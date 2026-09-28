@@ -1,0 +1,136 @@
+#####################
+# .NET & Build Artifacts
+#####################
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vspscc
+*.vssscc
+*.cache
+*.dbmdl
+*.pdb
+*.log
+*.tlog
+*.ilk
+*.tmp
+*.csproj.user
+.vs/
+
+
+#####################
+# ASP.NET Core
+#####################
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json.local
+.env
+*.secret.json
+
+#####################
+# Visual Studio
+#####################
+.vs/
+.vscode/
+*.code-workspace
+
+#####################
+# Rider / JetBrains
+#####################
+.idea/
+*.sln.iml
+
+#####################
+# User-specific Files
+#####################
+*.userprefs
+*.sublime-workspace
+*.sublime-project
+
+#####################
+# Logs
+#####################
+*.log
+logs/
+Logs/
+
+#####################
+# Database files
+#####################
+*.mdf
+*.ldf
+*.ndf
+
+#####################
+# Test Results
+#####################
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+#####################
+# Packages
+#####################
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+.nuget/
+*.symbols.nupkg
+
+#####################
+# Entity Framework
+#####################
+Migrations/
+
+#####################
+# Others
+#####################
+*.DS_Store
+Thumbs.db
+desktop.ini
+*.bak
+*.swp
+*.swo
+*.orig
+*.rej
+
+#####################
+# Secrets
+#####################
+secrets.json
+
+#####################
+# Dotnet Tools
+#####################
+.dotnet-tools/
+
+#####################
+# Global JSON
+#####################
+global.json.user
+
+#####################
+# Logs / Coverage / Report folders
+#####################reports/
+coverage/
+coverage-results/
+test-output/
+
+#####################
+# Docker
+#####################
+**/docker-compose.override.yml
+docker-compose.override.yml
+
+#####################
+# ReSharper
+#####################
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+

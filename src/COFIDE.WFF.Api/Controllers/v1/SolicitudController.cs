@@ -1,0 +1,470 @@
+﻿using Asp.Versioning;
+using COFIDE.WFF.Api.ApiVersions;
+using COFIDE.WFF.Api.Constants;
+using COFIDE.WFF.Api.Controllers.Common;
+using COFIDE.WFF.Api.Controllers.DTOs;
+using COFIDE.WFF.Application.Common.Interfaces;
+using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqueado;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.AnularSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.AprobarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarEnviarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.EnviarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarEnviarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumentoZip;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSustento;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSustentoZip;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitudZip;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
+using System.Net.Mime;
+namespace COFIDE.WFF.Api.Controllers.v1;
+
+
+[ApiController]
+[ApiVersion(Version1.Version)]
+[Route("api/v{version:apiVersion}/solicitudes")]
+[Produces(MediaTypeNames.Application.Json)]
+[ApiExplorerSettings(GroupName = Version1.GroupName)]
+public class SolicitudController : BaseApiController
+{
+    public SolicitudController(IMediator mediator, ICorrelationContext correlationContext) : base(mediator, correlationContext) { }
+
+    #region CREACIÓN DE SOLICITUD
+
+    [HttpPost]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.Create.Summary,
+        Description = DescriptionSwagger.SolicitudController.Create.Description,
+        OperationId = "Create"
+        )]
+    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<string>> Create([FromForm] RegistrarSolicitudCommand cmd)
+    {
+        var result = await _mediator.Send(cmd);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    [HttpPost("envios")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.CreateEnviar.Summary,
+        Description = DescriptionSwagger.SolicitudController.CreateEnviar.Description,
+        OperationId = "CreateEnviar"
+        )]
+    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<string>> CreateEnviar([FromForm] EnviarSolicitudCommand cmd)
+    {
+        var result = await _mediator.Send(cmd);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    [HttpPost("{id}/reusos")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.CrearSolicitudPorReuso.Summary,
+        Description = DescriptionSwagger.SolicitudController.CrearSolicitudPorReuso.Description,
+        OperationId = "CrearSolicitudPorReuso"
+        )]
+    public async Task<ActionResult<string>> CrearSolicitudPorReuso([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    {
+        var cmd = new ReusarSolicitudCommand(id, request);
+
+        var result = await _mediator.Send(cmd);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+
+    [HttpPost("{id}/reusos/envios")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.CrearSolicitudPorReusoYEnviar.Summary,
+        Description = DescriptionSwagger.SolicitudController.CrearSolicitudPorReusoYEnviar.Description,
+        OperationId = "CrearSolicitudPorReusoYEnviar"
+        )]
+    public async Task<ActionResult<string>> CrearSolicitudPorReusoYEnviar([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    {
+        var cmd = new ReusarEnviarSolicitudCommand(id, request);
+
+        var result = await _mediator.Send(cmd);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    #endregion
+
+    #region EDICIÓN DE SOLICITUD
+
+    [HttpPut("{id}")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.EditarSolicitud.Summary,
+        Description = DescriptionSwagger.SolicitudController.EditarSolicitud.Description,
+        OperationId = "EditarSolicitud"
+        )]
+    public async Task<ActionResult<string>> EditarSolicitud([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    {
+        var cmd = new EditarSolicitudCommand(id, request);
+
+        var result = await _mediator.Send(cmd);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+
+    [HttpPut("{id}/envios")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.EditarBorradorYFinalizar.Summary,
+        Description = DescriptionSwagger.SolicitudController.EditarBorradorYFinalizar.Description,
+        OperationId = "EditarBorradorYFinalizar"
+        )]
+    public async Task<ActionResult<string>> EditarBorradorYFinalizar([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    {
+        var cmd = new EditarEnviarSolicitudCommand(id, request);
+
+        var result = await _mediator.Send(cmd);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+
+    [HttpPut("{id}/anulaciones")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.AnularSolicitud.Summary,
+        Description = DescriptionSwagger.SolicitudController.AnularSolicitud.Description,
+        OperationId = "AnularSolicitud"
+        )]
+    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<string>> Anular([FromRoute] long id)
+    {
+        var result = await _mediator.Send(new AnularSolicitudCommand(id));
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+           ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    #endregion
+
+    #region REVISIONES
+
+    [HttpPut("{id}/aprobaciones")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.AprobarSolicitud.Summary,
+        Description = DescriptionSwagger.SolicitudController.AprobarSolicitud.Description,
+        OperationId = "AprobarSolicitud"
+        )]
+    public async Task<ActionResult<string>> AprobarSolicitud([FromRoute] long id, [FromForm] AprobarSolicitudCommand cmd)
+    {
+        if (id != cmd.Id)
+            return NotFound(ResponseDto<string?>.Fail(ResponseCodes.RouteMismatch, "El id no coincide"));
+
+        var command = cmd with { Id = id };
+
+        var result = await _mediator.Send(command);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    [HttpPut("{id}/rechazos")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.RechazarSolicitud.Summary,
+        Description = DescriptionSwagger.SolicitudController.RechazarSolicitud.Description,
+        OperationId = "RechazarSolicitud"
+        )]
+    public async Task<ActionResult<string>> RechazarSolicitud([FromRoute] long id, [FromForm] RechazarSolicitudCommand cmd)
+    {
+        if (id != cmd.Id)
+            return NotFound(ResponseDto<string?>.Fail(ResponseCodes.RouteMismatch, "El id no coincide"));
+
+        var command = cmd with { Id = id };
+
+        var result = await _mediator.Send(command);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+
+    #endregion
+
+
+
+
+    [HttpGet("{id}")]
+    [ProducesResponseType(typeof(ResponseDto<SolicitudDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<SolicitudDto>>> GetSolicitud(long id, [FromQuery] bool esReuso = false)
+    {
+        var result = await _mediator.Send(new ObtenerSolicitudQuery(id, esReuso));
+        if (result is null)
+            return NotFound(ResponseDto<SolicitudDto>
+                .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
+        return Ok(ResponseDto<SolicitudDto>.Ok(result));
+    }
+
+
+
+
+    #region LISTA-BANDEJA-PAGINACION
+
+    [HttpGet("paginado")]
+    [ProducesResponseType(typeof(SolicitudPaginadoResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ResponseDto<SolicitudPaginadoResponseDto>>> ObtenerSolicitudPaginado(
+    [FromQuery] ObtenerSolicitudPaginadoQuery query)
+    {
+        var result = await _mediator.Send(query);
+
+        var response = ResponseDto<SolicitudPaginadoResponseDto>.Ok(
+            result,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    /// <summary>listado de solicitudes por firmar del usuario</summary>
+    [HttpGet("bandeja-entrada")]
+    [ProducesResponseType(typeof(ResponseDto<BandejaEntradaResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<BandejaEntradaResponseDto>>> BandejaEntradaPaginado(
+    [FromQuery] ObtenerBandejaEntradaQuery query)
+    {
+        var result = await _mediator.Send(query);
+
+        var response = ResponseDto<BandejaEntradaResponseDto>.Ok(
+            result,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    /// <summary>listado de documentos bloqueado</summary>
+    [HttpGet("documentos/bloqueados/paginado")]
+    [ProducesResponseType(typeof(ResponseDto<PagedResultDto<DocumentoBloqueadoPaginadoDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<PagedResultDto<DocumentoBloqueadoPaginadoDto>>>> GetListadoDocumentosBloqueados(
+    [FromQuery] ObtenerDocumentoBloqueadoPaginadoQuery query)
+    {
+        var result = await _mediator.Send(query);
+
+        var response = ResponseDto<PagedResultDto<DocumentoBloqueadoPaginadoDto>>.Ok(
+         result,
+         "Operación exitosa",
+         HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+    #endregion
+
+
+
+    [HttpGet("panel-control")]
+    [ProducesResponseType(typeof(ResponseDto<SolicitudPanelControlDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<SolicitudPanelControlDto>>> GetSolicitudPanelControl()
+    {
+        var result = await _mediator.Send(new ObtenerSolicitudPanelControlQuery());
+        if (result is null)
+            return NotFound(ResponseDto<SolicitudPanelControlDto>
+                .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
+        return Ok(ResponseDto<SolicitudPanelControlDto>.Ok(result));
+    }
+
+
+
+
+
+
+
+
+    [HttpPost("codigos-referencia/conflictos")]
+    [ProducesResponseType(typeof(ResponseDto<DetectarConflictosResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<DetectarConflictosResponse>>> GetDetectarcodigoReferencia(
+        [FromBody] DetectarCodigoQuery request)
+    {
+        var result = await _mediator.Send(request);
+
+        return Ok(ResponseDto<DetectarConflictosResponse>.Ok(result));
+    }
+
+
+    [HttpPost("documentos/firma/validaciones")]
+    [ProducesResponseType(typeof(ResponseDto<IReadOnlyCollection<ValidarDocumentoFirmadoResponseDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<IReadOnlyCollection<ValidarDocumentoFirmadoResponseDto>>>> ValidarDocumentoFirmado([FromForm] ValidarDocumentoFirmadoQuery query)
+    {
+        var result = await _mediator.Send(query);
+
+        var response = ResponseDto<IReadOnlyCollection<ValidarDocumentoFirmadoResponseDto>>.Ok(
+          result,
+          ResponseCodes.OperacionExitosa,
+          HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    /// <summary>zip de documentos de solicitud</summary>
+    [HttpGet("{id}/documentos/zip")]
+    public async Task<IActionResult> DescargarDocumentosZip(long id, [FromQuery] List<long>? documentos, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new DescargarSolicitudDocumentoZipQuery(id, documentos),
+            cancellationToken);
+
+        return File(result.Archivo, result.ContentType, result.NombreArchivo);
+    }
+
+   
+
+    [HttpGet("{id}/descargar-zip")]
+    public async Task<IActionResult> DescargarZip(long id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new DescargarTodoSolicitudZipQuery(id),
+            cancellationToken);
+
+        return File(result.Archivo, result.ContentType, result.NombreArchivo);
+    }
+
+
+
+
+
+    #region Documentos y Sustentos
+
+    /// <summary>Obtener areas para combo</summary>
+    [HttpGet("documentos/{id}/descarga")]
+    [ProducesResponseType(typeof(ResponseDto<DescargarSolicitudDocumentoDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<DescargarSolicitudDocumentoDto>>> ObtenerDocumento(long id)
+    {
+        var result = await _mediator.Send(new DescargarSolicitudDocumentoQuery(id));
+        if (result is null)
+            return NotFound(ResponseDto<DescargarSolicitudDocumentoDto>
+                .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
+        return Ok(ResponseDto<DescargarSolicitudDocumentoDto>.Ok(result));
+    }
+    /// <summary>
+    /// anular solicitud
+    /// </summary>
+    [HttpPut("documentos/{id}/activaciones")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<string>> ActivarDocumento([FromRoute] long id)
+    {
+        var result = await _mediator.Send(new ActivarDocumentoBloqueadoCommand(id));
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+
+    #endregion
+
+    #region Solicitud Sustento
+
+    [HttpGet("sustentos/{id}/descarga")]
+    [ProducesResponseType(typeof(ResponseDto<DescargarSolicitudSustentoDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<DescargarSolicitudSustentoDto>>> ObtenerSustento(long id)
+    {
+        var result = await _mediator.Send(new DescargarSolicitudSustentoQuery(id));
+        if (result is null)
+            return NotFound(ResponseDto<DescargarSolicitudSustentoDto>
+                .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
+        return Ok(ResponseDto<DescargarSolicitudSustentoDto>.Ok(result));
+    }
+
+    /// <summary>zip de sustentos de solicitud</summary>
+    [HttpGet("{id}/sustentos/zip")]
+    public async Task<IActionResult> DescargarSustentosZip(long id, [FromQuery] List<long>? sustentos, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new DescargarSolicitudSustentoZipQuery(id, sustentos),
+            cancellationToken);
+
+        return File(result.Archivo, result.ContentType, result.NombreArchivo);
+    }
+
+    #endregion
+
+    #region Reporte
+
+    /// <summary>Reporte de descarga de solicitudes</summary>
+    [HttpGet("reporte")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReporteSolicitud(
+        [FromQuery] DescargarReporteSolicitudExcelQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return File(
+            result.Contenido,
+            result.ContentType,
+            result.NombreArchivo
+        );
+    }
+
+    #endregion
+}
+

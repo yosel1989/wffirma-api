@@ -1,0 +1,135 @@
+﻿using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
+using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors;
+using COFIDE.WFF.Domain.Common.Entities;
+using COFIDE.WFF.Domain.Exceptions;
+namespace COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
+
+public class SolicitudFirmanteFlujo : AuditableEntity<long>
+{
+    #region Propiedades unicas
+    public long IdFirmanteFlujo { get; private set; }
+    public long IdSolicitudPlantilla { get; private set; }
+    public long IdPlantillaEtapa { get; private set; }
+    public bool RevAprobado { get; private set; }
+    public DateTime? FechaRevision { get; private set; }
+    #endregion
+
+    #region Relaciones
+    public FirmanteFlujo FirmanteFlujo { get; private set; } = default!;
+    public SolicitudPlantilla SolicitudPlantilla { get; set; } = default!;
+
+    #endregion
+
+    #region Propiedades de la Plantilla Etapa, para simular el runtime y no depender de el agregado de plantilla
+    public long? OrdenEtapa { get; private set; }
+    public long IdUsuarioAsignado { get; private set; }
+    public bool EsFirmante { get; private set; }
+    public bool EsVisador { get; private set; }
+    public bool EsNuevo { get; private set; } = false;
+
+    #endregion   
+
+    #region Constructor
+    private SolicitudFirmanteFlujo() { } // EF
+
+    private SolicitudFirmanteFlujo(
+      long idSolicitudFirmanteFlujo,
+      long idFirmanteFlujo,
+      long idSolicitudPlantilla,
+      long idPlantillaEtapa,
+      long ordenEtapa,
+      bool revAprobado,
+      long idUsuarioAsignado)
+    {
+        Id = idSolicitudFirmanteFlujo;
+        IdFirmanteFlujo = idFirmanteFlujo;
+        IdSolicitudPlantilla = idSolicitudPlantilla;
+        IdPlantillaEtapa = idPlantillaEtapa;
+        RevAprobado = revAprobado;
+        OrdenEtapa = ordenEtapa;
+        IdUsuarioAsignado = idUsuarioAsignado;
+        Estado = true;
+    }
+
+    public static SolicitudFirmanteFlujo Crear(
+          long idSolicitudFirmanteFlujo,
+          long idFirmanteFlujo,
+          long idSolicitudPlantilla,
+          long idPlantillaEtapa,
+          long ordenEtapa,
+          long idUsuarioAsignado)
+    {
+
+        return new SolicitudFirmanteFlujo
+        (
+            idSolicitudFirmanteFlujo, idFirmanteFlujo, idSolicitudPlantilla, idPlantillaEtapa, ordenEtapa, false, idUsuarioAsignado
+        );
+    }
+
+    #endregion
+
+    #region Metodos
+    public void AsignarSolicitudPlantilla(long idSolicitudPlantilla)
+    {
+        IdSolicitudPlantilla = idSolicitudPlantilla;
+    }
+
+    public void AsignarDatosEtapa(
+        long? ordenEtapa,
+        long idUsuarioAsignado,
+        bool esFirmante,
+        bool esVisador)
+    {
+        OrdenEtapa = ordenEtapa;
+        IdUsuarioAsignado = idUsuarioAsignado;
+        EsFirmante = esFirmante;
+        EsVisador = esVisador;
+    }
+
+    public void Aprobar()
+    {
+        if (RevAprobado)
+            throw new DomainException(SolicitudErrors.FirmanteAprobado);
+
+        RevAprobado = true;
+        FechaRevision = DateTime.Now;
+    }
+
+    public void ActualizarDatosSolicitudFirmante(
+        long idFirmanteFlujo,
+        long idSolicitudPlantilla,
+        long idPlantillaEtapa,
+        long? ordenEtapa)
+    {
+        IdFirmanteFlujo = idFirmanteFlujo;
+        IdSolicitudPlantilla = idSolicitudPlantilla;
+        IdPlantillaEtapa = idPlantillaEtapa;
+        OrdenEtapa = ordenEtapa;
+    }
+
+    public void Inactivar()
+    {
+        Estado = false;
+    }
+
+    public void ValidarModificaionFirmante(SolicitudFirmanteFlujo request)
+    {
+        if (RevAprobado)
+            throw new DomainException(SolicitudErrors.FirmanteModificacionNoValida);
+
+        IdUsuarioAsignado = request.IdUsuarioAsignado;
+    }
+
+    public void ResetearPorRechazo()
+    {
+        RevAprobado = false;
+        FechaRevision = null;
+    }
+
+    public void MarcarComoNuevo()
+    {
+        EsNuevo = true;
+    }
+
+    #endregion
+}

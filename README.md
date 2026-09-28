@@ -1,20 +1,47 @@
-#Introducción 
-TODO: Proporcione una breve introducción del proyecto. En esta sección se deben explicar los objetivos o los motivos del proyecto. 
+# WFF - API Hexagonal
 
-# Tareas iniciales
-TODO: Guíe a los usuarios para que apliquen el código a su sistema propio sin ningún problema. En esta sección se puede hablar sobre:
-1.	El proceso de instalación
-2.	Las dependencias de software
-3.	Las últimas versiones
-4.	Las referencias de API
+API desarrollada bajo arquitectura Hexagonal (Ports & Adapters).
 
-# Compilación y prueba
-TODO: Describa y muestre cómo compilar el código y ejecutar las pruebas. 
+---
 
-# Contribución
-TODO: Explique cómo pueden contribuir otros usuarios y desarrolladores a la mejora del código. 
+## 📌 Descripción
 
-Si quiere obtener más información sobre cómo crear archivos Léame descriptivos, consulte las siguientes [directrices](https://docs.microsoft.com/en-us/azure/devops/repos/git/create-a-readme?view=azure-devops). También puede inspirarse en los archivos Léame siguientes:
-- [ASP.NET Core](https://github.com/aspnet/Home)
-- [Visual Studio Code](https://github.com/Microsoft/vscode)
-- [Chakra Core](https://github.com/Microsoft/ChakraCore)
+Esta API actúa como orquestador entre:
+
+- SSO (proveedor de autenticación)
+- API Suc (menú y datos externos)
+- Base de datos en Oracle
+
+---
+
+## 🏗 Arquitectura
+
+La solución sigue el patrón Hexagonal:
+
+- **Domain**
+  - Entidades
+  - Value Objects
+  - Puertos (Interfaces)
+
+- **Application**
+  - Casos de uso
+  - DTOs
+  - Handlers (MediatR)
+
+- **Infrastructure**
+  - Adaptadores externos
+  - Repositorios
+  - Configuración de seguridad (JWT)
+
+- **API**
+  - Controllers
+  - Configuración Swagger
+  - Middleware
+
+---
+
+## 🔐 Autenticación
+
+La API utiliza autenticación basada en JWT.
+
+El token es emitido por el SSO y debe enviarse en el header:

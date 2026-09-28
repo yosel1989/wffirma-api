@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Adapters\Queries\**" />
+    <Compile Remove="Logging\**" />
+    <EmbeddedResource Remove="Adapters\Queries\**" />
+    <EmbeddedResource Remove="Logging\**" />
+    <None Remove="Adapters\Queries\**" />
+    <None Remove="Logging\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Adapters\Services\Startup\" />
+    <Folder Include="Persistence\Migrations\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.6.2" />
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.3.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.23" />
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.12">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.15.0" />
+    <PackageReference Include="Oracle.EntityFrameworkCore" Version="9.23.26100" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.100" />
+    <PackageReference Include="PdfPig" Version="0.1.14" />
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="Scrutor" Version="7.0.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\COFIDE.WFF.Application\COFIDE.WFF.Application.csproj" />
+    <ProjectReference Include="..\COFIDE.WFF.Domain\COFIDE.WFF.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Adapters\Services\Pdf\Fonts\calibri.ttf" Link="Fonts/calibri.ttf" CopyToOutputDirectory="Always" />
+    <None Include="Adapters\Services\Pdf\Fonts\calibrib.ttf" Link="Fonts/calibrib.ttf" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.ServiceModel.Http" Version="8.*" />
+  </ItemGroup>
+</Project>
