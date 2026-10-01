@@ -1,0 +1,10 @@
+{
+  "usuarioActual": {
+    "userIdLocal": 10,
+    "userAreaId": 5,
+    "userAreaPadreId": 2,
+    "userAreaDescripcionCorta": "GTI",
+    "userGerenciaNombre": "GERENCIA GENERAL",
+    "userCorreo": "ana@cofide.com.pe"
+  }
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "caso": "Borrador con referencias, correos y plantilla nueva",
+    "esBorrador": true,
+    "codigoSolicitud": "GTI-SOL-00000001-2026",
+    "codigosReferencia": [ "REF-1", "REF-2" ],
+    "correos": [ "luis@cofide.com.pe" ],
+    "idPlantilla": null,
+    "configuracion": "{\"etapas\":[]}",
+    "conPlantilla": true,
+    "idEstadoEsperado": 1,
+    "eventoEsperado": "SolicitudCreadaBorradorDomainEvent"
+  },
+  {
+    "caso": "Envio directo con plantilla maestra existente",
+    "esBorrador": false,
+    "codigoSolicitud": "GTI-SOL-00000002-2026",
+    "codigosReferencia": [],
+    "correos": [],
+    "idPlantilla": 7,
+    "configuracion": null,
+    "conPlantilla": false,
+    "idEstadoEsperado": 2,
+    "eventoEsperado": "SolicitudCreadaDomainEvent"
+  }
+]
