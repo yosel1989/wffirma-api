@@ -86,6 +86,57 @@ public class SolicitudDocumentoTagServiceTest
         documento.DocumentoTags.Should().ContainSingle(t => t.Id == 50 && t.NumeroPagina == 2 && t.Estado);
     }
 
+    [Fact]
+    public async Task Actualizar_Debe_Mover_La_Etiqueta_Existente()
+    {
+        var solicitud = Borrador();
+        solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash",
+            null, null, null, null, null, null, null, null, 10);
+        var documento = solicitud.Documentos.Single();
+        documento.AsignarDocumentoConTag("contrato", "pdf", "tags", "hash-tag");
+        documento.AgregarDocumentoTag(8, 1, 1, 1, 175, 40);
+        var parametros = new Mock<IParametroRepository>();
+        var correlativos = new Mock<IGeneradorCorrelativoIdRepository>();
+        parametros.Setup(p => p.ObtenerTamanioFirmaAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TamanioFirmaDto { FirmaAnchoFirmante = 175, FirmaAltoFirmante = 40 });
+        correlativos.Setup(c => c.ObtenerBloqueSiguienteIdDocumentoTagAsync(0, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<long>());
+
+        await new SolicitudDocumentoTagService(correlativos.Object, parametros.Object)
+            .AntualizarDocumentoTagDesdeSolicitud(solicitud, """
+                [{"nombreDocumento":"contrato.pdf","coordenadas":[{"id":8,"numeroPagina":3,"x":12,"y":18}]}]
+                """, CancellationToken.None);
+
+        var etiqueta = documento.DocumentoTags.Should().ContainSingle().Subject;
+        etiqueta.Id.Should().Be(8);
+        etiqueta.Estado.Should().BeTrue();
+        etiqueta.NumeroPagina.Should().Be(3);
+        etiqueta.UbicacionX.Should().Be(12);
+        etiqueta.UbicacionY.Should().Be(18);
+    }
+
+    [Fact]
+    public async Task Actualizar_Sin_Codigo_Debe_Quitar_El_Sufijo_Cod()
+    {
+        var solicitud = Borrador();
+        solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash",
+            null, null, null, null, null, null, null, null, 10);
+        var documento = solicitud.Documentos.Single();
+        var parametros = new Mock<IParametroRepository>();
+        var correlativos = new Mock<IGeneradorCorrelativoIdRepository>();
+        parametros.Setup(p => p.ObtenerTamanioFirmaAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TamanioFirmaDto { FirmaAnchoFirmante = 175, FirmaAltoFirmante = 40 });
+        correlativos.Setup(c => c.ObtenerBloqueSiguienteIdDocumentoTagAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<long> { 50 });
+
+        await new SolicitudDocumentoTagService(correlativos.Object, parametros.Object)
+            .AntualizarDocumentoTagDesdeSolicitud(solicitud, """
+                [{"nombreDocumento":"contrato-COD.pdf","coordenadas":[{"id":0,"numeroPagina":1,"x":4,"y":5}]}]
+                """, CancellationToken.None);
+
+        documento.DocumentoTags.Should().ContainSingle(t => t.Id == 50 && t.NumeroPagina == 1);
+    }
+
     private static SolicitudDocumentoTagService Servicio(Mock<IParametroRepository>? parametros = null) =>
         new(new Mock<IGeneradorCorrelativoIdRepository>().Object, (parametros ?? new Mock<IParametroRepository>()).Object);
 
