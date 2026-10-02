@@ -10,7 +10,6 @@ using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
-using System.Text.Json;
 
 namespace COFIDE.WFF.Application.Tests.Features.Solicitudes;
 
@@ -35,19 +34,15 @@ string EventoEsperado)
 {
     public override string ToString() => Caso;
 }
-
 public sealed record UsuarioSolicitudData(UsuarioActualData UsuarioActual);
-
-public sealed record CrearSolicitudUseCaseData(
-    UsuarioActualData UsuarioActual,
-    List<CrearSolicitudUseCaseCase> Casos);
 #endregion
 public class CrearSolicitudUseCaseTests
 {
     private static readonly UsuarioActualData Usuario =
-    JsonResource.Single<UsuarioSolicitudData>("Solicitudes/usuario-solicitud-usecase.json").UsuarioActual;
+        JsonResource.Single<UsuarioSolicitudData>("Solicitudes/usuario-solicitud-usecase.json").UsuarioActual;
+
     public static IEnumerable<object[]> Casos =>
-    JsonResource.Cases<CrearSolicitudUseCaseCase>("Solicitudes/crear-solicitud-usecase.json");
+        JsonResource.Cases<CrearSolicitudUseCaseCase>("Solicitudes/crear-solicitud-usecase.json");
 
     private readonly Mock<ICurrentUserService> _currentUser = new();
     private readonly Mock<ISolicitudCreacionService> _creacion = new();
@@ -58,12 +53,13 @@ public class CrearSolicitudUseCaseTests
     private readonly Mock<IGeneradorCorrelativoIdRepository> _correlativos = new();
     public CrearSolicitudUseCaseTests()
     {
-        _currentUser.Setup(x => x.UserIdLocal).Returns(Usuario.UserIdLocal);
-        _currentUser.Setup(x => x.UserAreaId).Returns(Usuario.UserAreaId);
-        _currentUser.Setup(x => x.UserAreaPadreId).Returns(Usuario.UserAreaPadreId);
-        _currentUser.Setup(x => x.UserAreaDescripcionCorta).Returns(Usuario.UserAreaDescripcionCorta);
-        _currentUser.Setup(x => x.UserGerenciaNombre).Returns(Usuario.UserGerenciaNombre);
-        _currentUser.Setup(x => x.UserCorreo).Returns(Usuario.UserCorreo);
+        var usuario = Usuario;
+        _currentUser.Setup(x => x.UserIdLocal).Returns(usuario.UserIdLocal);
+        _currentUser.Setup(x => x.UserAreaId).Returns(usuario.UserAreaId);
+        _currentUser.Setup(x => x.UserAreaPadreId).Returns(usuario.UserAreaPadreId);
+        _currentUser.Setup(x => x.UserAreaDescripcionCorta).Returns(usuario.UserAreaDescripcionCorta);
+        _currentUser.Setup(x => x.UserGerenciaNombre).Returns(usuario.UserGerenciaNombre);
+        _currentUser.Setup(x => x.UserCorreo).Returns(usuario.UserCorreo);
 
         _correlativos
          .Setup(x => x.ObtenerBloqueSiguienteIdCodigosReferenciaAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
@@ -103,15 +99,16 @@ public class CrearSolicitudUseCaseTests
     [MemberData(nameof(Casos))]
     public async Task CrearDebe_Orquestar_Servicios_Y_Dejar_El_Estado_Esperado(CrearSolicitudUseCaseCase caso)
     {
+        var usuario = Usuario;
         var solicitudBase = CrearSolicitudBorrador(caso.CodigoSolicitud);
         Plantilla? plantilla = caso.ConPlantilla ? CrearPlantilla() : null;
 
         _creacion
             .Setup(x => x.CrearSolicitudBase(
                 It.IsAny<SolicitudRequestDto>(),
-                Usuario.UserAreaDescripcionCorta,
-                Usuario.UserIdLocal, Usuario.UserAreaId,
-                Usuario.UserAreaPadreId,
+                usuario.UserAreaDescripcionCorta,
+                usuario.UserIdLocal, usuario.UserAreaId,
+                usuario.UserAreaPadreId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(solicitudBase);
 
@@ -120,8 +117,8 @@ public class CrearSolicitudUseCaseTests
                 0,
                 caso.Configuracion,
                 caso.IdPlantilla,
-                Usuario.UserIdLocal,
-                Usuario.UserGerenciaNombre,
+                usuario.UserIdLocal,
+                usuario.UserGerenciaNombre,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(plantilla);
 
@@ -164,6 +161,7 @@ public class CrearSolicitudUseCaseTests
     [Fact]
     public async Task CrearDebe_Usar_El_Codigo_De_Area_Y_Usuario_Del_Contexto_Actual()
     {
+        var usuario = Usuario;
         _creacion
             .Setup(x => x.CrearSolicitudBase(
                 It.IsAny<SolicitudRequestDto>(),
@@ -189,9 +187,9 @@ public class CrearSolicitudUseCaseTests
         _creacion.Verify(
             x => x.CrearSolicitudBase(
                 It.IsAny<SolicitudRequestDto>(),
-                Usuario.UserAreaDescripcionCorta,
-                Usuario.UserIdLocal, Usuario.UserAreaId,
-                Usuario.UserAreaPadreId,
+                usuario.UserAreaDescripcionCorta,
+                usuario.UserIdLocal, usuario.UserAreaId,
+                usuario.UserAreaPadreId,
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -225,7 +223,7 @@ public class CrearSolicitudUseCaseTests
             pesoTotalDocu: 0);
 
     private static Plantilla CrearPlantilla() =>
-    Plantilla.Crear(1, "Flujo de prueba", "Descripcion", false, 10, "GERENCIA GENERAL", false);
+        Plantilla.Crear(1, "Flujo de prueba", "Descripcion", false, 10, "GERENCIA GENERAL", false);
     #endregion
 
 
