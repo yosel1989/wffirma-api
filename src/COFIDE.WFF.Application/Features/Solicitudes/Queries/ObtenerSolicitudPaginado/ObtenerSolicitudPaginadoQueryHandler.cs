@@ -8,11 +8,11 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPa
 
 public sealed class ObtenerSolicitudPaginadoQueryHandler(
         ICurrentUserService currentUser,
-        ISolicitudRepository solicitudRepository
+        ISolicitudQueryRepository solicitudQueryRepository
     ) : IRequestHandler<ObtenerSolicitudPaginadoQuery, SolicitudPaginadoResponseDto>
 {
     private readonly ICurrentUserService _currentUser = currentUser;
-    private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
+    private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     public async Task<SolicitudPaginadoResponseDto> Handle(ObtenerSolicitudPaginadoQuery request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserIdLocal is null)
@@ -33,7 +33,7 @@ public sealed class ObtenerSolicitudPaginadoQueryHandler(
             SearchTerm = request.SearchTerm
         };
 
-        var pagedResult = await _solicitudRepository.ObtenerPaginado(
+        var pagedResult = await _solicitudQueryRepository.ObtenerPaginado(
             paginationParams,
             idUsuario,
             areaUsuario,

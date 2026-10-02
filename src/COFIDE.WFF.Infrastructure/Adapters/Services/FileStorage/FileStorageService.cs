@@ -153,4 +153,17 @@ public class FileStorageService(
 
         return Task.FromResult(fullPath);
     }
+
+    // Estructura de carpetas del almacenamiento: es conocimiento del adaptador, no de Application.
+    private const string CarpetaDocumentos = "DOCUMENTOS";
+    private const string CarpetaSustentos = "SUSTENTOS";
+
+    public string ObtenerCarpetaDocumentos(string codigoSolicitud) =>
+        Path.Combine(codigoSolicitud, CarpetaDocumentos);
+
+    public string ObtenerCarpetaSustentos(string codigoSolicitud) =>
+        Path.Combine(codigoSolicitud, CarpetaSustentos);
+
+    public string CombinarRuta(string carpeta, string nombreArchivo) =>
+        Path.Combine(carpeta, nombreArchivo);
 }

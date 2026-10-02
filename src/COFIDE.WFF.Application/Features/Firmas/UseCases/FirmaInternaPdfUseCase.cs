@@ -68,7 +68,7 @@ public class FirmaInternaPdfUseCase(
         detalleFirma.ValidacionDocumentoFirmado();
 
         string rutaCompleta =
-            Path.Combine(
+            _fileStorageService.CombinarRuta(
                 documentoPorFirmar.Ruta,
                 $"{documentoPorFirmar.UltimoNombreOriginal}.{documentoPorFirmar.ExtensionOriginal}");
 

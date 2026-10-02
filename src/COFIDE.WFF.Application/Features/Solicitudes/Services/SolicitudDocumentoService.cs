@@ -8,7 +8,7 @@ using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Vo;
-using Microsoft.AspNetCore.Http;
+using COFIDE.WFF.Application.Common.Files;
 using System.Text.Json;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Services;
@@ -28,7 +28,7 @@ public class SolicitudDocumentoService(
 
     private readonly IParametroRepository _parametroRepository = parametroRepository;
     private readonly string sufijoDocumentoTag = "[T]";
-    public async Task<IReadOnlyCollection<DocumentoProcesadoInput>> CrearDocumentoInput(List<IFormFile>? archivos,
+    public async Task<IReadOnlyCollection<DocumentoProcesadoInput>> CrearDocumentoInput(List<ArchivoEntrada>? archivos,
         string codigoSolicitud, bool inCodigo, string? documentosTag, CancellationToken cancellationToken)
     {
         if (archivos == null || archivos.Count == 0)
@@ -38,11 +38,11 @@ public class SolicitudDocumentoService(
 
         foreach (var file in archivos)
         {
-            await using var stream = file.OpenReadStream();
+            await using var stream = file.AbrirLectura();
 
             lista.Add(await ProcesarArchivoAsync(
                 stream,
-                file.FileName,
+                file.Nombre,
                 codigoSolicitud,
                 inCodigo,
                 documentosTag,
@@ -63,7 +63,7 @@ public class SolicitudDocumentoService(
             .Where(x => x.Estado && idsDocumentosConservar.Contains(x.Id)))
         {
             string fileName = $"{doc.NombreOriginal}.{doc.ExtensionOriginal}";
-            string path = Path.Combine(doc.RutaOriginal, fileName);
+            string path = _fileStorageService.CombinarRuta(doc.RutaOriginal, fileName);
 
             await using var stream =
                 await _fileStorageService.GetFileAsync(path, cancellationToken);
@@ -107,7 +107,7 @@ public class SolicitudDocumentoService(
     public async Task SincronizarTagDocumentoAsync(Solicitud solicitud, CancellationToken cancellationToken)
     {
         var config = await _parametroRepository.ConfiguracionFirmaAsync(cancellationToken);
-        string subPath = Path.Combine(solicitud.CodigoSolicitud, "DOCUMENTOS");
+        string subPath = _fileStorageService.ObtenerCarpetaDocumentos(solicitud.CodigoSolicitud);
         var documentos = solicitud.Documentos
             .Where(x => x.Estado)
             .ToList();
@@ -149,7 +149,7 @@ public class SolicitudDocumentoService(
         {
             var documentoVigente = doc.ObtenerDatosDocumentoParaTag(solicitud.InCodigo);
             string fileName = $"{documentoVigente.UltimoNombreOriginal}.{documentoVigente.ExtensionOriginal}";
-            string path = Path.Combine(documentoVigente.Ruta, fileName);
+            string path = _fileStorageService.CombinarRuta(documentoVigente.Ruta, fileName);
 
             await using var stream = await _fileStorageService.GetFileAsync(path, cancellationToken);
 
@@ -157,7 +157,7 @@ public class SolicitudDocumentoService(
             if (doc.TieneRutaTag() && !string.Equals(doc.NombreConTag, nombreEsperadoTag, StringComparison.OrdinalIgnoreCase))
             {
                 await _fileStorageService.DeleteFileAsync(
-                    Path.Combine(
+                    _fileStorageService.CombinarRuta(
                         doc.RutaConTag!,
                         $"{doc.NombreConTag}.{doc.ExtensionConTag}"),
                     cancellationToken);
@@ -264,7 +264,7 @@ public class SolicitudDocumentoService(
             return;
 
         await _fileStorageService.DeleteFileAsync(
-            Path.Combine(
+            _fileStorageService.CombinarRuta(
                 doc.RutaConTag!,
                 $"{doc.NombreConTag}.{doc.ExtensionConTag}"),
             cancellationToken);
@@ -283,7 +283,7 @@ public class SolicitudDocumentoService(
         if (fileBytes.Length == 0)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.DocumentoEmpty);
 
-        string subPath = Path.Combine(codigoSolicitud, "DOCUMENTOS");
+        string subPath = _fileStorageService.ObtenerCarpetaDocumentos(codigoSolicitud);
         string hashOriginal = _pdfContentHashService.ObtenerHashContenido(fileBytes);
         string nombreOriginal = Path.GetFileNameWithoutExtension(fileName);
         string extensionOriginal = Path.GetExtension(fileName).TrimStart('.');
@@ -389,7 +389,7 @@ public class SolicitudDocumentoService(
         {
             if (!string.IsNullOrWhiteSpace(doc.RutaCodigo) && (doc.NombreCodigo != doc.NombreOriginal))
             {
-                var path = Path.Combine(
+                var path = _fileStorageService.CombinarRuta(
                     doc.RutaCodigo!,
                     $"{doc.NombreCodigo}.{doc.ExtensionCodigo}");
 
@@ -402,11 +402,11 @@ public class SolicitudDocumentoService(
     private async Task GenerarCodigoAsync(List<SolicitudDocumento> documentos, string codigoSolicitud, CancellationToken cancellationToken)
     {
 
-        string subPathDocumentos = Path.Combine(codigoSolicitud, "DOCUMENTOS");
+        string subPathDocumentos = _fileStorageService.ObtenerCarpetaDocumentos(codigoSolicitud);
 
         foreach (var doc in documentos)
         {
-            var pathOriginal = Path.Combine(doc.RutaOriginal, $"{doc.NombreOriginal}.{doc.ExtensionOriginal}");
+            var pathOriginal = _fileStorageService.CombinarRuta(doc.RutaOriginal, $"{doc.NombreOriginal}.{doc.ExtensionOriginal}");
 
             await using var originalStream = await _fileStorageService.GetFileAsync(pathOriginal, cancellationToken);
             using var ms = new MemoryStream();

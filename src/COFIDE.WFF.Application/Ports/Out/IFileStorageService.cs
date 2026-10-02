@@ -44,5 +44,8 @@ public interface IFileStorageService
     CancellationToken cancellationToken = default);
     Task<string> GetRouteAsync(string filePath, CancellationToken cancellationToken = default);
 
+    string ObtenerCarpetaDocumentos(string codigoSolicitud);
+    string ObtenerCarpetaSustentos(string codigoSolicitud);
+    string CombinarRuta(string carpeta, string nombreArchivo);
 }
 

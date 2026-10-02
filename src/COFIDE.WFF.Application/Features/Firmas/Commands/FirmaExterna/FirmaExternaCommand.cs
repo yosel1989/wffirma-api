@@ -1,10 +1,10 @@
 ﻿using COFIDE.WFF.Application.Common.Commands;
-using Microsoft.AspNetCore.Http;
+using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Application.Features.Firmas.Commands.FirmaExterna;
 
 public sealed record FirmaExternaCommand
 (
     long IdSolicitud,
     long IdSolicitudDocumento,
-    IFormFile Documento
+    ArchivoEntrada Documento
 ) : CreateCommand<string?>;

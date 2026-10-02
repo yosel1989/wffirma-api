@@ -3,6 +3,8 @@ using COFIDE.WFF.Api.ApiVersions;
 using COFIDE.WFF.Api.Constants;
 using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
+using COFIDE.WFF.Api.Mappings;
+using COFIDE.WFF.Api.Request.Solicitudes;
 using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqueado;
@@ -55,9 +57,9 @@ public class SolicitudController : BaseApiController
         )]
     [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<string>> Create([FromForm] RegistrarSolicitudCommand cmd)
+    public async Task<ActionResult<string>> Create([FromForm] CrearSolicitudRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(request.ToRegistrarCommand(), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -75,9 +77,9 @@ public class SolicitudController : BaseApiController
         )]
     [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<string>> CreateEnviar([FromForm] EnviarSolicitudCommand cmd)
+    public async Task<ActionResult<string>> CreateEnviar([FromForm] CrearSolicitudRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(request.ToEnviarCommand(), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -93,11 +95,11 @@ public class SolicitudController : BaseApiController
         Description = DescriptionSwagger.SolicitudController.CrearSolicitudPorReuso.Description,
         OperationId = "CrearSolicitudPorReuso"
         )]
-    public async Task<ActionResult<string>> CrearSolicitudPorReuso([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    public async Task<ActionResult<string>> CrearSolicitudPorReuso([FromRoute] long id, [FromForm] SolicitudFormRequest request, CancellationToken cancellationToken)
     {
-        var cmd = new ReusarSolicitudCommand(id, request);
+        var cmd = new ReusarSolicitudCommand(id, request.ToSolicitudRequestDto());
 
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(cmd, cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -114,11 +116,11 @@ public class SolicitudController : BaseApiController
         Description = DescriptionSwagger.SolicitudController.CrearSolicitudPorReusoYEnviar.Description,
         OperationId = "CrearSolicitudPorReusoYEnviar"
         )]
-    public async Task<ActionResult<string>> CrearSolicitudPorReusoYEnviar([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    public async Task<ActionResult<string>> CrearSolicitudPorReusoYEnviar([FromRoute] long id, [FromForm] SolicitudFormRequest request, CancellationToken cancellationToken)
     {
-        var cmd = new ReusarEnviarSolicitudCommand(id, request);
+        var cmd = new ReusarEnviarSolicitudCommand(id, request.ToSolicitudRequestDto());
 
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(cmd, cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -138,11 +140,11 @@ public class SolicitudController : BaseApiController
         Description = DescriptionSwagger.SolicitudController.EditarSolicitud.Description,
         OperationId = "EditarSolicitud"
         )]
-    public async Task<ActionResult<string>> EditarSolicitud([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    public async Task<ActionResult<string>> EditarSolicitud([FromRoute] long id, [FromForm] SolicitudFormRequest request, CancellationToken cancellationToken)
     {
-        var cmd = new EditarSolicitudCommand(id, request);
+        var cmd = new EditarSolicitudCommand(id, request.ToSolicitudRequestDto());
 
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(cmd, cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -159,11 +161,11 @@ public class SolicitudController : BaseApiController
         Description = DescriptionSwagger.SolicitudController.EditarBorradorYFinalizar.Description,
         OperationId = "EditarBorradorYFinalizar"
         )]
-    public async Task<ActionResult<string>> EditarBorradorYFinalizar([FromRoute] long id, [FromForm] SolicitudRequestDto request)
+    public async Task<ActionResult<string>> EditarBorradorYFinalizar([FromRoute] long id, [FromForm] SolicitudFormRequest request, CancellationToken cancellationToken)
     {
-        var cmd = new EditarEnviarSolicitudCommand(id, request);
+        var cmd = new EditarEnviarSolicitudCommand(id, request.ToSolicitudRequestDto());
 
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(cmd, cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -204,14 +206,9 @@ public class SolicitudController : BaseApiController
         Description = DescriptionSwagger.SolicitudController.AprobarSolicitud.Description,
         OperationId = "AprobarSolicitud"
         )]
-    public async Task<ActionResult<string>> AprobarSolicitud([FromRoute] long id, [FromForm] AprobarSolicitudCommand cmd)
+    public async Task<ActionResult<string>> AprobarSolicitud([FromRoute] long id, [FromForm] AprobarSolicitudRequest request, CancellationToken cancellationToken)
     {
-        if (id != cmd.Id)
-            return NotFound(ResponseDto<string?>.Fail(ResponseCodes.RouteMismatch, "El id no coincide"));
-
-        var command = cmd with { Id = id };
-
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(request.ToCommand(id), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -227,14 +224,9 @@ public class SolicitudController : BaseApiController
         Description = DescriptionSwagger.SolicitudController.RechazarSolicitud.Description,
         OperationId = "RechazarSolicitud"
         )]
-    public async Task<ActionResult<string>> RechazarSolicitud([FromRoute] long id, [FromForm] RechazarSolicitudCommand cmd)
+    public async Task<ActionResult<string>> RechazarSolicitud([FromRoute] long id, [FromForm] RechazarSolicitudRequest request, CancellationToken cancellationToken)
     {
-        if (id != cmd.Id)
-            return NotFound(ResponseDto<string?>.Fail(ResponseCodes.RouteMismatch, "El id no coincide"));
-
-        var command = cmd with { Id = id };
-
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(request.ToCommand(id), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -348,9 +340,9 @@ public class SolicitudController : BaseApiController
 
     [HttpPost("documentos/firma/validaciones")]
     [ProducesResponseType(typeof(ResponseDto<IReadOnlyCollection<ValidarDocumentoFirmadoResponseDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<IReadOnlyCollection<ValidarDocumentoFirmadoResponseDto>>>> ValidarDocumentoFirmado([FromForm] ValidarDocumentoFirmadoQuery query)
+    public async Task<ActionResult<ResponseDto<IReadOnlyCollection<ValidarDocumentoFirmadoResponseDto>>>> ValidarDocumentoFirmado([FromForm] ValidarDocumentoFirmadoRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
 
         var response = ResponseDto<IReadOnlyCollection<ValidarDocumentoFirmadoResponseDto>>.Ok(
           result,

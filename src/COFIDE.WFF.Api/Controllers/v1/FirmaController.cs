@@ -3,8 +3,9 @@ using COFIDE.WFF.Api.ApiVersions;
 using COFIDE.WFF.Api.Constants;
 using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
+using COFIDE.WFF.Api.Mappings;
+using COFIDE.WFF.Api.Request.Firmas;
 using COFIDE.WFF.Application.Common.Interfaces;
-using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaExterna;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaPdf;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaWebHook;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaZip;
@@ -97,15 +98,9 @@ public class FirmaController : BaseApiController
          Description = DescriptionSwagger.FirmaController.FirmaExterna.Description,
          OperationId = "FirmaExterna"
          )]
-    public async Task<ActionResult<string>> FirmaExterna([FromRoute] long id, [FromForm] FirmaExternaRequest request)
+    public async Task<ActionResult<string>> FirmaExterna([FromRoute] long id, [FromForm] FirmaExternaRequest request, CancellationToken cancellationToken)
     {
-        var command = new FirmaExternaCommand(
-               id,
-               request.IdSolicitudDocumento,
-               request.Documento
-           );
-
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(request.ToCommand(id), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,

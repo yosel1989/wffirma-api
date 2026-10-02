@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Necesario para inspeccionar controladores (ControllerBase, IFormFile) por reflexión -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Worker no se referencia: se valida por su .csproj y su código fuente -->
+    <ProjectReference Include="..\..\src\COFIDE.WFF.Api\COFIDE.WFF.Api.csproj" />
+    <ProjectReference Include="..\..\src\COFIDE.WFF.Application\COFIDE.WFF.Application.csproj" />
+    <ProjectReference Include="..\..\src\COFIDE.WFF.Domain\COFIDE.WFF.Domain.csproj" />
+    <ProjectReference Include="..\..\src\COFIDE.WFF.Infrastructure\COFIDE.WFF.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

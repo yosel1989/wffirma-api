@@ -11,7 +11,7 @@ using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
-using Microsoft.AspNetCore.Http;
+using COFIDE.WFF.Application.Common.Files;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.UseCases;
 
@@ -84,7 +84,7 @@ public class RevisarSolicitudUseCase(
         return solicitud.CodigoSolicitud;
     }
 
-    private async Task<Solicitud> PrepararAprobacionRechazo(long idSolicitud, List<IFormFile>? sustentos, CancellationToken cancellationToken)
+    private async Task<Solicitud> PrepararAprobacionRechazo(long idSolicitud, List<ArchivoEntrada>? sustentos, CancellationToken cancellationToken)
     {
         var solicitud = await _solicitudRepository.ObtenerSolicitudParaAprobacion(idSolicitud, cancellationToken, true)
         ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudInvalid);
