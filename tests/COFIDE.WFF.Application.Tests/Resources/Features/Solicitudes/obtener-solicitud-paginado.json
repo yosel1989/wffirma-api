@@ -1,0 +1,242 @@
+[
+  {
+    "caso": "Pagina intermedia de tres",
+    "usuario": {
+      "userIdLocal": 99,
+      "userCargoId": 4,
+      "userAreaId": 7,
+      "codigoRolUsuario": "COORDINADOR"
+    },
+    "pageNumber": 2,
+    "pageSize": 10,
+    "searchTerm": "fideicomiso",
+    "filtros": {
+      "fechaInicio": "2026-01-01",
+      "fechaFin": "2026-12-31",
+      "gerencia": [ 1, 2 ],
+      "departamento": [ 7 ],
+      "solicitante": null,
+      "tipoSolicitud": [ 10 ],
+      "subTipoSolicitud": null,
+      "tipoOperacion": null,
+      "aprobadorActual": [ 55 ],
+      "estado": [ 2 ],
+      "codigoSolicitud": "GTI-SOL",
+      "asunto": "contrato",
+      "referencia": "REF-1",
+      "urgente": true,
+      "usuario": false,
+      "usuarioDepartamento": true,
+      "incluirResumen": true
+    },
+    "repositorio": {
+      "totalCount": 25,
+      "codigosItems": [ "GTI-SOL-00000011-2026", "GTI-SOL-00000012-2026" ],
+      "resumen": {
+        "misSolicitudes": 5,
+        "total": 25,
+        "miDepartamento": 12,
+        "urgente": 3
+      }
+    },
+    "esperado": {
+      "pageSizeEnviadoAlRepositorio": 10,
+      "totalPages": 3,
+      "hasPrevious": true,
+      "hasNext": true,
+      "itemsEnPagina": 2
+    }
+  },
+  {
+    "caso": "Primera y unica pagina",
+    "usuario": {
+      "userIdLocal": 1,
+      "userCargoId": 2,
+      "userAreaId": 3,
+      "codigoRolUsuario": "SOLICITANTE"
+    },
+    "pageNumber": 1,
+    "pageSize": 10,
+    "searchTerm": null,
+    "filtros": {
+      "fechaInicio": null,
+      "fechaFin": null,
+      "gerencia": null,
+      "departamento": null,
+      "solicitante": null,
+      "tipoSolicitud": null,
+      "subTipoSolicitud": null,
+      "tipoOperacion": null,
+      "aprobadorActual": null,
+      "estado": null,
+      "codigoSolicitud": null,
+      "asunto": null,
+      "referencia": null,
+      "urgente": null,
+      "usuario": true,
+      "usuarioDepartamento": null,
+      "incluirResumen": true
+    },
+    "repositorio": {
+      "totalCount": 2,
+      "codigosItems": [ "GTI-SOL-00000001-2026", "GTI-SOL-00000002-2026" ],
+      "resumen": {
+        "misSolicitudes": 2,
+        "total": 2,
+        "miDepartamento": 2,
+        "urgente": 0
+      }
+    },
+    "esperado": {
+      "pageSizeEnviadoAlRepositorio": 10,
+      "totalPages": 1,
+      "hasPrevious": false,
+      "hasNext": false,
+      "itemsEnPagina": 2
+    }
+  },
+  {
+    "caso": "Ultima pagina",
+    "usuario": {
+      "userIdLocal": 50,
+      "userCargoId": 9,
+      "userAreaId": 4,
+      "codigoRolUsuario": "ADMINISTRADOR"
+    },
+    "pageNumber": 3,
+    "pageSize": 10,
+    "searchTerm": null,
+    "filtros": {
+      "fechaInicio": null,
+      "fechaFin": null,
+      "gerencia": null,
+      "departamento": null,
+      "solicitante": null,
+      "tipoSolicitud": null,
+      "subTipoSolicitud": null,
+      "tipoOperacion": null,
+      "aprobadorActual": null,
+      "estado": null,
+      "codigoSolicitud": null,
+      "asunto": null,
+      "referencia": null,
+      "urgente": null,
+      "usuario": null,
+      "usuarioDepartamento": null,
+      "incluirResumen": true
+    },
+    "repositorio": {
+      "totalCount": 21,
+      "codigosItems": [ "GTI-SOL-00000021-2026" ],
+      "resumen": {
+        "misSolicitudes": 0,
+        "total": 21,
+        "miDepartamento": 21,
+        "urgente": 1
+      }
+    },
+    "esperado": {
+      "pageSizeEnviadoAlRepositorio": 10,
+      "totalPages": 3,
+      "hasPrevious": true,
+      "hasNext": false,
+      "itemsEnPagina": 1
+    }
+  },
+  {
+    "caso": "Sin resultados",
+    "usuario": {
+      "userIdLocal": 7,
+      "userCargoId": 1,
+      "userAreaId": 2,
+      "codigoRolUsuario": "SOLICITANTE"
+    },
+    "pageNumber": 1,
+    "pageSize": 10,
+    "searchTerm": "no-existe",
+    "filtros": {
+      "fechaInicio": null,
+      "fechaFin": null,
+      "gerencia": null,
+      "departamento": null,
+      "solicitante": null,
+      "tipoSolicitud": null,
+      "subTipoSolicitud": null,
+      "tipoOperacion": null,
+      "aprobadorActual": null,
+      "estado": null,
+      "codigoSolicitud": null,
+      "asunto": null,
+      "referencia": null,
+      "urgente": null,
+      "usuario": null,
+      "usuarioDepartamento": null,
+      "incluirResumen": true
+    },
+    "repositorio": {
+      "totalCount": 0,
+      "codigosItems": [],
+      "resumen": {
+        "misSolicitudes": 0,
+        "total": 0,
+        "miDepartamento": 0,
+        "urgente": 0
+      }
+    },
+    "esperado": {
+      "pageSizeEnviadoAlRepositorio": 10,
+      "totalPages": 0,
+      "hasPrevious": false,
+      "hasNext": false,
+      "itemsEnPagina": 0
+    }
+  },
+  {
+    "caso": "PageSize sobre el maximo se recorta a 100",
+    "usuario": {
+      "userIdLocal": 99,
+      "userCargoId": 4,
+      "userAreaId": 7,
+      "codigoRolUsuario": "COORDINADOR"
+    },
+    "pageNumber": 1,
+    "pageSize": 500,
+    "searchTerm": null,
+    "filtros": {
+      "fechaInicio": null,
+      "fechaFin": null,
+      "gerencia": null,
+      "departamento": null,
+      "solicitante": null,
+      "tipoSolicitud": null,
+      "subTipoSolicitud": null,
+      "tipoOperacion": null,
+      "aprobadorActual": null,
+      "estado": null,
+      "codigoSolicitud": null,
+      "asunto": null,
+      "referencia": null,
+      "urgente": null,
+      "usuario": null,
+      "usuarioDepartamento": null,
+      "incluirResumen": true
+    },
+    "repositorio": {
+      "totalCount": 150,
+      "codigosItems": [ "GTI-SOL-00000001-2026" ],
+      "resumen": {
+        "misSolicitudes": 1,
+        "total": 150,
+        "miDepartamento": 150,
+        "urgente": 0
+      }
+    },
+    "esperado": {
+      "pageSizeEnviadoAlRepositorio": 100,
+      "totalPages": 2,
+      "hasPrevious": false,
+      "hasNext": true,
+      "itemsEnPagina": 1
+    }
+  }
+]

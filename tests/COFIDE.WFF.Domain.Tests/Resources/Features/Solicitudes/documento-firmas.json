@@ -1,0 +1,23 @@
+[
+  {
+    "caso": "Sin firmas",
+    "firmantes": [ 100, 101 ],
+    "firmados": [],
+    "firmasEsperadas": 0,
+    "rutasEsperadas": 0
+  },
+  {
+    "caso": "Una firma de dos",
+    "firmantes": [ 100, 101 ],
+    "firmados": [ 100 ],
+    "firmasEsperadas": 1,
+    "rutasEsperadas": 1
+  },
+  {
+    "caso": "Todas firmadas",
+    "firmantes": [ 100, 101 ],
+    "firmados": [ 100, 101 ],
+    "firmasEsperadas": 2,
+    "rutasEsperadas": 2
+  }
+]

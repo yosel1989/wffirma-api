@@ -1,0 +1,20 @@
+[
+  {
+    "caso": "Firma interna",
+    "esInterno": true,
+    "nombre": "contrato[F]",
+    "extension": "pdf",
+    "ruta": "/firmados",
+    "hash": "hash-firmado-1",
+    "internoExternoEsperado": "Interno"
+  },
+  {
+    "caso": "Firma externa",
+    "esInterno": false,
+    "nombre": "anexo[F]",
+    "extension": "pdf",
+    "ruta": "/firmados",
+    "hash": "hash-firmado-2",
+    "internoExternoEsperado": "Externo"
+  }
+]

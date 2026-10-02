@@ -1,6 +1,6 @@
 ﻿using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Exceptions;
-namespace COFIDE.WFF.Domain.Tests;
+namespace COFIDE.WFF.Domain.Tests.Features.Plantillas;
 
 public class PlantillaTests
 {

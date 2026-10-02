@@ -1,5 +1,5 @@
 ﻿using COFIDE.WFF.Domain.Exceptions;
-using COFIDE.WFF.Domain.Tests.Common.Resources;
+using COFIDE.WFF.Domain.Tests.Common.TestSupport;
 using COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 

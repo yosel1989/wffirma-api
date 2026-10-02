@@ -3,7 +3,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Features.Solicitudes.UseCases;
 using COFIDE.WFF.Application.Ports.Out;
-using COFIDE.WFF.Application.Tests.Common.Resources;
+using COFIDE.WFF.Application.Tests.Common.TestSupport;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
@@ -35,15 +35,19 @@ string EventoEsperado)
 {
     public override string ToString() => Caso;
 }
+
+public sealed record UsuarioSolicitudData(UsuarioActualData UsuarioActual);
+
 public sealed record CrearSolicitudUseCaseData(
     UsuarioActualData UsuarioActual,
     List<CrearSolicitudUseCaseCase> Casos);
 #endregion
 public class CrearSolicitudUseCaseTests
 {
-    private static readonly CrearSolicitudUseCaseData Data = CargarData();
+    private static readonly UsuarioActualData Usuario =
+    JsonResource.Single<UsuarioSolicitudData>("Solicitudes/usuario-solicitud-usecase.json").UsuarioActual;
     public static IEnumerable<object[]> Casos =>
-    JsonResource.Cases<CrearSolicitudUseCaseData>("Features/Solicitudes/crear-solicitud-usecase.json");
+    JsonResource.Cases<CrearSolicitudUseCaseCase>("Solicitudes/crear-solicitud-usecase.json");
 
     private readonly Mock<ICurrentUserService> _currentUser = new();
     private readonly Mock<ISolicitudCreacionService> _creacion = new();
@@ -54,13 +58,12 @@ public class CrearSolicitudUseCaseTests
     private readonly Mock<IGeneradorCorrelativoIdRepository> _correlativos = new();
     public CrearSolicitudUseCaseTests()
     {
-        var usuario = Data.UsuarioActual;
-        _currentUser.Setup(x => x.UserIdLocal).Returns(usuario.UserIdLocal);
-        _currentUser.Setup(x => x.UserAreaId).Returns(usuario.UserAreaId);
-        _currentUser.Setup(x => x.UserAreaPadreId).Returns(usuario.UserAreaPadreId);
-        _currentUser.Setup(x => x.UserAreaDescripcionCorta).Returns(usuario.UserAreaDescripcionCorta);
-        _currentUser.Setup(x => x.UserGerenciaNombre).Returns(usuario.UserGerenciaNombre);
-        _currentUser.Setup(x => x.UserCorreo).Returns(usuario.UserCorreo);
+        _currentUser.Setup(x => x.UserIdLocal).Returns(Usuario.UserIdLocal);
+        _currentUser.Setup(x => x.UserAreaId).Returns(Usuario.UserAreaId);
+        _currentUser.Setup(x => x.UserAreaPadreId).Returns(Usuario.UserAreaPadreId);
+        _currentUser.Setup(x => x.UserAreaDescripcionCorta).Returns(Usuario.UserAreaDescripcionCorta);
+        _currentUser.Setup(x => x.UserGerenciaNombre).Returns(Usuario.UserGerenciaNombre);
+        _currentUser.Setup(x => x.UserCorreo).Returns(Usuario.UserCorreo);
 
         _correlativos
          .Setup(x => x.ObtenerBloqueSiguienteIdCodigosReferenciaAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
@@ -100,16 +103,15 @@ public class CrearSolicitudUseCaseTests
     [MemberData(nameof(Casos))]
     public async Task CrearDebe_Orquestar_Servicios_Y_Dejar_El_Estado_Esperado(CrearSolicitudUseCaseCase caso)
     {
-        var usuario = Data.UsuarioActual;
         var solicitudBase = CrearSolicitudBorrador(caso.CodigoSolicitud);
         Plantilla? plantilla = caso.ConPlantilla ? CrearPlantilla() : null;
 
         _creacion
             .Setup(x => x.CrearSolicitudBase(
                 It.IsAny<SolicitudRequestDto>(),
-                usuario.UserAreaDescripcionCorta,
-                usuario.UserIdLocal, usuario.UserAreaId,
-                usuario.UserAreaPadreId,
+                Usuario.UserAreaDescripcionCorta,
+                Usuario.UserIdLocal, Usuario.UserAreaId,
+                Usuario.UserAreaPadreId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(solicitudBase);
 
@@ -118,8 +120,8 @@ public class CrearSolicitudUseCaseTests
                 0,
                 caso.Configuracion,
                 caso.IdPlantilla,
-                usuario.UserIdLocal,
-                usuario.UserGerenciaNombre,
+                Usuario.UserIdLocal,
+                Usuario.UserGerenciaNombre,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(plantilla);
 
@@ -162,7 +164,6 @@ public class CrearSolicitudUseCaseTests
     [Fact]
     public async Task CrearDebe_Usar_El_Codigo_De_Area_Y_Usuario_Del_Contexto_Actual()
     {
-        var usuario = Data.UsuarioActual;
         _creacion
             .Setup(x => x.CrearSolicitudBase(
                 It.IsAny<SolicitudRequestDto>(),
@@ -188,9 +189,9 @@ public class CrearSolicitudUseCaseTests
         _creacion.Verify(
             x => x.CrearSolicitudBase(
                 It.IsAny<SolicitudRequestDto>(),
-                usuario.UserAreaDescripcionCorta,
-                usuario.UserIdLocal, usuario.UserAreaId,
-                usuario.UserAreaPadreId,
+                Usuario.UserAreaDescripcionCorta,
+                Usuario.UserIdLocal, Usuario.UserAreaId,
+                Usuario.UserAreaPadreId,
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -225,23 +226,6 @@ public class CrearSolicitudUseCaseTests
 
     private static Plantilla CrearPlantilla() =>
     Plantilla.Crear(1, "Flujo de prueba", "Descripcion", false, 10, "GERENCIA GENERAL", false);
-
-    private static CrearSolicitudUseCaseData CargarData()
-    {
-        var ruta = Path.Combine(
-        AppContext.BaseDirectory, "Resources", "Features", "Solicitudes", "usuario-solicitud-usecase.json");
-        if (!File.Exists(ruta))
-            throw new FileNotFoundException(
-            $"No se copio el recurso de prueba. Revisa CopyToOutputDirectory en el csproj: {ruta}");
-        var opciones = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true,
-            AllowTrailingCommas = true
-        };
-
-        return JsonSerializer.Deserialize<CrearSolicitudUseCaseData>(File.ReadAllText(ruta), opciones)!;
-
-    }
     #endregion
 
 

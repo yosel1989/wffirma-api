@@ -1,6 +1,6 @@
 ﻿using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Vo;
 using COFIDE.WFF.Domain.Exceptions;
-using COFIDE.WFF.Domain.Tests.Common.Resources;
+using COFIDE.WFF.Domain.Tests.Common.TestSupport;
 using FluentAssertions;
 
 namespace COFIDE.WFF.Domain.Tests.Features.Solicitudes.ValueObjects;

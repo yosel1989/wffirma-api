@@ -1,0 +1,37 @@
+[
+  {
+    "caso": "Dos firmantes en una etapa",
+    "etapas": [
+      {
+        "orden": 1,
+        "idTipoAprobador": 10,
+        "usuarios": [ 100, 101 ]
+      }
+    ],
+    "idFirmante": 10,
+    "idVisador": 11,
+    "firmantesFlujoEsperados": 2,
+    "esFirmanteEsperado": true,
+    "esVisadorEsperado": false
+  },
+  {
+    "caso": "Visador en dos etapas",
+    "etapas": [
+      {
+        "orden": 1,
+        "idTipoAprobador": 11,
+        "usuarios": [ 100 ]
+      },
+      {
+        "orden": 2,
+        "idTipoAprobador": 11,
+        "usuarios": [ 101 ]
+      }
+    ],
+    "idFirmante": 10,
+    "idVisador": 11,
+    "firmantesFlujoEsperados": 2,
+    "esFirmanteEsperado": false,
+    "esVisadorEsperado": true
+  }
+]
