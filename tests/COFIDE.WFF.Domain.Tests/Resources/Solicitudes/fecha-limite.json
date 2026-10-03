@@ -1,0 +1,20 @@
+[
+  {
+    "caso": "Fecha futura es valida",
+    "minutosDesdeAhora": 120,
+    "esValida": true,
+    "codigoError": null
+  },
+  {
+    "caso": "Fecha pasada se rechaza",
+    "minutosDesdeAhora": -1,
+    "esValida": false,
+    "codigoError": "DOM_SOL_003"
+  },
+  {
+    "caso": "Fecha muy pasada se rechaza",
+    "minutosDesdeAhora": -5000,
+    "esValida": false,
+    "codigoError": "DOM_SOL_003"
+  }
+]

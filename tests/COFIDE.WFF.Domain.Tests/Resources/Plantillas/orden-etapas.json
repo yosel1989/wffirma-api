@@ -1,0 +1,27 @@
+[
+  {
+    "caso": "Una etapa en orden 1",
+    "ordenes": [ 1 ],
+    "codigoError": null
+  },
+  {
+    "caso": "Tres etapas consecutivas",
+    "ordenes": [ 1, 2, 3 ],
+    "codigoError": null
+  },
+  {
+    "caso": "No inicia en 1",
+    "ordenes": [ 2, 3 ],
+    "codigoError": "DOM_PLT_005"
+  },
+  {
+    "caso": "Salto en la secuencia",
+    "ordenes": [ 1, 3 ],
+    "codigoError": "DOM_PLT_006"
+  },
+  {
+    "caso": "Orden duplicado",
+    "ordenes": [ 1, 1 ],
+    "codigoError": "DOM_PLT_006"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "caso": "No urgente sin fecha",
+    "esUrgente": false,
+    "diasFechaLimite": null,
+    "esUrgenteEsperado": false,
+    "debeTenerFechaLimite": false,
+    "codigoError": null
+  },
+  {
+    "caso": "No urgente descarta la fecha",
+    "esUrgente": false,
+    "diasFechaLimite": 5,
+    "esUrgenteEsperado": false,
+    "debeTenerFechaLimite": false,
+    "codigoError": null
+  },
+  {
+    "caso": "Urgente con fecha futura",
+    "esUrgente": true,
+    "diasFechaLimite": 3,
+    "esUrgenteEsperado": true,
+    "debeTenerFechaLimite": true,
+    "codigoError": null
+  },
+  {
+    "caso": "Urgente sin fecha se rechaza",
+    "esUrgente": true,
+    "diasFechaLimite": null,
+    "esUrgenteEsperado": false,
+    "debeTenerFechaLimite": false,
+    "codigoError": "DOM_SOL_014"
+  },
+  {
+    "caso": "Urgente con fecha pasada se rechaza",
+    "esUrgente": true,
+    "diasFechaLimite": -2,
+    "esUrgenteEsperado": false,
+    "debeTenerFechaLimite": false,
+    "codigoError": "DOM_SOL_003"
+  }
+]

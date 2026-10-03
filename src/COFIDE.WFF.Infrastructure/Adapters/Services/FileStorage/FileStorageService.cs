@@ -1,4 +1,5 @@
-﻿using COFIDE.WFF.Application.Ports.Out;
+﻿using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Infrastructure.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -7,10 +8,14 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Services.FileStorage;
 public class FileStorageService(
         IOptions<FileStorageOptions> options,
         ILogger<FileStorageOptions> logger
-    ) : IFileStorageService
+    ) : IFileStorageService, IRegistroArchivosTransaccion
 {
     private readonly FileStorageOptions _options = options.Value;
     private readonly ILogger<FileStorageOptions> _logger = logger;
+
+    // B1 – Archivos escritos en esta petición (scope), para compensarlos si la transacción se revierte.
+    private readonly List<string> _archivosNuevos = [];
+    private readonly List<(string Original, string Respaldo)> _archivosSobrescritos = [];
 
     public async Task<string> SaveFileAsync(
             Stream fileStream,
@@ -44,6 +49,9 @@ public class FileStorageService(
 
             // Construir ruta completa del archivo
             var filePath = Path.Combine(fullPath, newFileName);
+
+            // si el archivo ya existe se respalda antes de sobrescribirlo, para poder restaurarlo.
+            RegistrarEscritura(filePath);
 
             // Guardar archivo
             using (var fileStreamWriter = new FileStream(filePath, FileMode.Create, FileAccess.Write))
@@ -166,4 +174,74 @@ public class FileStorageService(
 
     public string CombinarRuta(string carpeta, string nombreArchivo) =>
         Path.Combine(carpeta, nombreArchivo);
+
+    #region Compensación transaccional 
+
+    private void RegistrarEscritura(string filePath)
+    {
+        if (_archivosNuevos.Contains(filePath) || _archivosSobrescritos.Any(x => x.Original == filePath))
+            return;
+
+        if (File.Exists(filePath))
+        {
+            var respaldo = $"{filePath}.bak-{Guid.NewGuid():N}";
+            File.Copy(filePath, respaldo);
+            _archivosSobrescritos.Add((filePath, respaldo));
+        }
+        else
+        {
+            _archivosNuevos.Add(filePath);
+        }
+    }
+
+    public void ConfirmarArchivos()
+    {
+        foreach (var (_, respaldo) in _archivosSobrescritos)
+            IntentarEliminar(respaldo);
+
+        _archivosNuevos.Clear();
+        _archivosSobrescritos.Clear();
+    }
+
+    public Task DescartarArchivosAsync(CancellationToken cancellationToken)
+    {
+        foreach (var archivo in _archivosNuevos)
+            IntentarEliminar(archivo);
+
+        foreach (var (original, respaldo) in _archivosSobrescritos)
+        {
+            try
+            {
+                File.Copy(respaldo, original, overwrite: true);
+                File.Delete(respaldo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "No se pudo restaurar {Archivo} desde {Respaldo}", original, respaldo);
+            }
+        }
+
+        if (_archivosNuevos.Count > 0 || _archivosSobrescritos.Count > 0)
+            _logger.LogWarning("Transacción revertida: se eliminaron {Nuevos} archivo(s) y se restauraron {Restaurados}.",
+                _archivosNuevos.Count, _archivosSobrescritos.Count);
+
+        _archivosNuevos.Clear();
+        _archivosSobrescritos.Clear();
+        return Task.CompletedTask;
+    }
+
+    private void IntentarEliminar(string ruta)
+    {
+        try
+        {
+            if (File.Exists(ruta))
+                File.Delete(ruta);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "No se pudo eliminar el archivo {Archivo}", ruta);
+        }
+    }
+
+    #endregion
 }

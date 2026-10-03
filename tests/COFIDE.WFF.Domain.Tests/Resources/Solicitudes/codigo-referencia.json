@@ -1,0 +1,44 @@
+[
+  {
+    "caso": "Recorta espacios",
+    "entrada": "  REF-001  ",
+    "longitudExtra": 0,
+    "esperado": "REF-001",
+    "codigoError": null
+  },
+  {
+    "caso": "Conserva minusculas",
+    "entrada": "ref-002",
+    "longitudExtra": 0,
+    "esperado": "ref-002",
+    "codigoError": null
+  },
+  {
+    "caso": "Rechaza nulo",
+    "entrada": null,
+    "longitudExtra": 0,
+    "esperado": null,
+    "codigoError": "DOM_SOL_025"
+  },
+  {
+    "caso": "Rechaza vacio",
+    "entrada": "",
+    "longitudExtra": 0,
+    "esperado": null,
+    "codigoError": "DOM_SOL_025"
+  },
+  {
+    "caso": "Rechaza solo espacios",
+    "entrada": "    ",
+    "longitudExtra": 0,
+    "esperado": null,
+    "codigoError": "DOM_SOL_025"
+  },
+  {
+    "caso": "Rechaza exceso de longitud",
+    "entrada": null,
+    "longitudExtra": 1,
+    "esperado": null,
+    "codigoError": "DOM_SOL_026"
+  }
+]

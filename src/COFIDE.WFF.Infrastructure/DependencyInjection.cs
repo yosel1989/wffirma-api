@@ -31,6 +31,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using COFIDE.WFF.Infrastructure.Eventos;
 namespace COFIDE.WFF.Infrastructure;
 public static class DependencyInjection
 {
@@ -165,7 +166,17 @@ public static class DependencyInjection
                 .Bind(configuration.GetSection("FileServer"))
                 .Validate(o => !string.IsNullOrWhiteSpace(o.BaseUrl), "BaseUrl FileServer es requerido")
                 .ValidateOnStart();
-        services.AddScoped<IFileStorageService, FileStorageService>();
+        services.AddScoped<FileStorageService>();
+        services.AddScoped<IFileStorageService>(sp => sp.GetRequiredService<FileStorageService>());
+        // la misma instancia (scoped) registra los archivos escritos para compensarlos si hay rollback.
+        services.AddScoped<IRegistroArchivosTransaccion>(sp => sp.GetRequiredService<FileStorageService>());
+        #endregion
+
+        #region Publicación de eventos post-commit 
+        services.Configure<PublicacionEventosOptions>(configuration.GetSection(PublicacionEventosOptions.SectionName));
+        services.AddSingleton<ColaReintentoEventos>();
+        services.AddScoped<IPublicadorEventosPostCommit, PublicadorEventosPostCommit>();
+        services.AddHostedService<ReintentoEventosService>();
         #endregion
 
         // Unit of Work

@@ -76,3 +76,6 @@ app.UseAuthorization();
 app.MapRateLimitedControllers();
 
 await app.RunAsync();
+
+/// <summary>Visible para WebApplicationFactory en COFIDE.WFF.Api.IntegrationTests.</summary>
+public partial class Program { }

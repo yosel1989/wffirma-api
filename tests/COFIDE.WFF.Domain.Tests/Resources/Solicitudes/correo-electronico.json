@@ -1,0 +1,38 @@
+[
+  {
+    "caso": "Normaliza mayusculas y espacios",
+    "entrada": "  Ana.Perez@Cofide.com.pe  ",
+    "esperado": "ana.perez@cofide.com.pe",
+    "codigoError": null
+  },
+  {
+    "caso": "Acepta subdominio",
+    "entrada": "luis@mail.cofide.com.pe",
+    "esperado": "luis@mail.cofide.com.pe",
+    "codigoError": null
+  },
+  {
+    "caso": "Rechaza sin arroba",
+    "entrada": "no-es-correo",
+    "esperado": null,
+    "codigoError": "CORREO_INVALIDO"
+  },
+  {
+    "caso": "Rechaza sin dominio",
+    "entrada": "user@",
+    "esperado": null,
+    "codigoError": "CORREO_INVALIDO"
+  },
+  {
+    "caso": "Rechaza sin TLD",
+    "entrada": "user@cofide",
+    "esperado": null,
+    "codigoError": "CORREO_INVALIDO"
+  },
+  {
+    "caso": "Rechaza con espacio interno",
+    "entrada": "ana perez@cofide.com.pe",
+    "esperado": null,
+    "codigoError": "CORREO_INVALIDO"
+  }
+]

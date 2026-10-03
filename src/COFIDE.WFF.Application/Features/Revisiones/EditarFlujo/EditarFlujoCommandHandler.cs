@@ -13,6 +13,7 @@ using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Factories;
 namespace COFIDE.WFF.Application.Features.Revisiones.EditarFlujo;
 
 public sealed class EditarFlujoCommandHandler(
@@ -24,8 +25,7 @@ public sealed class EditarFlujoCommandHandler(
         IPlantillaCreacionService plantillaCreacionService,
         IWorkflowDomainService workflowDomainService,
         IParametroRepository parametroRepository,
-        ISolicitudFlujoDiffService solicitudFlujoDiffService,
-        ISolicitudEventoFactory solicitudEventoFactory,
+        IFlujoDiffDomainService flujoDiffDomainService,
         IGeneradorCorrelativoIdRepository generadorCorrelativoIdRepository
     ) : BaseCommandHandler<EditarFlujoCommand, EditarFlujoResponseDto>(mapper)
 {
@@ -36,8 +36,7 @@ public sealed class EditarFlujoCommandHandler(
     private readonly IPlantillaCreacionService _plantillaCreacionService = plantillaCreacionService;
     private readonly IWorkflowDomainService _workflowDomainService = workflowDomainService;
     private readonly IParametroRepository _parametroRepository = parametroRepository;
-    private readonly ISolicitudFlujoDiffService _solicitudFlujoDiffService = solicitudFlujoDiffService;
-    private readonly ISolicitudEventoFactory _solicitudEventoFactory = solicitudEventoFactory;
+    private readonly IFlujoDiffDomainService _flujoDiffDomainService = flujoDiffDomainService;
     private readonly IGeneradorCorrelativoIdRepository _generadorCorrelativoIdRepository = generadorCorrelativoIdRepository;
 
     public override async Task<EditarFlujoResponseDto> Handle(EditarFlujoCommand request, CancellationToken cancellationToken)
@@ -119,7 +118,7 @@ public sealed class EditarFlujoCommandHandler(
             _workflowDomainService.ValidacionFirmanteNoMaestroFlujo(solicitud.SolicitudPlantilla, plantilla, editPlantilla);
 
             // Obtenemos los cambios que han mapeado en el flujo
-            var diff = _solicitudFlujoDiffService.CalcularDiff(plantilla, editPlantilla);
+            var diff = _flujoDiffDomainService.CalcularDiff(plantilla, editPlantilla);
 
             // Editamos el flujo del agregado Plantilla => Etapas y FirmanteFlujo
             plantilla.EditarFlujo(editPlantilla, generarIdEtapa, generarIdFirmante, tipoEtapaDict, tipoAprobadorDict, usuarioActual);
@@ -147,7 +146,7 @@ public sealed class EditarFlujoCommandHandler(
 
             _plantillaRepository.GuardarFlujoPlantillaAsync(plantilla);
 
-            var eventos = _solicitudEventoFactory.CrearEventos(solicitud.Id, diff);
+            var eventos = SolicitudEventoFactory.CrearEventosCambioFlujo(solicitud.Id, diff, usuarioActual, gerenciaUsuario);
             solicitud.RegistrarEventos(eventos);
         }
 

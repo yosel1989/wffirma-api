@@ -1,0 +1,38 @@
+[
+  {
+    "caso": "Secuencial con un firmante",
+    "tipoEtapa": "SECUENCIAL",
+    "cantidadFirmantes": 1,
+    "codigoError": null
+  },
+  {
+    "caso": "Secuencial con dos firmantes",
+    "tipoEtapa": "SECUENCIAL",
+    "cantidadFirmantes": 2,
+    "codigoError": "DOM_PLT_015"
+  },
+  {
+    "caso": "Secuencial sin firmantes",
+    "tipoEtapa": "SECUENCIAL",
+    "cantidadFirmantes": 0,
+    "codigoError": "DOM_PLT_015"
+  },
+  {
+    "caso": "Paralelo con dos firmantes",
+    "tipoEtapa": "PARALELO",
+    "cantidadFirmantes": 2,
+    "codigoError": null
+  },
+  {
+    "caso": "Paralelo con cinco firmantes",
+    "tipoEtapa": "PARALELO",
+    "cantidadFirmantes": 5,
+    "codigoError": null
+  },
+  {
+    "caso": "Paralelo con un firmante",
+    "tipoEtapa": "PARALELO",
+    "cantidadFirmantes": 1,
+    "codigoError": "DOM_PLT_016"
+  }
+]

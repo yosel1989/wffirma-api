@@ -43,7 +43,7 @@ public class BuenasPracticasTests
         ArchitectureAssert.SinViolaciones(
             "B5 - Sin catch (Exception) en Application",
             Codigo.Coincidencias(RutasSolucion.ArchivosCs(Capas.Application), patron),
-            "Capture excepciones específicas; los reintentos de notificaciones los debe asumir el Outbox.");
+            "Capture excepciones específicas; los reintentos de notificaciones los asume el publicador de eventos .");
     }
 
     [Fact, Trait("Categoria", "Hexagonal"), Trait("Hallazgo", "H2")]

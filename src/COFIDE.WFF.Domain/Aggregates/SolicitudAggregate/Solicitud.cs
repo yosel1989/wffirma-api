@@ -803,4 +803,37 @@ public class Solicitud : AuditableEntity<long>
         if (firmante.OrdenEtapa != ObtenerEtapaActual())
             throw new DomainException(SolicitudErrors.NoPuedeAprobarEstaEtapaSolicitud);
     }
+
+    #region Detalles de firma
+    /// <summary>
+    /// Crea los detalles de firma que faltan: uno por cada firmante activo del flujo y cada documento activo.
+    /// No duplica los que ya existen. (Antes esta regla estaba en SolicitudPlantillaService.)
+    /// </summary>
+    public void GenerarDetallesFirmaPendientes(Func<long> generarIdDetalleFirma)
+    {
+        foreach (var firmanteFlujo in SolicitudPlantilla.FirmantesFlujo.Where(x => x.Estado))
+        {
+            foreach (var documento in _documentos.Where(x => x.Estado))
+            {
+                var yaExiste = documento.DetallesFirma
+                    .Any(x => x.Estado && x.IdSolicitudFirmanteFlujo == firmanteFlujo.Id);
+
+                if (yaExiste)
+                    continue;
+
+                var detalle = DetalleFirma.Crear(
+                    generarIdDetalleFirma(),
+                    firmanteFlujo.Id,
+                    documento.Id,
+                    null,
+                    null,
+                    null,
+                    null,
+                    firmanteFlujo.IdUsuarioAsignado);
+
+                documento.AgregarDetalleFirma(detalle);
+            }
+        }
+    }
+    #endregion
 }

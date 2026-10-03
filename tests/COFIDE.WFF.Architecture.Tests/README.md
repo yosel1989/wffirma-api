@@ -129,7 +129,7 @@ Estas reglas quedan para la revisión de código (PR) y el informe:
 - Si los **límites de un agregado** son correctos o el agregado es demasiado grande.
 - Si un Handler es un simple **pass-through** sin responsabilidad propia.
 - Si un nombre expresa bien el **lenguaje ubicuo** (mezcla español/inglés, abreviaturas) (N3, N4).
-- Consistencia transaccional con archivos y **Outbox** (B1).
+- Consistencia transaccional con archivos y publicación de eventos (B1).
 - Si una consulta de lectura está **duplicada** en otro repositorio (H3).
 - Si la cobertura de **pruebas del dominio** es suficiente (B10).
 

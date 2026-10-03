@@ -1,0 +1,37 @@
+[
+  {
+    "caso": "Agrega uno y conserva el existente",
+    "existentes": [ "REF-A", "REF-B" ],
+    "request": [ "REF-A", "REF-B", "REF-C" ],
+    "nuevosEsperados": 1,
+    "activosEsperados": [ "REF-A", "REF-B", "REF-C" ]
+  },
+  {
+    "caso": "Inactiva el que ya no viene",
+    "existentes": [ "REF-A", "REF-B" ],
+    "request": [ "REF-A" ],
+    "nuevosEsperados": 0,
+    "activosEsperados": [ "REF-A" ]
+  },
+  {
+    "caso": "Ignora duplicados del request",
+    "existentes": [],
+    "request": [ "REF-X", "REF-X", "  REF-X  " ],
+    "nuevosEsperados": 1,
+    "activosEsperados": [ "REF-X" ]
+  },
+  {
+    "caso": "Ignora vacios y blancos",
+    "existentes": [],
+    "request": [ "REF-Y", "", "   " ],
+    "nuevosEsperados": 1,
+    "activosEsperados": [ "REF-Y" ]
+  },
+  {
+    "caso": "Request vacio inactiva todo",
+    "existentes": [ "REF-A" ],
+    "request": [],
+    "nuevosEsperados": 0,
+    "activosEsperados": []
+  }
+]

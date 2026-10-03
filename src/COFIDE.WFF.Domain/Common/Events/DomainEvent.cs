@@ -3,5 +3,6 @@
 namespace COFIDE.WFF.Domain.Common.Events;
 public abstract record DomainEvent : IDomainEvent
 {
-    public DateTime OccurredOn { get; } = DateTime.UtcNow;
+    // init: permite conservar la fecha original si el evento se serializa (por ejemplo, al publicarlo en una cola).
+    public DateTime OccurredOn { get; init; } = DateTime.UtcNow;
 }
