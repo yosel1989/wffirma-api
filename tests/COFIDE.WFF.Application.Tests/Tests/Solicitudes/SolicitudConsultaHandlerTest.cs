@@ -17,7 +17,7 @@ using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Inputs;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Common.Enums;
-using COFIDE.WFF.Domain.Common.Pageds;
+using COFIDE.WFF.Application.Common.Pageds;
 using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;

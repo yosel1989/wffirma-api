@@ -23,7 +23,6 @@ using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Common.Enums;
-using COFIDE.WFF.Domain.Common.Pageds;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
 using COFIDE.WFF.Domain.ValueObjects;
@@ -32,6 +31,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
+using COFIDE.WFF.Application.Features.Usuarios.Models;
 namespace COFIDE.WFF.Application.Tests.Consultas;
 
 public class ConsultasRestantesHandlerTest

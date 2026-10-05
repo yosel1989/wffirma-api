@@ -1,4 +1,4 @@
-﻿using COFIDE.WFF.Domain.Common.Pageds;
+﻿using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Domain.Common.Enums;
 namespace COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPlantillaPaginado;
 

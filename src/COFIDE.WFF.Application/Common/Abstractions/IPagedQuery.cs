@@ -1,5 +1,4 @@
 ﻿using COFIDE.WFF.Application.Common.Pageds;
-using COFIDE.WFF.Domain.Common.Pageds;
 namespace COFIDE.WFF.Application.Common.Abstractions;
 
 /// <summary>

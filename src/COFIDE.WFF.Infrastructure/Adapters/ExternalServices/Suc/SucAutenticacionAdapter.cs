@@ -2,6 +2,7 @@
 using COFIDE.WFF.Domain.ValueObjects;
 using COFIDE.WFF.Infrastructure.Adapters.ExternalServices.Suc.DTOs;
 using COFIDE.WFF.Infrastructure.Exceptions;
+using COFIDE.WFF.Application.Features.Usuarios.Models;
 namespace COFIDE.WFF.Infrastructure.Adapters.ExternalServices.Suc;
 
 public class SucAutenticacionAdapter(

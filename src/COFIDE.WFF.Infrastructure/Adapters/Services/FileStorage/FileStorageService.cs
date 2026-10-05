@@ -13,7 +13,7 @@ public class FileStorageService(
     private readonly FileStorageOptions _options = options.Value;
     private readonly ILogger<FileStorageOptions> _logger = logger;
 
-    // B1 – Archivos escritos en esta petición (scope), para compensarlos si la transacción se revierte.
+    // Archivos escritos en esta petición (scope), para compensarlos si la transacción se revierte.
     private readonly List<string> _archivosNuevos = [];
     private readonly List<(string Original, string Respaldo)> _archivosSobrescritos = [];
 

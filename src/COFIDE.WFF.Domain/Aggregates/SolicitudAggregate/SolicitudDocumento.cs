@@ -32,7 +32,7 @@ public class SolicitudDocumento : AuditableEntity<long>
     public IReadOnlyCollection<DetalleFirma> DetallesFirma => _detalleFirma;
     public IReadOnlyCollection<DocumentoTag> DocumentoTags => _documentoTags;
 
-    public Solicitud Solicitud { get; set; } = null!;
+    public Solicitud Solicitud { get; private set; } = null!;
 
     private SolicitudDocumento() { } // EF
 

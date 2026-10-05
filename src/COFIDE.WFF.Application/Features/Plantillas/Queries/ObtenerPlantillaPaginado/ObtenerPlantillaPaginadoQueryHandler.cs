@@ -1,7 +1,6 @@
 ﻿using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
-using COFIDE.WFF.Domain.Common.Pageds;
 using MediatR;
 namespace COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPlantillaPaginado;
 

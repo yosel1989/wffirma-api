@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
+using COFIDE.WFF.Application.Tests.Support;
 namespace COFIDE.WFF.Application.Tests.Firmas;
 
 public class FirmaUseCaseTest
@@ -157,11 +158,11 @@ public class FirmaUseCaseTest
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash-original",
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        documento.Solicitud = solicitud;
+        NavegacionEf.Asignar(documento, x => x.Solicitud, solicitud);
         if (conDetalleDelUsuario)
         {
             var detalle = DetalleFirma.Crear(1, 2, 4, null, null, null, null, 10);
-            detalle.SolicitudDocumento = documento;
+            NavegacionEf.Asignar(detalle, x => x.SolicitudDocumento, documento);
             documento.AgregarDetalleFirma(detalle);
         }
 

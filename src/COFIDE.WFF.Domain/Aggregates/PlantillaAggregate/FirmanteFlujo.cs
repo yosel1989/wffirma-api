@@ -14,10 +14,10 @@ public class FirmanteFlujo : AuditableEntity<long>
     public DateTime FechaAsignacion { get; private set; }
     public bool EsSuplente { get; private set; }
     public bool EsDelegado { get; private set; }
-    public long IdUsuarioOrigen { get; set; }
+    public long IdUsuarioOrigen { get; private set; }
     public bool EsNuevo { get; private set; } = false;
-    public Usuario FirmanteFlujoUsuarioAsignado { get; set; } = default!;
-    public PlantillaEtapa PlantillaEtapa { get; set; } = default!;
+    public Usuario FirmanteFlujoUsuarioAsignado { get; private set; } = default!;
+    public PlantillaEtapa PlantillaEtapa { get; private set; } = default!;
 
     private FirmanteFlujo() { } // EF
 

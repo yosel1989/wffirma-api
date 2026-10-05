@@ -13,7 +13,7 @@ public class DocumentoTag : AuditableEntity<long>
     public decimal AnchoFirma { get; private set; }
     public decimal AltoFirma { get; private set; }
     public bool EsNuevo { get; private set; } = false;
-    public SolicitudDocumento SolicitudDocumento { get; set; } = null!;
+    public SolicitudDocumento SolicitudDocumento { get; private set; } = null!;
     private DocumentoTag() { }
 
     private DocumentoTag(

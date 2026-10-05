@@ -16,6 +16,7 @@ using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
+using COFIDE.WFF.Application.Tests.Support;
 namespace COFIDE.WFF.Application.Tests.Plantillas;
 
 public class PlantillaYJobHandlerTest
@@ -64,7 +65,7 @@ public class PlantillaYJobHandlerTest
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash",
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        documento.Solicitud = solicitud;
+        NavegacionEf.Asignar(documento, x => x.Solicitud, solicitud);
         var plantillas = new Mock<IPlantillaRepository>();
         var parametros = new Mock<IParametroRepository>();
         plantillas.Setup(p => p.ObtenerAgregadoPlantillaAsync(It.IsAny<long>(), It.IsAny<CancellationToken>(), true))

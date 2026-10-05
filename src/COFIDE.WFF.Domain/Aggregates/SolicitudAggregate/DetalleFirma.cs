@@ -25,9 +25,9 @@ public class DetalleFirma : AuditableEntity<long>
     public string? CodigoFirma { get; private set; }
     public string? CodigoReferencial { get; private set; }
 
-    public SolicitudDocumento SolicitudDocumento { get; set; } = null!;
-    public SolicitudFirmanteFlujo SolicitudFirmanteFlujo { get; set; } = default!;
-    public Usuario UsuarioFirmante { get; set; } = null!;
+    public SolicitudDocumento SolicitudDocumento { get; private set; } = null!;
+    public SolicitudFirmanteFlujo SolicitudFirmanteFlujo { get; private set; } = default!;
+    public Usuario UsuarioFirmante { get; private set; } = null!;
 
     public bool EsNuevo { get; private set; } = false;
     private DetalleFirma() { }

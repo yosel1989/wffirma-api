@@ -4,7 +4,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Application.Tests.Support;
-using COFIDE.WFF.Domain.Common.Pageds;
+using COFIDE.WFF.Application.Common.Pageds;
 using FluentAssertions;
 using Moq;
 using applicationException = COFIDE.WFF.Application.Exceptions;

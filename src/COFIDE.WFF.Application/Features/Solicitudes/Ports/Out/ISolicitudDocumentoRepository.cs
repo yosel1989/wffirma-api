@@ -1,7 +1,7 @@
 ﻿using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Common.Pageds;
+using COFIDE.WFF.Application.Common.Pageds;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 
 public interface ISolicitudDocumentoRepository : IGenericRepository<SolicitudDocumento, long>

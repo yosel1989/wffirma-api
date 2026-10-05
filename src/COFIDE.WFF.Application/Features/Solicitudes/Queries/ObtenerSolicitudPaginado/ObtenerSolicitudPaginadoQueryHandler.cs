@@ -1,7 +1,7 @@
 ﻿using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Domain.Common.Pageds;
+using COFIDE.WFF.Application.Common.Pageds;
 using MediatR;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;

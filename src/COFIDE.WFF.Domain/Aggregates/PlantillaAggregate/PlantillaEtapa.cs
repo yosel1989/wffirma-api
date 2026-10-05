@@ -8,7 +8,7 @@ public class PlantillaEtapa : AuditableEntity<long>
 {
 
     #region 01 Campos
-    public Plantilla Plantilla { get; set; } = null!;
+    public Plantilla Plantilla { get; private set; } = null!;
     public long IdPlantilla { get; private set; }
     public long OrdenEtapa { get; private set; }
     public Vo.NombreEtapa NombreEtapa { get; private set; } = default!;
@@ -18,8 +18,8 @@ public class PlantillaEtapa : AuditableEntity<long>
     public long IdTipoAprobador { get; private set; }
     #endregion
 
-    public ParametroDetalle ParametroTipoEtapa { get; set; } = default!;
-    public ParametroDetalle ParametroTipoAprobador { get; set; } = default!;
+    public ParametroDetalle ParametroTipoEtapa { get; private set; } = default!;
+    public ParametroDetalle ParametroTipoAprobador { get; private set; } = default!;
 
     #region Propiedades de la Plantilla Etapa, para los eventos no serán mapeados en BD
     public bool EsNuevo { get; private set; } = false;
