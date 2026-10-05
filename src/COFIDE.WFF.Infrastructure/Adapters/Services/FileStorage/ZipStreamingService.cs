@@ -96,6 +96,27 @@ public sealed class ZipStreamingService(
     }
 
 
+    public async Task<byte[]> GenerarZipAsync(
+        IReadOnlyCollection<EntradaZip> entradas,
+        CancellationToken cancellationToken)
+    {
+        using var buffer = new MemoryStream();
+
+        using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var entrada in entradas)
+            {
+                await using var origen = await _fileStorageService.GetFileAsync(entrada.RutaArchivo, cancellationToken);
+
+                var entry = archive.CreateEntry(entrada.NombreEnZip, CompressionLevel.Fastest);
+                await using var destino = entry.Open();
+                await origen.CopyToAsync(destino, cancellationToken);
+            }
+        }
+
+        return buffer.ToArray();
+    }
+
     private static string GenerarNombreUnico(
         string nombreOriginal,
         HashSet<string> nombresUsados)

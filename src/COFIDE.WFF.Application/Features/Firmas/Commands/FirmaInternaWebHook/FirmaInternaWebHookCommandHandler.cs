@@ -107,7 +107,7 @@ public class FirmaInternaWebHookCommandHandler(
             detalleFirma.SolicitudDocumento
                 .Solicitud.CodigoSolicitud;
 
-        string subPath = Path.Combine(codigoSolicitud, "DOCUMENTOS");
+        string subPath = _fileStorageService.ObtenerCarpetaDocumentos(codigoSolicitud);
 
         var vigente = detalleFirma
             .SolicitudDocumento
@@ -122,7 +122,7 @@ public class FirmaInternaWebHookCommandHandler(
 
         using var uploadStream = new MemoryStream(bytes);
 
-        string rutaCompleta = Path.Combine(vigente.Ruta, $"{vigente.UltimoNombreOriginal}.{vigente.ExtensionOriginal}");
+        string rutaCompleta = _fileStorageService.CombinarRuta(vigente.Ruta, $"{vigente.UltimoNombreOriginal}.{vigente.ExtensionOriginal}");
         await using var streamOriginal = await _fileStorageService.GetFileAsync(rutaCompleta, cancellationToken);
         var resultadoValidacion = await _documentoFirmadoValidator.Interno_ValidarDocumentoFirmadoAsync(streamOriginal, uploadStream);
         _logger.LogInformation("resultadoValidacion:{ResultadoValidacion}", resultadoValidacion);

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoRechazoEventHandler(
-        ISolicitudRepository solicitudRepository,
+        ISolicitudQueryRepository solicitudQueryRepository,
         ISolicitudPlantillaRepository solicitudPlantillaQueryRepository,
         ICorreoSenderPort correoSenderPort,
         IFormatoNotificacionRepository formatoNotificacionRepository,
@@ -16,7 +16,7 @@ public class EnviarCorreoRechazoEventHandler(
         ILogger<EnviarCorreoRechazoEventHandler> logger
     ) : INotificationHandler<DomainEventNotification<SolicitudRechazadaDomainEvent>>
 {
-    private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
+    private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly ISolicitudPlantillaRepository _solicitudPlantillaQueryRepository = solicitudPlantillaQueryRepository;
     private readonly ICorreoSenderPort _correoSenderPort = correoSenderPort;
     private readonly IFormatoNotificacionRepository _formatoNotificacionRepository = formatoNotificacionRepository;
@@ -35,7 +35,7 @@ public class EnviarCorreoRechazoEventHandler(
                 .ObtenerPorCodigo("SOLICITUD_RECHAZADA", cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_RECHAZADA no configurado.");
 
-            var solicitud = await _solicitudRepository
+            var solicitud = await _solicitudQueryRepository
                 .ObtenerParaNotificaciones(domainEvent.IdSolicitud, cancellationToken)
                 ?? throw new InvalidOperationException("Solicitud no encontrada para notificaciones.");
 

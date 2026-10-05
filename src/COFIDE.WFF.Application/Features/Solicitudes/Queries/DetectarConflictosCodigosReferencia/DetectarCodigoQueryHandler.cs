@@ -8,11 +8,11 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictos
 
 public sealed class DetectarCodigoQueryHandler(
         IMapper mapper,
-        ISolicitudRepository solicitudRepository,
+        ISolicitudQueryRepository solicitudQueryRepository,
         IParametroRepository parametroRepository
     ) : BaseQueryHandler<DetectarCodigoQuery, DetectarConflictosResponse>(mapper)
 {
-    private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
+    private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly IParametroRepository _parametroRepository = parametroRepository;
 
     public override async Task<DetectarConflictosResponse> Handle(DetectarCodigoQuery request, CancellationToken cancellationToken)
@@ -72,7 +72,7 @@ public sealed class DetectarCodigoQueryHandler(
 
         if (candidatosBd.Count > 0)
         {
-            var existentes = await _solicitudRepository
+            var existentes = await _solicitudQueryRepository
                 .ObtenerCodigosExistentesAsync(
                     request.IdSolicitud,
                     candidatosBd,

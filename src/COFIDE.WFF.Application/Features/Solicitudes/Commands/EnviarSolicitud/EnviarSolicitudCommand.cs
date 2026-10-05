@@ -1,5 +1,5 @@
 ﻿using COFIDE.WFF.Application.Common.Commands;
-using Microsoft.AspNetCore.Http;
+using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Commands.EnviarSolicitud;
 
 public sealed record EnviarSolicitudCommand
@@ -13,8 +13,8 @@ public sealed record EnviarSolicitudCommand
     bool InCodigo,
     DateTime? FechaLimite,
     decimal? PesoTotalDocu,
-    List<IFormFile>? Documentos,
-    List<IFormFile>? Sustentos,
+    List<ArchivoEntrada>? Documentos,
+    List<ArchivoEntrada>? Sustentos,
     List<string>? CodigosReferencia,
     long? IdPlantilla,
     string? Configuracion,

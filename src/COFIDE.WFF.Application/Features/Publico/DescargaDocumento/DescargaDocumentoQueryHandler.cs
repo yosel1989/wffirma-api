@@ -14,13 +14,13 @@ public sealed class DescargaDocumentoQueryHandler(
         IEnlaceDescargaTemporalRepository enlaceDescargaTemporalRepository,
         IFileStorageService fileStorageService,
         IUnitOfWork unitOfWork,
-        ISolicitudRepository solicitudRepository
+        ISolicitudQueryRepository solicitudQueryRepository
     ) : BaseQueryHandler<DescargaDocumentoQuery, DescargaDocumentoResponseDto>(mapper)
 {
     private readonly IEnlaceDescargaTemporalRepository _enlaceDescargaTemporalRepository = enlaceDescargaTemporalRepository;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
-    private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
+    private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
 
     public override async Task<DescargaDocumentoResponseDto> Handle(DescargaDocumentoQuery request, CancellationToken cancellationToken)
     {
@@ -29,7 +29,7 @@ public sealed class DescargaDocumentoQueryHandler(
 
         enlace.ValidarDisponible();
 
-        var archivos = await _solicitudRepository.ObtenerDocumentosFirmadosPorSolicitudAsync(enlace.IdSolicitud, cancellationToken);
+        var archivos = await _solicitudQueryRepository.ObtenerDocumentosFirmadosPorSolicitudAsync(enlace.IdSolicitud, cancellationToken);
 
         enlace.RegistrarDescarga();
 
@@ -58,7 +58,7 @@ public sealed class DescargaDocumentoQueryHandler(
                 archivosConRuta);
         }
 
-        var solicitud = await _solicitudRepository.ObtenerParaNotificaciones(enlace.IdSolicitud, cancellationToken)
+        var solicitud = await _solicitudQueryRepository.ObtenerParaNotificaciones(enlace.IdSolicitud, cancellationToken)
                             ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.EnlaceNotFound);
 
         return new DescargaDocumentoResponseDto(

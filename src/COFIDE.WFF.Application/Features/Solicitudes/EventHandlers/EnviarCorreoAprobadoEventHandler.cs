@@ -12,25 +12,23 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoAprobadoEventHandler(
         ISolicitudRepository solicitudRepository,
+        ISolicitudQueryRepository solicitudQueryRepository,
         ICorreoSenderPort correoSenderPort,
         IFormatoNotificacionRepository formatoNotificacionRepository,
         IHtmlTemplateRenderer htmlTemplateRenderer,
         IUrlProvider urlProvider,
         IEnlaceDescargaTemporalRepository enlaceDescargaTemporalRepository,
-        ITokenSeguroGenerator tokenSeguroGenerator,
-        IUnitOfWork unitOfWork,
         IParametroRepository parametroRepository,
         ILogger<EnviarCorreoAprobadoEventHandler> logger
     ) : INotificationHandler<DomainEventNotification<SolicitudAprobadaDomainEvent>>
 {
     private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
+    private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly ICorreoSenderPort _correoSenderPort = correoSenderPort;
     private readonly IFormatoNotificacionRepository _formatoNotificacionRepository = formatoNotificacionRepository;
     private readonly IHtmlTemplateRenderer _htmlTemplateRenderer = htmlTemplateRenderer;
     private readonly IUrlProvider _urlProvider = urlProvider;
     private readonly IEnlaceDescargaTemporalRepository _enlaceDescargaTemporalRepository = enlaceDescargaTemporalRepository;
-    private readonly ITokenSeguroGenerator _tokenSeguroGenerator = tokenSeguroGenerator;
-    private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IParametroRepository _parametroRepository = parametroRepository;
     private readonly ILogger<EnviarCorreoAprobadoEventHandler> _logger = logger;
 
@@ -47,7 +45,7 @@ public class EnviarCorreoAprobadoEventHandler(
                 .ObtenerPorCodigo("SOLICITUD_APROBADA", cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_APROBADA no configurado.");
 
-            var solicitud = await _solicitudRepository
+            var solicitud = await _solicitudQueryRepository
                 .ObtenerParaNotificaciones(domainEvent.IdSolicitud, cancellationToken)
                 ?? throw new InvalidOperationException("Solicitud no encontrada para notificaciones.");
 
@@ -64,18 +62,15 @@ public class EnviarCorreoAprobadoEventHandler(
             string LinkDescargaDocumentos = string.Empty;
             var correos = solicitudCorreos.Correos;
 
-            if (solicitud.TieneDocumento)
+            // El enlace se crea en la transacción de la aprobación (RevisarSolicitudUseCase).
+            // Este handler solo lo lee: ya no escribe en la base de datos.
+            var enlaceDocumento = solicitud.TieneDocumento
+                ? await _enlaceDescargaTemporalRepository.ObtenerPorIdSolicitudAsync(domainEvent.IdSolicitud, cancellationToken)
+                : null;
+
+            if (enlaceDocumento is not null)
             {
-                string tokenGenerado = _tokenSeguroGenerator.Generar();
-                var enlaceDocumento = EnlaceDescargaTemporal.Crear(
-                    tokenGenerado,
-                    domainEvent.IdSolicitud,
-                    DateTime.Now.AddDays(vigenciaDias));
-
-                await _enlaceDescargaTemporalRepository.AddAsync(enlaceDocumento);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                var linkDescarga = $"{baseBackUrl.TrimEnd('/')}/API-WFF/api/v1/public/{tokenGenerado}";
+                var linkDescarga = $"{baseBackUrl.TrimEnd('/')}/API-WFF/api/v1/public/{enlaceDocumento.Token}";
 
                 LinkDescargaDocumentos =
                     $"Si desea descargue los documentos, estarán habilitados por {vigenciaDias} día(s): " +

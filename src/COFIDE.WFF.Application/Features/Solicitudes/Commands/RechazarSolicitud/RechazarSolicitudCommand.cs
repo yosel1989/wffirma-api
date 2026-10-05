@@ -1,5 +1,5 @@
 ﻿using COFIDE.WFF.Application.Common.Commands;
-using Microsoft.AspNetCore.Http;
+using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
 
 public sealed record RechazarSolicitudCommand
@@ -7,5 +7,5 @@ public sealed record RechazarSolicitudCommand
     long Id,
     string MotivoRechazo,
     string? Comentario,
-    List<IFormFile>? Sustentos
+    List<ArchivoEntrada>? Sustentos
 ) : UpdateCommand<string?, long>(Id);

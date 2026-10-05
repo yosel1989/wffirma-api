@@ -18,14 +18,14 @@ public class SolicitudPlantillaService(
         IPlantillaRepository plantillaRepository,
         IGeneradorCorrelativoIdRepository generadorCorrelativoIdRepository,
         IParametroRepository parametroRepository,
-        ISolicitudFlujoDiffService solicitudFlujoDiffService,
+        IFlujoDiffDomainService flujoDiffDomainService,
         IWorkflowDomainService workflowDomainService
     ) : ISolicitudPlantillaService
 {
     private readonly IPlantillaRepository _plantillaRepository = plantillaRepository;
     private readonly IGeneradorCorrelativoIdRepository _generadorCorrelativoIdRepository = generadorCorrelativoIdRepository;
     private readonly IParametroRepository _parametroRepository = parametroRepository;
-    private readonly ISolicitudFlujoDiffService _solicitudFlujoDiffService = solicitudFlujoDiffService;
+    private readonly IFlujoDiffDomainService _flujoDiffDomainService = flujoDiffDomainService;
     private readonly IWorkflowDomainService _workflowDomainService = workflowDomainService;
 
     public async Task<Plantilla?> CrearSolicitudPlantilla(long? idPlantillaOrigen, string? configuracion, long? idPlantillaRequest, long idUsuario, string gerenciaUsuario, CancellationToken cancellationToken)
@@ -92,7 +92,7 @@ public class SolicitudPlantillaService(
         // Seteamos el Usuarioasignado al firmante aún vigente
         _workflowDomainService.ConstruirFirmanteFlujoEtapa(solicitud, plantilla, tipoAprobadorDict);
 
-        CrearListaDetalleFirma(solicitud, generarIdDetalleFirma);
+        solicitud.GenerarDetallesFirmaPendientes(generarIdDetalleFirma);
 
         _workflowDomainService.ActualizarSolicitudFirmanteNoMaestroFlujo(solicitud.SolicitudPlantilla, plantilla, generarIdSolicitudFirmante, generarIdDetalleFirma, null);
     }
@@ -120,7 +120,7 @@ public class SolicitudPlantillaService(
         // Creamos los firmantes en la solicitud en base a la plantilla base
         _workflowDomainService.AgregarFirmantesFlujoDesdeEtapas(solicitud, plantilla, generarIdSolicitudFirmante);
 
-        CrearListaDetalleFirma(solicitud, generarIdDetalleFirma);
+        solicitud.GenerarDetallesFirmaPendientes(generarIdDetalleFirma);
     }
 
     #region Métodos privados
@@ -234,40 +234,12 @@ public class SolicitudPlantillaService(
         Func<long> generarIdFirmante = () => rangoFirmantes[indexFirmante++];
 
         // Obtenemos los cambios que han mapeado en el flujo
-        var diff = _solicitudFlujoDiffService.CalcularDiff(plantilla, editPlantilla);
+        var diff = _flujoDiffDomainService.CalcularDiff(plantilla, editPlantilla);
 
         // Editamos el flujo del agregado Plantilla => Etapas y FirmanteFlujo
         plantilla.EditarFlujo(editPlantilla, generarIdEtapa, generarIdFirmante, tipoEtapaDict, tipoAprobadorDict, idUsuario);
 
         return diff;
-    }
-
-    private static void CrearListaDetalleFirma(Solicitud solicitud, Func<long> generarIdDetalleFirma)
-    {
-        foreach (var solFirmaFlujo in solicitud.SolicitudPlantilla.FirmantesFlujo.Where(x => x.Estado))
-        {
-            foreach (var documento in solicitud.Documentos.Where(x => x.Estado))
-            {
-                var yaExiste = documento.DetallesFirma
-                    .Any(x => x.Estado && x.IdSolicitudFirmanteFlujo == solFirmaFlujo.Id);
-
-                if (yaExiste)
-                    continue;
-
-                var detalle = DetalleFirma.Crear(
-                    generarIdDetalleFirma(),
-                    solFirmaFlujo.Id,
-                    documento.Id,
-                    null,
-                    null,
-                    null,
-                    null,
-                    solFirmaFlujo.IdUsuarioAsignado
-                );
-
-                documento.AgregarDetalleFirma(detalle);
-            }
-        }
     }
 
     private async Task<Dictionary<long, ParametroDetalle>> ObtenerDiccionarioTipoEtapa(CancellationToken cancellationToken)

@@ -37,12 +37,10 @@ public static class DependencyInjection
         services.AddScoped<IPlantillaCreacionService, PlantillaCreacionService>();
         services.AddScoped<IWorkflowDomainService, WorkflowDomainService>();
 
-        services.AddScoped<ISolicitudFlujoDiffService, SolicitudFlujoDiffService>();
-        services.AddScoped<ISolicitudEventoFactory, SolicitudEventoFactory>();
+        services.AddScoped<IFlujoDiffDomainService, FlujoDiffDomainService>();
         // Dispatcher para Domain Events
         services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
-        services.AddScoped<ISolicitudFlujoNoMaestroService, SolicitudFlujoNoMaestroService>();
 
         //Nuevo
         services.AddScoped<ISolicitudCreacionService, SolicitudCreacionService>();

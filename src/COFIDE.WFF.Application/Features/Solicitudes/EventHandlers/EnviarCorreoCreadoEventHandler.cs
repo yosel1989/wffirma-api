@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoCreadoEventHandler(
-        ISolicitudRepository solicitudRepository,
+        ISolicitudQueryRepository solicitudQueryRepository,
         ICorreoSenderPort correoSenderPort,
         IFormatoNotificacionRepository formatoNotificacionRepository,
         IHtmlTemplateRenderer htmlTemplateRenderer,
@@ -15,7 +15,7 @@ public class EnviarCorreoCreadoEventHandler(
         ILogger<EnviarCorreoCreadoEventHandler> logger
     ) : INotificationHandler<DomainEventNotification<SolicitudCreadaDomainEvent>>
 {
-    private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
+    private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly ICorreoSenderPort _correoSenderPort = correoSenderPort;
     private readonly IFormatoNotificacionRepository _formatoNotificacionRepository = formatoNotificacionRepository;
     private readonly IHtmlTemplateRenderer _htmlTemplateRenderer = htmlTemplateRenderer;
@@ -33,7 +33,7 @@ public class EnviarCorreoCreadoEventHandler(
                 .ObtenerPorCodigo("SOLICITUD_ENVIO", cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_ENVIO no configurado.");
 
-            var solicitud = await _solicitudRepository
+            var solicitud = await _solicitudQueryRepository
                 .ObtenerParaNotificaciones(domainEvent.IdSolicitud, cancellationToken)
                 ?? throw new InvalidOperationException("Solicitud no encontrada para notificaciones.");
 

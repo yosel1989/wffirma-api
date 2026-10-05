@@ -2,70 +2,44 @@
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using System.IO.Compression;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 
 namespace COFIDE.WFF.Application.Features.Solicitudes.Services;
 
+/// <summary>
+/// Decide QUÉ archivos de una solicitud van en el ZIP y con qué nombre.
+/// CÓMO se arma el ZIP y cómo se leen los archivos es responsabilidad de Infraestructura
+/// (IZipStreamingService / IFileStorageService).
+/// </summary>
 public sealed class SolicitudDescargaZipService(
         ISolicitudRepository solicitudRepository,
-        IFileStorageService fileStorageService
+        IFileStorageService fileStorageService,
+        IZipStreamingService zipStreamingService
     ) : ISolicitudDescargaZipService
 {
+    private const string CarpetaZipDocumentos = "DOCUMENTOS";
+    private const string CarpetaZipSustentos = "SUSTENTOS";
+
     private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
+    private readonly IZipStreamingService _zipStreamingService = zipStreamingService;
 
     public async Task<(byte[] Archivo, string NombreZip)> DescargarDocumentosZipAsync(
         long idSolicitud,
         List<long>? idsDocumentos,
         CancellationToken cancellationToken)
     {
-        var solicitud = await _solicitudRepository.ObtenerSolicitudConDocumentosYSustentosPorIdAsync(
-            idSolicitud,
-             idsDocumentos,
-                null,
-            cancellationToken,
-            false);
+        var solicitud = await ObtenerSolicitudAsync(idSolicitud, idsDocumentos, null, cancellationToken);
 
-        if (solicitud is null)
-            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudInvalid);
-
-        var documentosActivos = solicitud.Documentos
-            .Where(x => x.Estado)
-            .ToList();
+        var documentosActivos = solicitud.Documentos.Where(x => x.Estado).ToList();
 
         if (documentosActivos.Count == 0)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.ArchivoNotFound);
 
-        using var memoryStream = new MemoryStream();
+        var entradas = EntradasDocumentos(documentosActivos, solicitud.InCodigo);
+        var archivo = await _zipStreamingService.GenerarZipAsync(entradas, cancellationToken);
 
-        using (var zip = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-        {
-            int contador = 1;
-            var nombresUsados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var documento in documentosActivos)
-            {
-                var archivoInfo = ResolverArchivoDocumento(documento, solicitud.InCodigo);
-
-                await using var fileStream = await _fileStorageService.GetFileAsync(
-                    archivoInfo.RutaRelativa,
-                    cancellationToken);
-
-                var nombreEntry = GenerarNombreUnicoEntry(
-                    nombresUsados,
-                    contador++,
-                    archivoInfo.NombreCompleto);
-
-                var entry = zip.CreateEntry($"DOCUMENTOS/{nombreEntry}", CompressionLevel.Fastest);
-
-                await using var entryStream = entry.Open();
-                await fileStream.CopyToAsync(entryStream, cancellationToken);
-            }
-        }
-
-        return (memoryStream.ToArray(), $"DOCUMENTOS_{solicitud.CodigoSolicitud}.zip");
+        return (archivo, $"DOCUMENTOS_{solicitud.CodigoSolicitud}.zip");
     }
 
     public async Task<(byte[] Archivo, string NombreZip)> DescargarSustentosZipAsync(
@@ -73,55 +47,91 @@ public sealed class SolicitudDescargaZipService(
         List<long>? idsSustentos,
         CancellationToken cancellationToken)
     {
-        var solicitud = await _solicitudRepository.ObtenerSolicitudConDocumentosYSustentosPorIdAsync(
-            idSolicitud,
-            null,
-            idsSustentos,
-            cancellationToken,
-            false);
+        var solicitud = await ObtenerSolicitudAsync(idSolicitud, null, idsSustentos, cancellationToken);
 
-        if (solicitud is null)
-            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudInvalid);
-
-        var sustentosActivos = solicitud.Sustentos
-            .Where(x => x.Estado)
-            .ToList();
+        var sustentosActivos = solicitud.Sustentos.Where(x => x.Estado).ToList();
 
         if (sustentosActivos.Count == 0)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.ArchivoNotFound);
 
-        using var memoryStream = new MemoryStream();
+        var entradas = EntradasSustentos(sustentosActivos);
+        var archivo = await _zipStreamingService.GenerarZipAsync(entradas, cancellationToken);
 
-        using (var zip = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-        {
-            int contador = 1;
-            var nombresUsados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var sustento in sustentosActivos)
-            {
-                string nombreArchivo = $"{sustento.NombreSustento}.{sustento.ExtensionSustento}";
-                string rutaRelativa = Path.Combine(sustento.RutaSustento, nombreArchivo);
-
-                await using var fileStream = await _fileStorageService.GetFileAsync(
-                    rutaRelativa,
-                    cancellationToken);
-
-                var nombreEntry = GenerarNombreUnicoEntry(
-                    nombresUsados,
-                    contador++,
-                    nombreArchivo);
-
-                var entry = zip.CreateEntry($"SUSTENTOS/{nombreEntry}", CompressionLevel.Fastest);
-
-                await using var entryStream = entry.Open();
-                await fileStream.CopyToAsync(entryStream, cancellationToken);
-            }
-        }
-
-        return (memoryStream.ToArray(), $"SUSTENTOS_{solicitud.CodigoSolicitud}.zip");
+        return (archivo, $"SUSTENTOS_{solicitud.CodigoSolicitud}.zip");
     }
 
-    private static (string RutaRelativa, string NombreCompleto) ResolverArchivoDocumento(
+    public async Task<(byte[] Archivo, string NombreZip)> DescargarTodoZipAsync(long idSolicitud, CancellationToken cancellationToken)
+    {
+        var solicitud = await ObtenerSolicitudAsync(idSolicitud, null, null, cancellationToken);
+
+        var documentosActivos = solicitud.Documentos.Where(x => x.Estado).ToList();
+        var sustentosActivos = solicitud.Sustentos.Where(x => x.Estado).ToList();
+
+        if (documentosActivos.Count == 0 && sustentosActivos.Count == 0)
+            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.ArchivoNotFound);
+
+        var entradas = EntradasDocumentos(documentosActivos, solicitud.InCodigo)
+            .Concat(EntradasSustentos(sustentosActivos))
+            .ToList();
+
+        var archivo = await _zipStreamingService.GenerarZipAsync(entradas, cancellationToken);
+
+        return (archivo, $"{solicitud.CodigoSolicitud}.zip");
+    }
+
+    private async Task<Solicitud> ObtenerSolicitudAsync(
+        long idSolicitud,
+        List<long>? idsDocumentos,
+        List<long>? idsSustentos,
+        CancellationToken cancellationToken)
+    {
+        var solicitud = await _solicitudRepository.ObtenerSolicitudConDocumentosYSustentosPorIdAsync(
+            idSolicitud,
+            idsDocumentos,
+            idsSustentos,
+            cancellationToken,
+            false);
+
+        return solicitud ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudInvalid);
+    }
+
+    private List<EntradaZip> EntradasDocumentos(IEnumerable<SolicitudDocumento> documentos, bool inCodigo)
+    {
+        var entradas = new List<EntradaZip>();
+        var nombresUsados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var contador = 1;
+
+        foreach (var documento in documentos)
+        {
+            var (rutaArchivo, nombreArchivo) = ResolverArchivoDocumento(documento, inCodigo);
+            var nombreEntry = GenerarNombreUnicoEntry(nombresUsados, contador++, nombreArchivo);
+            entradas.Add(new EntradaZip($"{CarpetaZipDocumentos}/{nombreEntry}", rutaArchivo));
+        }
+
+        return entradas;
+    }
+
+    private List<EntradaZip> EntradasSustentos(IEnumerable<SolicitudSustento> sustentos)
+    {
+        var entradas = new List<EntradaZip>();
+        var nombresUsados = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var contador = 1;
+
+        foreach (var sustento in sustentos)
+        {
+            string nombreArchivo = $"{sustento.NombreSustento}.{sustento.ExtensionSustento}";
+            string rutaArchivo = _fileStorageService.CombinarRuta(sustento.RutaSustento, nombreArchivo);
+            var nombreEntry = GenerarNombreUnicoEntry(nombresUsados, contador++, nombreArchivo);
+            entradas.Add(new EntradaZip($"{CarpetaZipSustentos}/{nombreEntry}", rutaArchivo));
+        }
+
+        return entradas;
+    }
+
+    /// <summary>
+    /// Versión del documento a entregar: firmada &gt; con tag &gt; con código (si aplica) &gt; original.
+    /// </summary>
+    private (string RutaArchivo, string NombreArchivo) ResolverArchivoDocumento(
         SolicitudDocumento documento,
         bool inCodigo)
     {
@@ -137,35 +147,28 @@ public sealed class SolicitudDescargaZipService(
         if (detalleFirmado is not null)
         {
             string nombreFirmado = $"{detalleFirmado.NombreDocumentoFirmado}.{detalleFirmado.ExtensionDocumentoFirmado}";
-            string rutaFirmado = Path.Combine(detalleFirmado.RutaDocumentoFirmado!, nombreFirmado);
-
-            return (rutaFirmado, nombreFirmado);
+            return (_fileStorageService.CombinarRuta(detalleFirmado.RutaDocumentoFirmado!, nombreFirmado), nombreFirmado);
         }
-        else if (!string.IsNullOrWhiteSpace(documento.RutaConTag) &&
+
+        if (!string.IsNullOrWhiteSpace(documento.RutaConTag) &&
             !string.IsNullOrWhiteSpace(documento.NombreConTag) &&
             !string.IsNullOrWhiteSpace(documento.ExtensionConTag))
         {
-
-            string nombreFirmado = $"{documento.NombreConTag}.{documento.ExtensionConTag}";
-            string rutaFirmado = Path.Combine(documento.RutaConTag!, nombreFirmado);
-
-            return (rutaFirmado, nombreFirmado);
+            string nombreConTag = $"{documento.NombreConTag}.{documento.ExtensionConTag}";
+            return (_fileStorageService.CombinarRuta(documento.RutaConTag!, nombreConTag), nombreConTag);
         }
+
         if (inCodigo &&
             !string.IsNullOrWhiteSpace(documento.RutaCodigo) &&
             !string.IsNullOrWhiteSpace(documento.NombreCodigo) &&
             !string.IsNullOrWhiteSpace(documento.ExtensionCodigo))
         {
             string nombreCodigo = $"{documento.NombreCodigo}.{documento.ExtensionCodigo}";
-            string rutaCodigo = Path.Combine(documento.RutaCodigo, nombreCodigo);
-
-            return (rutaCodigo, nombreCodigo);
+            return (_fileStorageService.CombinarRuta(documento.RutaCodigo, nombreCodigo), nombreCodigo);
         }
 
         string nombreOriginal = $"{documento.NombreOriginal}.{documento.ExtensionOriginal}";
-        string rutaOriginal = Path.Combine(documento.RutaOriginal, nombreOriginal);
-
-        return (rutaOriginal, nombreOriginal);
+        return (_fileStorageService.CombinarRuta(documento.RutaOriginal, nombreOriginal), nombreOriginal);
     }
 
     private static string GenerarNombreUnicoEntry(
@@ -173,17 +176,13 @@ public sealed class SolicitudDescargaZipService(
         int correlativo,
         string nombreOriginal)
     {
-        if (!nombresUsados.Contains(nombreOriginal))
-        {
-            nombresUsados.Add(nombreOriginal);
+        if (nombresUsados.Add(nombreOriginal))
             return nombreOriginal;
-        }
 
         string nombreSinExtension = Path.GetFileNameWithoutExtension(nombreOriginal);
         string extension = Path.GetExtension(nombreOriginal);
 
         string nuevoNombre;
-
         do
         {
             nuevoNombre = $"{nombreSinExtension}_{correlativo}{extension}";
@@ -192,92 +191,6 @@ public sealed class SolicitudDescargaZipService(
         while (nombresUsados.Contains(nuevoNombre));
 
         nombresUsados.Add(nuevoNombre);
-
         return nuevoNombre;
-    }
-
-    public async Task<(byte[] Archivo, string NombreZip)> DescargarTodoZipAsync(long idSolicitud, CancellationToken cancellationToken)
-    {
-        var solicitud = await _solicitudRepository.ObtenerSolicitudConDocumentosYSustentosPorIdAsync(
-            idSolicitud,
-            null,
-            null,
-            cancellationToken,
-            false);
-
-        if (solicitud is null)
-            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudInvalid);
-
-        var documentosActivos = solicitud.Documentos
-            .Where(x => x.Estado)
-            .ToList();
-
-        var sustentosActivos = solicitud.Sustentos
-            .Where(x => x.Estado)
-            .ToList();
-
-        if (documentosActivos.Count == 0 && sustentosActivos.Count == 0)
-            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.ArchivoNotFound);
-
-        using var memoryStream = new MemoryStream();
-
-        using (var zip = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-        {
-            int contadorDocumentos = 1;
-            int contadorSustentos = 1;
-
-            var nombresDocs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var nombresSust = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var documento in documentosActivos)
-            {
-                var archivoInfo = ResolverArchivoDocumento(documento, solicitud.InCodigo);
-
-                await using var fileStream = await _fileStorageService.GetFileAsync(
-                    archivoInfo.RutaRelativa,
-                    cancellationToken);
-
-                var nombreEntry = GenerarNombreUnicoEntry(
-                    nombresDocs,
-                    contadorDocumentos++,
-                    archivoInfo.NombreCompleto);
-
-                var entry = zip.CreateEntry(
-                    $"DOCUMENTOS/{nombreEntry}",
-                    CompressionLevel.Fastest);
-
-                await using var entryStream = entry.Open();
-                await fileStream.CopyToAsync(entryStream, cancellationToken);
-            }
-
-            foreach (var sustento in sustentosActivos)
-            {
-                string nombreArchivo = $"{sustento.NombreSustento}.{sustento.ExtensionSustento}";
-                string rutaRelativa = Path.Combine(
-                    sustento.RutaSustento,
-                    nombreArchivo);
-
-                await using var fileStream = await _fileStorageService.GetFileAsync(
-                    rutaRelativa,
-                    cancellationToken);
-
-                var nombreEntry = GenerarNombreUnicoEntry(
-                    nombresSust,
-                    contadorSustentos++,
-                    nombreArchivo);
-
-                var entry = zip.CreateEntry(
-                    $"SUSTENTOS/{nombreEntry}",
-                    CompressionLevel.Fastest);
-
-                await using var entryStream = entry.Open();
-                await fileStream.CopyToAsync(entryStream, cancellationToken);
-            }
-        }
-
-        return (
-            memoryStream.ToArray(),
-            $"{solicitud.CodigoSolicitud}.zip"
-        );
     }
 }

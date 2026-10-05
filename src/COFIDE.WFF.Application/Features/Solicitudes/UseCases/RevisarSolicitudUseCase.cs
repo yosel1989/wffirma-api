@@ -11,8 +11,11 @@ using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
-using Microsoft.AspNetCore.Http;
+using COFIDE.WFF.Application.Common.Files;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Features.Publico.Ports.Out;
+using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Factories;
+using VO = COFIDE.WFF.Domain.ValueObjects;
 namespace COFIDE.WFF.Application.Features.Solicitudes.UseCases;
 
 public class RevisarSolicitudUseCase(
@@ -23,8 +26,9 @@ public class RevisarSolicitudUseCase(
         IParametroRepository parametroRepository,
         ISolicitudSustentoService solicitudSustentoService,
         IGeneradorCorrelativoIdRepository generadorCorrelativoIdRepository,
-        ISolicitudEventoFactory solicitudEventoFactory,
-        IFileStorageService fileStorageService
+        IFileStorageService fileStorageService,
+        IEnlaceDescargaTemporalRepository enlaceDescargaTemporalRepository,
+        ITokenSeguroGenerator tokenSeguroGenerator
     ) : IRevisarSolicitudUseCase
 {
     private readonly ICurrentUserService _currentUser = currentUser;
@@ -34,8 +38,9 @@ public class RevisarSolicitudUseCase(
     private readonly IParametroRepository _parametroRepository = parametroRepository;
     private readonly ISolicitudSustentoService _solicitudSustentoService = solicitudSustentoService;
     private readonly IGeneradorCorrelativoIdRepository _generadorCorrelativoIdRepository = generadorCorrelativoIdRepository;
-    private readonly ISolicitudEventoFactory _solicitudEventoFactory = solicitudEventoFactory;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
+    private readonly IEnlaceDescargaTemporalRepository _enlaceDescargaTemporalRepository = enlaceDescargaTemporalRepository;
+    private readonly ITokenSeguroGenerator _tokenSeguroGenerator = tokenSeguroGenerator;
 
     public async Task<string?> Aprobar(AprobarSolicitudCommand cmd, CancellationToken cancellationToken)
     {
@@ -51,9 +56,34 @@ public class RevisarSolicitudUseCase(
             solicitud.AgregarComentario(idComentario, IsUsuarioAccion, cmd.Comentario);
         }
 
+        // el enlace de descarga se crea dentro de la transacción de la aprobación
+        // (antes lo creaba el handler del correo, después del commit y fuera de la transacción).
+        if (solicitud.IdEstadoSolicitud == VO.EstadoSolicitud.Aprobado.Codigo
+            && solicitud.Documentos.Any(d => d.Estado))
+        {
+            await CrearEnlaceDescargaAsync(solicitud.Id, cancellationToken);
+        }
+
         _solicitudRepository.GuardarFlujoSolicitudAsync(solicitud);
         return solicitud.CodigoSolicitud;
     }
+
+    private async Task CrearEnlaceDescargaAsync(long idSolicitud, CancellationToken cancellationToken)
+    {
+        var parametroVigencia = await _parametroRepository
+            .ObtenerCodigoParametroDias(CodigoParametroVigenciaEnlace, cancellationToken);
+
+        var vigenciaDias = int.TryParse(parametroVigencia.FirstOrDefault()?.Valor, out var dias) ? dias : 1;
+
+        var enlace = EnlaceDescargaTemporal.Crear(
+            _tokenSeguroGenerator.Generar(),
+            idSolicitud,
+            DateTime.Now.AddDays(vigenciaDias));
+
+        await _enlaceDescargaTemporalRepository.AddAsync(enlace);
+    }
+
+    private const string CodigoParametroVigenciaEnlace = "TI_VIGENCIA";
 
     public async Task<string?> Rechazar(RechazarSolicitudCommand cmd, CancellationToken cancellationToken)
     {
@@ -84,7 +114,7 @@ public class RevisarSolicitudUseCase(
         return solicitud.CodigoSolicitud;
     }
 
-    private async Task<Solicitud> PrepararAprobacionRechazo(long idSolicitud, List<IFormFile>? sustentos, CancellationToken cancellationToken)
+    private async Task<Solicitud> PrepararAprobacionRechazo(long idSolicitud, List<ArchivoEntrada>? sustentos, CancellationToken cancellationToken)
     {
         var solicitud = await _solicitudRepository.ObtenerSolicitudParaAprobacion(idSolicitud, cancellationToken, true)
         ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudInvalid);
@@ -111,7 +141,7 @@ public class RevisarSolicitudUseCase(
         {
             var idSustento = generarIdSustento();
             solicitud.AgregarSustento(idSustento, nuevoSustento.NombreSustento, nuevoSustento.ExtensionSustento, nuevoSustento.RutaSustento, nuevoSustento.PesoSustento);
-            var eventos = _solicitudEventoFactory.CrearEventoSustento(solicitud.Id, idSustento);
+            var eventos = SolicitudEventoFactory.CrearEventoSustento(solicitud.Id, idSustento, _currentUser.UserIdLocal!.Value, _currentUser.UserGerenciaNombre!);
             solicitud.RegistrarEventos(eventos);
         }
 

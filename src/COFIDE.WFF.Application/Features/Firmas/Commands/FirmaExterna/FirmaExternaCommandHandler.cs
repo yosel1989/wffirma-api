@@ -50,10 +50,10 @@ public sealed class FirmaExternaCommandHandler(
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.FirmaArchivoNotFound);
 
         // Extraer las firmas del documento en FileStorage
-        string rutaCompleta = Path.Combine(documentoVigente.Ruta, $"{documentoVigente.UltimoNombreOriginal}.{documentoVigente.ExtensionOriginal}");
+        string rutaCompleta = _fileStorageService.CombinarRuta(documentoVigente.Ruta, $"{documentoVigente.UltimoNombreOriginal}.{documentoVigente.ExtensionOriginal}");
         await using var stream = await _fileStorageService.GetFileAsync(rutaCompleta, cancellationToken);
 
-        using var archivoFirmado = request.Documento.OpenReadStream();
+        using var archivoFirmado = request.Documento.AbrirLectura();
         using var memoryStream = new MemoryStream();
         await archivoFirmado.CopyToAsync(memoryStream, cancellationToken);
         byte[] archivoBytes = memoryStream.ToArray();
@@ -72,7 +72,7 @@ public sealed class FirmaExternaCommandHandler(
         if (!resultado.EsValido)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.FirmaDocumentoInvalid.Format(resultado.Mensaje!));
 
-        string subPathDocumentos = Path.Combine(codigoSolicitud, "DOCUMENTOS");
+        string subPathDocumentos = _fileStorageService.ObtenerCarpetaDocumentos(codigoSolicitud);
         string nombreDocumentoFirmado = documentoVigente!.NombreOriginalFirmado;
         string extensionDocumentoFirmado = documentoVigente!.ExtensionOriginal;
         string uniqueFileName = $"{documentoVigente!.NombreOriginalFirmado}.{documentoVigente!.ExtensionOriginal}";

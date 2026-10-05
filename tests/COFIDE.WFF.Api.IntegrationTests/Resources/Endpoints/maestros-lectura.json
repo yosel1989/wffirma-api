@@ -1,0 +1,9 @@
+﻿// Endpoints de solo lectura que deben responder 200 con el usuario de prueba.
+// Agregue aquí nuevos endpoints de consulta (no incluir endpoints que modifiquen datos).
+[
+  { "Caso": "Áreas",               "Ruta": "/api/v1/maestros/areas" },
+  { "Caso": "Departamentos",       "Ruta": "/api/v1/maestros/departamentos" },
+  { "Caso": "Tipos de solicitud",  "Ruta": "/api/v1/maestros/tipos-solicitud" },
+  { "Caso": "Tipos de operación",  "Ruta": "/api/v1/maestros/tipos-operacion" },
+  { "Caso": "Estados de solicitud","Ruta": "/api/v1/maestros/estados-solicitud" }
+]

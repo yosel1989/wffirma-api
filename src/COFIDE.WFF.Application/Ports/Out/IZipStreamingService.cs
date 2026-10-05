@@ -13,4 +13,12 @@ public interface IZipStreamingService
         Stream output,
         IReadOnlyCollection<FirmaZipRequestDto> archivos,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Genera un ZIP en memoria con los archivos indicados. Los nombres dentro del ZIP
+    /// se usan tal como vienen (el llamador decide carpetas internas y nombres únicos).
+    /// </summary>
+    Task<byte[]> GenerarZipAsync(
+        IReadOnlyCollection<EntradaZip> entradas,
+        CancellationToken cancellationToken);
 }

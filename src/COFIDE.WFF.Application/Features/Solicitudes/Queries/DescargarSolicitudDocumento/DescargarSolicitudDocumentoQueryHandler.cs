@@ -44,7 +44,7 @@ public sealed class DescargarSolicitudDocumentoHandler(
 
         if (detalleFirmado is not null)
         {
-            ruta = Path.Combine(
+            ruta = _fileStorageService.CombinarRuta(
                 detalleFirmado.RutaDocumentoFirmado!,
                 $"{detalleFirmado.NombreDocumentoFirmado}.{detalleFirmado.ExtensionDocumentoFirmado}");
 
@@ -55,7 +55,7 @@ public sealed class DescargarSolicitudDocumentoHandler(
             !string.IsNullOrWhiteSpace(solicitudDocumento.NombreConTag) &&
             !string.IsNullOrWhiteSpace(solicitudDocumento.ExtensionConTag))
         {
-            ruta = Path.Combine(
+            ruta = _fileStorageService.CombinarRuta(
                 solicitudDocumento.RutaConTag,
                 $"{solicitudDocumento.NombreConTag}.{solicitudDocumento.ExtensionConTag}");
 
@@ -69,7 +69,7 @@ public sealed class DescargarSolicitudDocumentoHandler(
                    solicitudDocumento.NombreCodigo,
                    solicitudDocumento.ExtensionCodigo);
 
-            ruta = Path.Combine(
+            ruta = _fileStorageService.CombinarRuta(
                 solicitudDocumento.RutaCodigo!,
                 $"{solicitudDocumento.NombreCodigo}.{solicitudDocumento.ExtensionCodigo}");
 
@@ -83,7 +83,7 @@ public sealed class DescargarSolicitudDocumentoHandler(
                solicitudDocumento.NombreOriginal,
                solicitudDocumento.ExtensionOriginal);
 
-            ruta = Path.Combine(
+            ruta = _fileStorageService.CombinarRuta(
                 solicitudDocumento.RutaOriginal,
                 $"{solicitudDocumento.NombreOriginal}.{solicitudDocumento.ExtensionOriginal}");
 

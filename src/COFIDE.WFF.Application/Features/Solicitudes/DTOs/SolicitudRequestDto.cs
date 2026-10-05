@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 
 public sealed record SolicitudRequestDto(
@@ -11,8 +11,8 @@ public sealed record SolicitudRequestDto(
     bool InCodigo = false,
     DateTime? FechaLimite = null,
     decimal? PesoTotalDocu = null,
-    List<IFormFile>? Documentos = null,
-    List<IFormFile>? Sustentos = null,
+    List<ArchivoEntrada>? Documentos = null,
+    List<ArchivoEntrada>? Sustentos = null,
     List<long>? IdsDocumentosConservar = null,
     List<long>? IdsSustentosConservar = null,
     List<string>? CodigosReferencia = null,

@@ -28,7 +28,7 @@ public sealed class DescargarSolicitudSustentoHandler(
         if (solicitudSustento is null)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SustentoVacio);
 
-        var ruta = Path.Combine(
+        var ruta = _fileStorageService.CombinarRuta(
                 solicitudSustento.RutaSustento,
                 $"{solicitudSustento.NombreSustento}.{solicitudSustento.ExtensionSustento}");
 

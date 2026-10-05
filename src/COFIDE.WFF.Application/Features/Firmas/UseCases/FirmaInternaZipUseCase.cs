@@ -48,7 +48,7 @@ public class FirmaInternaZipUseCase(
             var primerDocumentoPorFirmar = primerDocumento.ObtenerDocumentoVigenteParaFirma(primerDocumento.Solicitud.InCodigo);
 
             string rutaPrimerDocumento =
-                Path.Combine(
+                _fileStorageService.CombinarRuta(
                     primerDocumentoPorFirmar!.Ruta,
                     $"{primerDocumentoPorFirmar.UltimoNombreOriginal}.{primerDocumentoPorFirmar.ExtensionOriginal}");
 
@@ -85,7 +85,7 @@ public class FirmaInternaZipUseCase(
 
                 detalleFirma.ValidacionDocumentoFirmado();
 
-                string rutaCompleta = Path.Combine(documentoPorFirmar!.Ruta, $"{documentoPorFirmar!.UltimoNombreOriginal}.{documentoPorFirmar!.ExtensionOriginal}");
+                string rutaCompleta = _fileStorageService.CombinarRuta(documentoPorFirmar!.Ruta, $"{documentoPorFirmar!.UltimoNombreOriginal}.{documentoPorFirmar!.ExtensionOriginal}");
                 await using var stream = await _fileStorageService.GetFileAsync(rutaCompleta, cancellationToken);
 
                 var memoryStream = new MemoryStream();

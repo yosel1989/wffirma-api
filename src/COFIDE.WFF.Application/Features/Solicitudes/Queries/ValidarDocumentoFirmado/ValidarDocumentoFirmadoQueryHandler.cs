@@ -18,11 +18,11 @@ public sealed class ValidarDocumentoFirmadoQueryHandler(
 
         foreach (var archivo in request.Archivos)
         {
-            await using var stream = archivo.OpenReadStream();
+            await using var stream = archivo.AbrirLectura();
 
             resultado.Add(new ValidarDocumentoFirmadoResponseDto
             {
-                NombreDocumento = archivo.FileName,
+                NombreDocumento = archivo.Nombre,
                 TieneFirmaDigital = await _documentoFirmadoValidator.TieneFirmaAsync(stream)
             });
         }

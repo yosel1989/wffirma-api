@@ -1,0 +1,29 @@
+﻿// PLANTILLA (sí se versiona). Copie este archivo como "conexiones.json" en esta misma carpeta
+// y complete los valores del ambiente de PRUEBAS / QA. "conexiones.json" está en .gitignore.
+//
+// - Nunca coloque datos de PRODUCCIÓN.
+// - Las mismas claves pueden definirse como variables de entorno en el pipeline, con prefijo WFF_IT_
+//   (por ejemplo WFF_IT_ConnectionStrings__OracleConnection); la variable de entorno tiene prioridad.
+// - Cuando se adopte el gestor de secretos, solo cambia Support/ConfiguracionPruebas.cs.
+{
+  "ConnectionStrings": {
+    "OracleConnection": ""
+  },
+
+  "FileServer": {
+    "BaseUrl": ""
+  },
+
+  // Solo se usan en Tests/ApisExternas (requiere IntegrationTests:ApisExternasHabilitadas = true).
+  "ExternalServices": {
+    "SucApi":       { "BaseUrl": "", "CodigoSistema": "" },
+    "CorreoApi":    { "BaseUrl": "", "CodigoSistema": "" },
+    "FirmaApi":     { "BaseUrl": "", "CodigoSistema": "", "EndpointCallBack": "" },
+    "HubSocketApi": { "BaseUrl": "" },
+    "SucWCF":       { "BaseUrl": "", "CodigoSistema": "", "CodigoCadena": "", "JwtSecretKey": "" }
+  },
+
+  "IntegrationTests": {
+    "ApisExternasHabilitadas": false
+  }
+}

@@ -1,14 +1,14 @@
 ﻿using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
-using Microsoft.AspNetCore.Http;
+using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Services;
 
 public class SolicitudSustentoService(IFileStorageService fileStorageService) : ISolicitudSustentoService
 {
     private readonly IFileStorageService _fileStorageService = fileStorageService;
 
-    public async Task<IReadOnlyCollection<SustentoProcesadoInput>> CrearDocumentoSustentoInput(List<IFormFile>? archivos, string codigoSolicitud, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<SustentoProcesadoInput>> CrearDocumentoSustentoInput(List<ArchivoEntrada>? archivos, string codigoSolicitud, CancellationToken cancellationToken)
     {
         if (archivos == null || archivos.Count == 0)
             return [];
@@ -17,11 +17,11 @@ public class SolicitudSustentoService(IFileStorageService fileStorageService) : 
 
         foreach (var file in archivos)
         {
-            await using var stream = file.OpenReadStream();
+            await using var stream = file.AbrirLectura();
 
             lista.Add(await ProcesarArchivoAsync(
                 stream,
-                file.FileName,
+                file.Nombre,
                 codigoSolicitud,
                 cancellationToken));
         }
@@ -40,7 +40,7 @@ public class SolicitudSustentoService(IFileStorageService fileStorageService) : 
             .Where(x => x.Estado && idssustentosConservar.Contains(x.Id)))
         {
             string fileName = $"{doc.NombreSustento}.{doc.ExtensionSustento}";
-            string path = Path.Combine(doc.RutaSustento, fileName);
+            string path = _fileStorageService.CombinarRuta(doc.RutaSustento, fileName);
 
             await using var stream =
                 await _fileStorageService.GetFileAsync(path, cancellationToken);
@@ -68,7 +68,7 @@ public class SolicitudSustentoService(IFileStorageService fileStorageService) : 
         if (fileBytes.Length == 0)
             throw new Exception("Documento vacío");
 
-        string subPath = Path.Combine(codigoSolicitud, "SUSTENTOS");
+        string subPath = _fileStorageService.ObtenerCarpetaSustentos(codigoSolicitud);
 
         string nombreSustento = Path.GetFileNameWithoutExtension(fileName);
         string extensionSustento = Path.GetExtension(fileName).TrimStart('.');

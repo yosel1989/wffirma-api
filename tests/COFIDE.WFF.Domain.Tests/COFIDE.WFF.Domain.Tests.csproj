@@ -33,8 +33,4 @@
 		<None Update="Resources\**\*.json" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Resources\Features\Firmas\" />
-	</ItemGroup>
-
 </Project>

@@ -8,12 +8,10 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntr
 
 public sealed class ObtenerBandejaEntradaQueryHandler(
         ICurrentUserService currentUser,
-        ISolicitudRepository solicitudRepository,
         ISolicitudQueryRepository solicitudQueryRepository
     ) : IRequestHandler<ObtenerBandejaEntradaQuery, BandejaEntradaResponseDto>
 {
     private readonly ICurrentUserService _currentUser = currentUser;
-    private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
     private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     public async Task<BandejaEntradaResponseDto> Handle(ObtenerBandejaEntradaQuery request, CancellationToken cancellationToken)
     {
@@ -29,7 +27,7 @@ public sealed class ObtenerBandejaEntradaQueryHandler(
             SearchTerm = request.SearchTerm
         };
 
-        var pagedResult = await _solicitudRepository.ObtenerBandejaEntrada(
+        var pagedResult = await _solicitudQueryRepository.ObtenerBandejaEntrada(
           paginationParams,
           idUsuario,
           request.Fechainicio,
