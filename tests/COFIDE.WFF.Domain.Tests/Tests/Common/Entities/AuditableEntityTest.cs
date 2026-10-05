@@ -1,12 +1,7 @@
 ﻿using COFIDE.WFF.Domain.Common.Entities;
 using FluentAssertions;
-<<<<<<<< HEAD:tests/COFIDE.WFF.Domain.Tests/Tests/Common/Entities/AuditableEntityTest.cs
 namespace COFIDE.WFF.Domain.Tests.Common.Entities;
 public class AuditableEntityTest
-========
-namespace COFIDE.WFF.Domain.Tests.Tests.Common.Entities;
-public class AuditableEntityTests
->>>>>>>> eb859a5fb546d4a843ae56b393262105489e2da8:tests/COFIDE.WFF.Domain.Tests/Tests/Common/Entities/AuditableEntityTests.cs
 {
     [Fact]
     public void SetCreationAudit_Debe_Asignar_Datos_De_Creacion()

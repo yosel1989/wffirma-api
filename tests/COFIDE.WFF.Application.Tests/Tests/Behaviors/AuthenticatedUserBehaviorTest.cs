@@ -5,7 +5,7 @@ using FluentAssertions;
 using MediatR;
 using Moq;
 using applicationException = COFIDE.WFF.Application.Exceptions;
-namespace COFIDE.WFF.Application.Tests.Tests.Behaviors;
+namespace COFIDE.WFF.Application.Tests.Behaviors;
 
 public class AuthenticatedUserBehaviorTest
 {

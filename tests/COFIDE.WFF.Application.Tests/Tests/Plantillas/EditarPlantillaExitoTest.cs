@@ -11,7 +11,7 @@ using FluentAssertions;
 using Moq;
 using Vo = COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Vo;
 
-namespace COFIDE.WFF.Application.Tests.Features.Plantillas;
+namespace COFIDE.WFF.Application.Tests.Plantillas;
 
 public class EditarPlantillaExitoTest
 {

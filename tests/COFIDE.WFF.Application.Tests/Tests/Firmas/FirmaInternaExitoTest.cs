@@ -8,16 +8,17 @@ using COFIDE.WFF.Application.Features.Firmas.Services;
 using COFIDE.WFF.Application.Features.Firmas.UseCases;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Common.Enums;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
-using VoConst=COFIDE.WFF.Domain.ValueObjects;
+using VoConst = COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
-namespace COFIDE.WFF.Application.Tests.Features.Firmas;
+namespace COFIDE.WFF.Application.Tests.Firmas;
 
 public class FirmaInternaExitoTest
 {
@@ -26,7 +27,7 @@ public class FirmaInternaExitoTest
     {
         var (documento, detalle) = DocumentoPendiente();
         var lecturas = new Mock<ISolicitudReadPort>();
-        var archivos = new Mock<IFileStorageService>();
+        var archivos = ArchivosDePrueba.Almacenamiento();
         var preparacion = new Mock<IFirmaPreparationService>();
         var puerto = new Mock<IFirmaPort>();
         var orientacion = new Mock<IOrientacionPaginaPdfService>();
@@ -101,7 +102,7 @@ public class FirmaInternaExitoTest
     {
         var (documento, detalle) = DocumentoPendiente();
         var lecturas = new Mock<ISolicitudReadPort>();
-        var archivos = new Mock<IFileStorageService>();
+        var archivos = ArchivosDePrueba.Almacenamiento();
         var zip = new Mock<IZipStreamingService>();
         var preparacion = new Mock<IFirmaPreparationService>();
         var puerto = new Mock<IFirmaPort>();

@@ -9,7 +9,7 @@ using FluentAssertions;
 using Moq;
 using applicationException = COFIDE.WFF.Application.Exceptions;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 #region Casos de prueba
 

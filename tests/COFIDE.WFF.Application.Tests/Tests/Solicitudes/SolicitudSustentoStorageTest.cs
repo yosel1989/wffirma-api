@@ -1,5 +1,6 @@
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using FluentAssertions;
 using Moq;
@@ -27,7 +28,7 @@ public class SolicitudSustentoStorageTest
     {
         var solicitud = Borrador();
         solicitud.AgregarSustento(6, "anexo", "pdf", "sustentos", 10);
-        var archivos = new Mock<IFileStorageService>();
+        var archivos = ArchivosDePrueba.Almacenamiento();
         archivos.Setup(a => a.GetFileAsync(Path.Combine("sustentos", "anexo.pdf"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new MemoryStream([1, 2, 3]));
         archivos.Setup(a => a.SaveFileAsync(It.IsAny<Stream>(), "anexo.pdf", It.IsAny<string>(), "anexo.pdf", It.IsAny<CancellationToken>()))

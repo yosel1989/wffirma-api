@@ -22,7 +22,7 @@ using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudCommandHandlerTest
 {

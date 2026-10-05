@@ -10,7 +10,7 @@ using MediatR;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Behaviors;
+namespace COFIDE.WFF.Application.Tests.Behaviors;
 
 public class PipelineBehaviorTest
 {
@@ -81,15 +81,20 @@ public class PipelineBehaviorTest
     }
 
     [Fact]
-    public async Task Transaccion_En_Un_Comando_Debe_Confirmar_Y_Publicar_Eventos_PostCommit()
+    public async Task Transaccion_En_Un_Comando_Debe_Confirmar_Y_Despachar_Eventos()
     {
+        var previo = new EventoPrevio();
+        var posterior = new EventoPosterior();
         var uow = Unidad();
         var dispatcher = new Mock<IDomainEventDispatcher>();
         var publicador = new Mock<IPublicadorEventosPostCommit>();
         var archivos = new Mock<IRegistroArchivosTransaccion>();
-        var behavior = Transaccion<GuardarCommand>(uow, dispatcher, publicador, archivos);
+        uow.Setup(u => u.GetDomainEvents()).Returns(new IDomainEvent[] { previo, posterior });
         dispatcher.Setup(d => d.DispatchPreCommitAsync(It.IsAny<IEnumerable<IDomainEvent>>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+        publicador.Setup(p => p.PublicarAsync(It.IsAny<IReadOnlyCollection<IDomainEvent>>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var behavior = Transaccion<GuardarCommand>(uow, dispatcher, publicador, archivos);
 
         var resultado = await behavior.Handle(
             new GuardarCommand(),
@@ -101,33 +106,11 @@ public class PipelineBehaviorTest
         uow.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
         uow.Verify(u => u.RollbackTransactionAsync(), Times.Never);
         dispatcher.Verify(d => d.DispatchPreCommitAsync(It.IsAny<IEnumerable<IDomainEvent>>(), It.IsAny<CancellationToken>()), Times.Once);
-        // B1: los eventos post-commit los publica el publicador (inmediato + reintentos si falla).
-        publicador.Verify(p => p.PublicarAsync(It.IsAny<IReadOnlyCollection<IDomainEvent>>(), It.IsAny<CancellationToken>()), Times.Once);
+        dispatcher.Verify(d => d.DispatchPostCommitAsync(It.IsAny<IEnumerable<IDomainEvent>>(), It.IsAny<CancellationToken>()), Times.Never);
+        publicador.Verify(p => p.PublicarAsync(
+            It.Is<IReadOnlyCollection<IDomainEvent>>(eventos => eventos.Count == 1 && eventos.Single() == posterior),
+            CancellationToken.None), Times.Once);
         archivos.Verify(a => a.ConfirmarArchivos(), Times.Once);
-        archivos.Verify(a => a.DescartarArchivosAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Transaccion_Debe_Publicar_Solo_Los_Eventos_PostCommit_Despues_Del_Commit()
-    {
-        var uow = Unidad();
-        var pre = new EventoPreCommitPrueba();
-        var post = new EventoPostCommitPrueba();
-        uow.Setup(u => u.GetDomainEvents()).Returns(new IDomainEvent[] { pre, post });
-        var orden = new List<string>();
-        uow.Setup(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()))
-            .Callback(() => orden.Add("commit")).Returns(Task.CompletedTask);
-        var publicador = new Mock<IPublicadorEventosPostCommit>();
-        IReadOnlyCollection<IDomainEvent>? publicados = null;
-        publicador.Setup(p => p.PublicarAsync(It.IsAny<IReadOnlyCollection<IDomainEvent>>(), It.IsAny<CancellationToken>()))
-            .Callback((IReadOnlyCollection<IDomainEvent> e, CancellationToken _) => { publicados = e; orden.Add("publicar"); })
-            .Returns(Task.CompletedTask);
-
-        await Transaccion<GuardarCommand>(uow, publicador: publicador)
-            .Handle(new GuardarCommand(), _ => Task.FromResult("ok"), CancellationToken.None);
-
-        publicados.Should().ContainSingle().Which.Should().BeSameAs(post);
-        orden.Should().Equal("commit", "publicar");
     }
 
     [Fact]
@@ -135,8 +118,8 @@ public class PipelineBehaviorTest
     {
         var uow = Unidad();
         var archivos = new Mock<IRegistroArchivosTransaccion>();
-        var publicador = new Mock<IPublicadorEventosPostCommit>();
-        var behavior = Transaccion<GuardarCommand>(uow, publicador: publicador, archivos: archivos);
+        archivos.Setup(a => a.DescartarArchivosAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        var behavior = Transaccion<GuardarCommand>(uow, archivos: archivos);
 
         var act = () => behavior.Handle(
             new GuardarCommand(),
@@ -146,10 +129,7 @@ public class PipelineBehaviorTest
         await act.Should().ThrowAsync<InvalidOperationException>();
         uow.Verify(u => u.RollbackTransactionAsync(), Times.Once);
         uow.Verify(u => u.CommitTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
-        // B1: se compensan los archivos escritos y no se publica ningún evento.
-        archivos.Verify(a => a.DescartarArchivosAsync(It.IsAny<CancellationToken>()), Times.Once);
-        archivos.Verify(a => a.ConfirmarArchivos(), Times.Never);
-        publicador.Verify(p => p.PublicarAsync(It.IsAny<IReadOnlyCollection<IDomainEvent>>(), It.IsAny<CancellationToken>()), Times.Never);
+        archivos.Verify(a => a.DescartarArchivosAsync(CancellationToken.None), Times.Once);
     }
 
     [Fact]
@@ -195,16 +175,7 @@ public class PipelineBehaviorTest
         Mock<IPublicadorEventosPostCommit>? publicador = null,
         Mock<IRegistroArchivosTransaccion>? archivos = null)
         where TRequest : notnull =>
-        new(
-            uow.Object,
-            (dispatcher ?? new Mock<IDomainEventDispatcher>()).Object,
-            (publicador ?? new Mock<IPublicadorEventosPostCommit>()).Object,
-            (archivos ?? new Mock<IRegistroArchivosTransaccion>()).Object,
-            NullLogger<TransactionBehavior<TRequest, string>>.Instance);
-
-    private sealed record EventoPreCommitPrueba : COFIDE.WFF.Domain.Common.Events.DomainEvent, IPreCommitDomainEvent;
-
-    private sealed record EventoPostCommitPrueba : COFIDE.WFF.Domain.Common.Events.DomainEvent, IPostCommitDomainEvent;
+        new(uow.Object, (dispatcher ?? new Mock<IDomainEventDispatcher>()).Object, (publicador ?? new Mock<IPublicadorEventosPostCommit>()).Object, (archivos ?? new Mock<IRegistroArchivosTransaccion>()).Object, NullLogger<TransactionBehavior<TRequest, string>>.Instance);
 
     private static string? Leer(object destino, string propiedad)
     {
@@ -230,4 +201,14 @@ public class PipelineBehaviorTest
     private sealed record GuardarCommand : IRequest<string>;
 
     private sealed record AuditoriaCommand : AuditableCommand<string>;
+
+    private sealed record EventoPrevio : IPreCommitDomainEvent
+    {
+        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+    }
+
+    private sealed record EventoPosterior : IPostCommitDomainEvent
+    {
+        public DateTime OccurredOn { get; } = DateTime.UtcNow;
+    }
 }

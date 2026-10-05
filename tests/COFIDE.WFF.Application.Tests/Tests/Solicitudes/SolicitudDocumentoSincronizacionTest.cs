@@ -5,12 +5,13 @@ using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
 using FluentAssertions;
 using Moq;
 
-namespace COFIDE.WFF.Application.Tests.Features.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudDocumentoSincronizacionTest
 {
@@ -45,7 +46,7 @@ public class SolicitudDocumentoSincronizacionTest
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash",
             "contrato-COD", "pdf", "codigos", "hash-cod", null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        var archivos = new Mock<IFileStorageService>();
+        var archivos = ArchivosDePrueba.Almacenamiento();
         archivos.Setup(a => a.DeleteFileAsync(Path.Combine("codigos", "contrato-COD.pdf"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 

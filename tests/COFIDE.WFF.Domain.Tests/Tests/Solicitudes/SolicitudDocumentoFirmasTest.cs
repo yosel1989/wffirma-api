@@ -4,7 +4,7 @@ using COFIDE.WFF.Domain.Tests.Support;
 using COFIDE.WFF.Domain.Tests.Support.Mothers.Solicitudes;
 using FluentAssertions;
 
-namespace COFIDE.WFF.Domain.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Domain.Tests.Features.Solicitudes;
 
 public sealed record DocumentoFirmasCase(
     string Caso,

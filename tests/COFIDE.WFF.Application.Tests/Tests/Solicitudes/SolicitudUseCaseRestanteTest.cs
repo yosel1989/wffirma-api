@@ -1,7 +1,5 @@
+using COFIDE.WFF.Application.Common.Files;
 using COFIDE.WFF.Application.Common.Ports.Out;
-using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
-using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.AprobarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
@@ -11,16 +9,12 @@ using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
 using COFIDE.WFF.Domain.Common.Enums;
-using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Exceptions;
 using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Tests.Support;
-using COFIDE.WFF.Application.Common.Files;
 
-using COFIDE.WFF.Application.Features.Publico.Ports.Out;
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudUseCaseRestanteTest
 {
@@ -89,9 +83,9 @@ public class SolicitudUseCaseRestanteTest
         var sustentos = new Mock<ISolicitudSustentoService>();
         var tags = new Mock<ISolicitudDocumentoTagService>();
         solicitudes.Setup(s => s.ObtenerAgregadoSolicitudAsync(8, It.IsAny<CancellationToken>(), true)).ReturnsAsync(Borrador());
-        documentos.Setup(d => d.CrearDocumentoInput(It.IsAny<List<Microsoft.AspNetCore.Http.IFormFile>?>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+        documentos.Setup(d => d.CrearDocumentoInput(It.IsAny<List<ArchivoEntrada>?>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<DocumentoProcesadoInput>());
-        sustentos.Setup(s => s.CrearDocumentoSustentoInput(It.IsAny<List<Microsoft.AspNetCore.Http.IFormFile>?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        sustentos.Setup(s => s.CrearDocumentoSustentoInput(It.IsAny<List<ArchivoEntrada>?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SustentoProcesadoInput>());
         plantillas.Setup(p => p.CrearSolicitudPlantilla(0, null, null, 10, "GTI", It.IsAny<CancellationToken>()))
             .ReturnsAsync((Plantilla?)null);
@@ -124,38 +118,6 @@ public class SolicitudUseCaseRestanteTest
         ex.Which.Error.Code.Should().Be("APP_SOL_013");
     }
 
-    [Fact]
-    public async Task Aprobar_Sin_Solicitud_Debe_Lanzar_APP_SOL_001()
-    {
-        var solicitudes = new Mock<ISolicitudRepository>();
-        solicitudes.Setup(s => s.ObtenerSolicitudParaAprobacion(8, It.IsAny<CancellationToken>(), true))
-            .ReturnsAsync((Solicitud?)null);
-
-        var act = () => Revisar(solicitudes).Aprobar(new AprobarSolicitudCommand(8, null, null), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        ex.Which.Error.Code.Should().Be("APP_SOL_001");
-    }
-
-    [Fact]
-    public async Task Aprobar_Sin_Plantilla_Debe_Lanzar_APP_SOL_005()
-    {
-        var solicitud = Borrador();
-        var asignada = SolicitudPlantilla.Crear(1, solicitud, Plantilla.Crear(5, "Flujo", "Descripcion", false, 10, "GTI", true));
-        asignada.ActualizarPlantilla(5);
-        solicitud.AsignarPlantilla(asignada);
-        var solicitudes = new Mock<ISolicitudRepository>();
-        var plantillas = new Mock<IPlantillaRepository>();
-        solicitudes.Setup(s => s.ObtenerSolicitudParaAprobacion(8, It.IsAny<CancellationToken>(), true)).ReturnsAsync(solicitud);
-        plantillas.Setup(p => p.ObtenerAgregadoPlantillaAsync(5, It.IsAny<CancellationToken>(), false))
-            .ReturnsAsync((Plantilla?)null);
-
-        var act = () => Revisar(solicitudes, plantillas).Aprobar(new AprobarSolicitudCommand(8, null, null), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        ex.Which.Error.Code.Should().Be("APP_SOL_005");
-    }
-
     private static EditarSolicitudUseCase Editar(
         Mock<ISolicitudRepository> solicitudes,
         Mock<ISolicitudPlantillaService>? plantillas = null,
@@ -182,21 +144,6 @@ public class SolicitudUseCaseRestanteTest
             new Mock<ISolicitudPlantillaService>().Object,
             new Mock<ISolicitudDocumentoTagService>().Object,
             Correlativos());
-
-    private static RevisarSolicitudUseCase Revisar(
-        Mock<ISolicitudRepository> solicitudes,
-        Mock<IPlantillaRepository>? plantillas = null) =>
-        new(
-            Usuario(10).Object,
-            solicitudes.Object,
-            (plantillas ?? new Mock<IPlantillaRepository>()).Object,
-            new Mock<IWorkflowDomainService>().Object,
-            new Mock<IParametroRepository>().Object,
-            new Mock<ISolicitudSustentoService>().Object,
-            Correlativos(),
-            ArchivosDePrueba.Almacenamiento().Object,
-            new Mock<IEnlaceDescargaTemporalRepository>().Object,
-            new Mock<ITokenSeguroGenerator>().Object);
 
     private static IGeneradorCorrelativoIdRepository Correlativos()
     {

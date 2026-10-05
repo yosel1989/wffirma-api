@@ -3,7 +3,7 @@ using COFIDE.WFF.Domain.Tests.Support;
 using COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 
-namespace COFIDE.WFF.Domain.Tests.Tests.Solicitudes.ValueObjects;
+namespace COFIDE.WFF.Domain.Tests.Features.Solicitudes.ValueObjects;
 
 public sealed record CorreoCase(string Caso, string Entrada, string Input, string? Esperado, string? CodigoError)
 {

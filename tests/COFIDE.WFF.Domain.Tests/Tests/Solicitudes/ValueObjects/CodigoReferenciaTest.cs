@@ -3,7 +3,7 @@ using COFIDE.WFF.Domain.Exceptions;
 using COFIDE.WFF.Domain.Tests.Support;
 using FluentAssertions;
 
-namespace COFIDE.WFF.Domain.Tests.Tests.Solicitudes.ValueObjects;
+namespace COFIDE.WFF.Domain.Tests.Features.Solicitudes.ValueObjects;
 
 public sealed record CodigoReferenciaCase(
     string Caso, string? Entrada, int LongitudExtra, string? Esperado, string? CodigoError)

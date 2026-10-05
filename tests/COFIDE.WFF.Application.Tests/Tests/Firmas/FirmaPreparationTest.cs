@@ -9,7 +9,7 @@ using COFIDE.WFF.Domain.DomainServices;
 using FluentAssertions;
 using Moq;
 
-namespace COFIDE.WFF.Application.Tests.Features.Firmas;
+namespace COFIDE.WFF.Application.Tests.Firmas;
 
 public class FirmaPreparationTest
 {

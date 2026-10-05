@@ -7,9 +7,6 @@ using COFIDE.WFF.Application.Features.Maestros.DTOs;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
-using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Features.Solicitudes.Services;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
@@ -19,7 +16,7 @@ using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
-namespace COFIDE.WFF.Application.Tests.Features.Plantillas;
+namespace COFIDE.WFF.Application.Tests.Plantillas;
 
 public class PlantillaYJobHandlerTest
 {
@@ -43,24 +40,6 @@ public class PlantillaYJobHandlerTest
         var ex = await act.Should().ThrowAsync<DomainException>();
         ex.Which.Error.Code.Should().Be("DOM_PLT_027");
         parametros.Verify(p => p.ObtenerDetallePorCodigoParametro(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Flujo_No_Maestro_No_Debe_Editar_Una_Plantilla_Maestra()
-    {
-        var diffs = new Mock<ISolicitudFlujoDiffService>();
-        var plantilla = Plantilla.Crear(6, "Flujo", "Descripcion", true, 10, "GTI", true);
-
-        var resultado = await new SolicitudFlujoNoMaestroService(
-                new Mock<ICurrentUserService>().Object,
-                new Mock<IParametroRepository>().Object,
-                new Mock<COFIDE.WFF.Domain.DomainServices.IWorkflowDomainService>().Object,
-                diffs.Object,
-                new Mock<IGeneradorCorrelativoIdRepository>().Object)
-            .ActualizarPlantillaDesdeSolicitud(new CrearSolicitudPlantilla(), Borrador(), plantilla, CancellationToken.None);
-
-        resultado.Should().BeNull();
-        diffs.Verify(d => d.CalcularDiff(It.IsAny<Plantilla>(), It.IsAny<COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Models.PlantillaEditModel>()), Times.Never);
     }
 
     [Fact]

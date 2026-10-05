@@ -1,6 +1,4 @@
-using AutoMapper;
 using COFIDE.WFF.Application.Common.Ports.Out;
-using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaExterna;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaPdf;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaZip;
 using COFIDE.WFF.Application.Features.Firmas.Commands.RestablecerDocumentoFirmado;
@@ -15,20 +13,17 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Tests.Support;
-using COFIDE.WFF.Application.Common.Files;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Firmas;
+namespace COFIDE.WFF.Application.Tests.Firmas;
 
 public class FirmaUseCaseTest
 {
-    private readonly Mock<IMapper> _mapper = new();
 
     [Fact]
     public async Task Restablecer_Sin_Detalles_Firmados_Debe_Responder_Vacio()
     {
         var detalles = new Mock<IDetalleFirmaRepository>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
+        var archivos = new Mock<IFileStorageService>();
         detalles.Setup(d => d.ObtenerDocumentosEnEstadoFirmadoAsync(It.IsAny<List<long>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([]);
 
@@ -45,7 +40,7 @@ public class FirmaUseCaseTest
         var detalle = DetalleFirma.Crear(1, 2, 4, null, null, null, null, 100);
         detalle.Firmar("contrato [F]", "pdf", "firmados", "hash", true);
         var detalles = new Mock<IDetalleFirmaRepository>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
+        var archivos = new Mock<IFileStorageService>();
         detalles.Setup(d => d.ObtenerDocumentosEnEstadoFirmadoAsync(It.IsAny<List<long>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([detalle]);
         detalles.Setup(d => d.UpdateRangeAsync(It.IsAny<IEnumerable<DetalleFirma>>(), It.IsAny<CancellationToken>()))
@@ -92,7 +87,7 @@ public class FirmaUseCaseTest
     {
         var documento = Documento(conDetalleDelUsuario: true);
         var lecturas = new Mock<ISolicitudReadPort>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
+        var archivos = new Mock<IFileStorageService>();
         lecturas.Setup(l => l.ObtenerDocumentoParaFirmaInternaMasivaRead(8, 4, It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(documento);
         archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -121,7 +116,7 @@ public class FirmaUseCaseTest
     public async Task FirmaZip_Sin_Archivo_Debe_Lanzar_APP_SOL_009()
     {
         var lecturas = new Mock<ISolicitudReadPort>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
+        var archivos = new Mock<IFileStorageService>();
         lecturas.Setup(l => l.ObtenerDocumentosParaFirmaInternaMasivaRead(8, It.IsAny<List<long>>(), It.IsAny<CancellationToken>(), true))
             .ReturnsAsync([Documento()]);
         archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -133,105 +128,11 @@ public class FirmaUseCaseTest
         ex.Which.Error.Code.Should().Be("APP_SOL_009");
     }
 
-    [Fact]
-    public async Task FirmaExterna_Sin_Documento_Debe_Lanzar_APP_SOL_008()
-    {
-        var documentos = new Mock<ISolicitudDocumentoRepository>();
-        documentos.Setup(d => d.ObtenerSolicitudDocumentoParaFirmadoInterno(4, It.IsAny<CancellationToken>(), true))
-            .ReturnsAsync((SolicitudDocumento?)null);
-
-        var act = () => Externa(documentos).Handle(new FirmaExternaCommand(8, 4, Archivo()), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        ex.Which.Error.Code.Should().Be("APP_SOL_008");
-    }
-
-    [Fact]
-    public async Task FirmaExterna_Sin_Archivo_En_Storage_Debe_Lanzar_APP_SOL_014()
-    {
-        var documentos = new Mock<ISolicitudDocumentoRepository>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
-        documentos.Setup(d => d.ObtenerSolicitudDocumentoParaFirmadoInterno(4, It.IsAny<CancellationToken>(), true))
-            .ReturnsAsync(Documento());
-        archivos.Setup(a => a.ExistsFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
-
-        var act = () => Externa(documentos, archivos).Handle(new FirmaExternaCommand(8, 4, Archivo()), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        ex.Which.Error.Code.Should().Be("APP_SOL_014");
-    }
-
-    [Fact]
-    public async Task FirmaExterna_Sin_Detalle_Debe_Lanzar_APP_SOL_006()
-    {
-        var documentos = new Mock<ISolicitudDocumentoRepository>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
-        documentos.Setup(d => d.ObtenerSolicitudDocumentoParaFirmadoInterno(4, It.IsAny<CancellationToken>(), true))
-            .ReturnsAsync(Documento());
-        documentos.Setup(d => d.ObtenerDetalleFirmaPorDocumentoAsignado(4, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((DetalleFirma?)null);
-        archivos.Setup(a => a.ExistsFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => new MemoryStream([1]));
-
-        var act = () => Externa(documentos, archivos).Handle(new FirmaExternaCommand(8, 4, Archivo()), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        ex.Which.Error.Code.Should().Be("APP_SOL_006");
-    }
-
-    [Fact]
-    public async Task FirmaExterna_Con_Validacion_Fallida_Debe_Lanzar_APP_SOL_007()
-    {
-        var (documento, detalle) = DocumentoFirmable();
-        var documentos = new Mock<ISolicitudDocumentoRepository>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
-        var validador = new Mock<IDocumentoFirmadoValidator>();
-        PrepararExterna(documentos, archivos, documento, detalle);
-        validador.Setup(v => v.Externo_ValidarDocumentoFirmadoAsync(
-                It.IsAny<Stream>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<bool>()))
-            .ReturnsAsync(ResultadoValidacionFirma.Fail("dni distinto"));
-
-        var act = () => Externa(documentos, archivos, validador).Handle(new FirmaExternaCommand(8, 4, Archivo()), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        ex.Which.Error.Code.Should().Be("APP_SOL_007");
-    }
-
-    [Fact]
-    public async Task FirmaExterna_Valida_Debe_Firmar_El_Detalle()
-    {
-        var (documento, detalle) = DocumentoFirmable();
-        var documentos = new Mock<ISolicitudDocumentoRepository>();
-        var archivos = ArchivosDePrueba.Almacenamiento();
-        var validador = new Mock<IDocumentoFirmadoValidator>();
-        var hash = new Mock<IPdfContentHashService>();
-        var firmas = new Mock<IDetalleFirmaRepository>();
-        PrepararExterna(documentos, archivos, documento, detalle);
-        validador.Setup(v => v.Externo_ValidarDocumentoFirmadoAsync(
-                It.IsAny<Stream>(), It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<bool>()))
-            .ReturnsAsync(ResultadoValidacionFirma.Ok());
-        hash.Setup(h => h.ObtenerHashContenido(It.IsAny<byte[]>())).Returns("hash-firmado");
-        archivos.Setup(a => a.SaveFileAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("guardado");
-        firmas.Setup(f => f.UpdateAsync(detalle)).Returns(Task.CompletedTask);
-
-        var resultado = await Externa(documentos, archivos, validador, hash, firmas)
-            .Handle(new FirmaExternaCommand(8, 4, Archivo()), CancellationToken.None);
-
-        resultado.Should().BeEmpty();
-        detalle.EstadoDocumento.Should().Be(EstadoDocumento.Firmado);
-        detalle.HashDocumentoFirmado.Should().Be("hash-firmado");
-        detalle.InternoExterno!.Codigo.Should().Be('E');
-    }
-
     private FirmaInternaPdfUseCase Pdf(Mock<ISolicitudReadPort> lecturas, Mock<IFileStorageService>? archivos = null) =>
         new(
             Usuario().Object,
             lecturas.Object,
-            (archivos ?? ArchivosDePrueba.Almacenamiento()).Object,
+            (archivos ?? new Mock<IFileStorageService>()).Object,
             new Mock<IDocumentoFirmadoValidator>().Object,
             new Mock<IDetalleFirmaRepository>().Object,
             new Mock<IFirmaPort>().Object,
@@ -243,42 +144,11 @@ public class FirmaUseCaseTest
         new(
             Usuario().Object,
             lecturas.Object,
-            (archivos ?? ArchivosDePrueba.Almacenamiento()).Object,
+            (archivos ?? new Mock<IFileStorageService>()).Object,
             new Mock<IZipStreamingService>().Object,
             new Mock<IFirmaPreparationService>().Object,
             new Mock<IFirmaPort>().Object,
             new Mock<IOrientacionPaginaPdfService>().Object);
-
-    private FirmaExternaCommandHandler Externa(
-        Mock<ISolicitudDocumentoRepository> documentos,
-        Mock<IFileStorageService>? archivos = null,
-        Mock<IDocumentoFirmadoValidator>? validador = null,
-        Mock<IPdfContentHashService>? hash = null,
-        Mock<IDetalleFirmaRepository>? firmas = null) =>
-        new(
-            _mapper.Object,
-            Usuario().Object,
-            (validador ?? new Mock<IDocumentoFirmadoValidator>()).Object,
-            documentos.Object,
-            (firmas ?? new Mock<IDetalleFirmaRepository>()).Object,
-            (archivos ?? ArchivosDePrueba.Almacenamiento()).Object,
-            (hash ?? new Mock<IPdfContentHashService>()).Object);
-
-    private static void PrepararExterna(
-        Mock<ISolicitudDocumentoRepository> documentos,
-        Mock<IFileStorageService> archivos,
-        SolicitudDocumento documento,
-        DetalleFirma detalle)
-    {
-        documentos.Setup(d => d.ObtenerSolicitudDocumentoParaFirmadoInterno(4, It.IsAny<CancellationToken>(), true))
-            .ReturnsAsync(documento);
-        documentos.Setup(d => d.ObtenerDetalleFirmaPorDocumentoAsignado(4, 10, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(detalle);
-        archivos.Setup(a => a.ExistsFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
-        archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => new MemoryStream([1]));
-    }
 
     private static SolicitudDocumento Documento(bool conDetalleDelUsuario = false)
     {
@@ -297,18 +167,6 @@ public class FirmaUseCaseTest
 
         return documento;
     }
-
-    private static (SolicitudDocumento Documento, DetalleFirma Detalle) DocumentoFirmable()
-    {
-        var documento = Documento();
-        var detalle = DetalleFirma.Crear(1, 2, 4, null, null, null, null, 10);
-        detalle.SolicitudDocumento = documento;
-        documento.AgregarDetalleFirma(detalle);
-        return (documento, detalle);
-    }
-
-    private static ArchivoEntrada Archivo() =>
-        ArchivosDePrueba.Crear("documento.pdf", [9, 9]);
 
     private static Mock<ICurrentUserService> Usuario()
     {

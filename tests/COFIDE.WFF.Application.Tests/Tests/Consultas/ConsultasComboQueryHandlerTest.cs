@@ -32,7 +32,7 @@ using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Consultas;
+namespace COFIDE.WFF.Application.Tests.Consultas;
 
 public class ConsultasComboQueryHandlerTest
 {

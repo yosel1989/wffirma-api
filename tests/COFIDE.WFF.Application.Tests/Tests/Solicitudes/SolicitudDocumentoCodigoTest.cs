@@ -3,11 +3,12 @@ using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using FluentAssertions;
 using Moq;
 
-namespace COFIDE.WFF.Application.Tests.Features.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudDocumentoCodigoTest
 {
@@ -17,7 +18,7 @@ public class SolicitudDocumentoCodigoTest
         var solicitud = Borrador(false);
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash",
             null, null, null, null, null, null, null, null, 10);
-        var archivos = new Mock<IFileStorageService>();
+        var archivos = ArchivosDePrueba.Almacenamiento();
         var hash = new Mock<IPdfContentHashService>();
         var validador = new Mock<IDocumentoFirmadoValidator>();
         archivos.Setup(a => a.GetFileAsync(Path.Combine("originales", "contrato.pdf"), It.IsAny<CancellationToken>()))
@@ -44,7 +45,7 @@ public class SolicitudDocumentoCodigoTest
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash-original",
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        var archivos = new Mock<IFileStorageService>();
+        var archivos = ArchivosDePrueba.Almacenamiento();
         var hash = new Mock<IPdfContentHashService>();
         var inserter = new Mock<IPdfCodigoInserter>();
         var validador = new Mock<IDocumentoFirmadoValidator>();
@@ -71,7 +72,7 @@ public class SolicitudDocumentoCodigoTest
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash-original",
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        var archivos = new Mock<IFileStorageService>();
+        var archivos = ArchivosDePrueba.Almacenamiento();
         var validador = new Mock<IDocumentoFirmadoValidator>();
         archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new MemoryStream([1]));

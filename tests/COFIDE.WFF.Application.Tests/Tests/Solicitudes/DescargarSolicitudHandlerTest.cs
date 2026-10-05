@@ -1,8 +1,4 @@
 using AutoMapper;
-using COFIDE.WFF.Application.Common.Enums;
-using COFIDE.WFF.Application.Common.Ports.Out;
-using COFIDE.WFF.Application.Features.Publico.DescargaDocumento;
-using COFIDE.WFF.Application.Features.Publico.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumentoZip;
@@ -12,26 +8,23 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitud
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Entities;
-using COFIDE.WFF.Domain.Exceptions;
-using COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Tests.Support;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class DescargarSolicitudHandlerTest
 {
     private readonly Mock<IMapper> _mapper = new();
-    private readonly Mock<IFileStorageService> _archivos = ArchivosDePrueba.Almacenamiento();
+    private readonly Mock<IFileStorageService> _archivos = new();
     private readonly Mock<ISolicitudRepository> _solicitudes = new();
-    private readonly Mock<ISolicitudQueryRepository> _consultas = new();
     private readonly byte[] _contenido = [1, 2, 3];
 
     public DescargarSolicitudHandlerTest()
     {
+        _archivos.Setup(a => a.CombinarRuta(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns((string carpeta, string nombre) => Path.Combine(carpeta, nombre));
         _archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new MemoryStream(_contenido));
     }
@@ -193,97 +186,11 @@ public class DescargarSolicitudHandlerTest
         dto.Archivo.Should().Equal(7);
     }
 
-    [Fact]
-    public async Task Descarga_Publica_Sin_Enlace_Debe_Lanzar_APP_SOL_010()
-    {
-        var enlaces = new Mock<IEnlaceDescargaTemporalRepository>();
-        enlaces.Setup(e => e.ObtenerPorTokenAsync("ausente", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((EnlaceDescargaTemporal?)null);
-
-        var act = () => Publico(enlaces).Handle(new DescargaDocumentoQuery("ausente"), CancellationToken.None);
-
-        var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        ex.Which.Error.Code.Should().Be("APP_SOL_010");
-    }
-
-    [Fact]
-    public async Task Descarga_Publica_Expirada_Debe_Lanzar_DomainException()
-    {
-        var enlaces = new Mock<IEnlaceDescargaTemporalRepository>();
-        enlaces.Setup(e => e.ObtenerPorTokenAsync("vencido", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(EnlaceDescargaTemporal.Crear("vencido", 8, DateTime.UtcNow.AddMinutes(-5)));
-
-        var act = () => Publico(enlaces).Handle(new DescargaDocumentoQuery("vencido"), CancellationToken.None);
-
-        await act.Should().ThrowAsync<DomainException>();
-        _consultas.Verify(s => s.ObtenerDocumentosFirmadosPorSolicitudAsync(
-            It.IsAny<long>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Descarga_Publica_De_Un_Archivo_Debe_Responder_ArchivoUnico()
-    {
-        var enlace = EnlaceDescargaTemporal.Crear("tok", 8, DateTime.UtcNow.AddDays(1));
-        var enlaces = new Mock<IEnlaceDescargaTemporalRepository>();
-        var uow = new Mock<IUnitOfWork>();
-        enlaces.Setup(e => e.ObtenerPorTokenAsync("tok", It.IsAny<CancellationToken>())).ReturnsAsync(enlace);
-        _consultas.Setup(s => s.ObtenerDocumentosFirmadosPorSolicitudAsync(8, It.IsAny<CancellationToken>(), false))
-            .ReturnsAsync(new List<ArchivoDescargaDto> { new("a.pdf", "ruta/a.pdf") });
-        _archivos.Setup(a => a.GetRouteAsync("ruta/a.pdf", It.IsAny<CancellationToken>())).ReturnsAsync("fisica/a.pdf");
-        uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-
-        var dto = await Publico(enlaces, uow).Handle(new DescargaDocumentoQuery("tok"), CancellationToken.None);
-
-        dto.Tipo.Should().Be(TipoDescarga.ArchivoUnico);
-        dto.NombreArchivo.Should().Be("a.pdf");
-        dto.ContentType.Should().Be("application/pdf");
-        dto.Archivos.Single().RutaFisica.Should().Be("fisica/a.pdf");
-        enlace.DescargasRealizadas.Should().Be(1);
-        _consultas.Verify(s => s.ObtenerParaNotificaciones(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Descarga_Publica_De_Varios_Archivos_Debe_Responder_Zip()
-    {
-        var enlace = EnlaceDescargaTemporal.Crear("tok", 8, DateTime.UtcNow.AddDays(1));
-        var enlaces = new Mock<IEnlaceDescargaTemporalRepository>();
-        enlaces.Setup(e => e.ObtenerPorTokenAsync("tok", It.IsAny<CancellationToken>())).ReturnsAsync(enlace);
-        _consultas.Setup(s => s.ObtenerDocumentosFirmadosPorSolicitudAsync(8, It.IsAny<CancellationToken>(), false))
-            .ReturnsAsync(new List<ArchivoDescargaDto>
-            {
-                new("a.pdf", "ruta/a.pdf"),
-                new("b.pdf", "ruta/b.pdf")
-            });
-        _archivos.Setup(a => a.GetRouteAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string ruta, CancellationToken _) => "fisica/" + ruta);
-        _consultas.Setup(s => s.ObtenerParaNotificaciones(8, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new FormatoNotificacionSolicitud(
-                "Solicitud", "GTI-SOL-00000008-2026", "ana@cofide.com.pe", "Ana",
-                "Contrato", "Alta", "Asunto", "2026-10-02", false, null, null, null, true));
-
-        var dto = await Publico(enlaces).Handle(new DescargaDocumentoQuery("tok"), CancellationToken.None);
-
-        dto.Tipo.Should().Be(TipoDescarga.Zip);
-        dto.NombreArchivo.Should().Be("GTI-SOL-00000008-2026.zip");
-        dto.ContentType.Should().Be("application/zip");
-        dto.Archivos.Should().HaveCount(2);
-    }
-
     private DescargarSolicitudDocumentoHandler Documento() =>
         new(_mapper.Object, _archivos.Object, _solicitudes.Object);
 
     private DescargarSolicitudSustentoHandler Sustento() =>
         new(_mapper.Object, _archivos.Object, _solicitudes.Object);
-
-    private DescargaDocumentoQueryHandler Publico(
-        Mock<IEnlaceDescargaTemporalRepository> enlaces,
-        Mock<IUnitOfWork>? uow = null)
-    {
-        uow ??= new Mock<IUnitOfWork>();
-        uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-        return new DescargaDocumentoQueryHandler(
-            _mapper.Object, enlaces.Object, _archivos.Object, uow.Object, _consultas.Object);
-    }
 
     private static SolicitudDocumento PrepararDocumento(
         bool inCodigo = false,

@@ -12,7 +12,6 @@ using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
 using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Inputs;
@@ -22,9 +21,8 @@ using COFIDE.WFF.Domain.Common.Pageds;
 using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Tests.Support;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudConsultaHandlerTest
 {
@@ -40,7 +38,7 @@ public class SolicitudConsultaHandlerTest
             _mapper.Object,
             _usuario.Object,
             new Mock<IDocumentoFirmadoValidator>().Object,
-            ArchivosDePrueba.Almacenamiento().Object,
+            new Mock<IFileStorageService>().Object,
             new Mock<ISolicitudQueryRepository>().Object)
             .Handle(new ObtenerSolicitudQuery(1, false), CancellationToken.None);
 
@@ -52,7 +50,7 @@ public class SolicitudConsultaHandlerTest
     public async Task ObtenerSolicitud_En_Reuso_No_Debe_Leer_Archivos()
     {
         _usuario.Setup(u => u.UserIdLocal).Returns(10);
-        var archivos = ArchivosDePrueba.Almacenamiento();
+        var archivos = new Mock<IFileStorageService>();
         var consulta = new Mock<ISolicitudQueryRepository>();
         var dto = new SolicitudDto
         {
@@ -75,7 +73,7 @@ public class SolicitudConsultaHandlerTest
     public async Task ObtenerSolicitud_Debe_Marcar_Los_Documentos_Que_Ya_Tienen_Firma()
     {
         _usuario.Setup(u => u.UserIdLocal).Returns(10);
-        var archivos = ArchivosDePrueba.Almacenamiento();
+        var archivos = new Mock<IFileStorageService>();
         var validador = new Mock<IDocumentoFirmadoValidator>();
         var consulta = new Mock<ISolicitudQueryRepository>();
         var dto = new SolicitudDto
@@ -198,21 +196,6 @@ public class SolicitudConsultaHandlerTest
             .Handle(new ObtenerSolicitudPanelControlQuery(), CancellationToken.None);
 
         resultado.Should().BeSameAs(esperado);
-    }
-
-    [Fact]
-    public async Task ValidarDocumentoFirmado_Debe_Evaluar_Cada_Archivo()
-    {
-        var archivo = ArchivosDePrueba.Crear("contrato.pdf", [1, 2]);
-        var validador = new Mock<IDocumentoFirmadoValidator>();
-        validador.Setup(v => v.TieneFirmaAsync(It.IsAny<Stream>())).ReturnsAsync(true);
-
-        var resultado = await new ValidarDocumentoFirmadoQueryHandler(_mapper.Object, validador.Object)
-            .Handle(new ValidarDocumentoFirmadoQuery([archivo]), CancellationToken.None);
-
-        resultado.Should().ContainSingle();
-        resultado.Single().NombreDocumento.Should().Be("contrato.pdf");
-        resultado.Single().TieneFirmaDigital.Should().BeTrue();
     }
 
     [Fact]

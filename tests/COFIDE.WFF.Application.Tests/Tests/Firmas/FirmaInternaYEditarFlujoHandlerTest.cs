@@ -8,7 +8,6 @@ using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Application.Features.Revisiones.EditarFlujo;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
@@ -18,9 +17,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Tests.Support;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Firmas;
+namespace COFIDE.WFF.Application.Tests.Firmas;
 
 public class FirmaInternaYEditarFlujoHandlerTest
 {
@@ -215,7 +213,7 @@ public class FirmaInternaYEditarFlujoHandlerTest
     {
         var usuario = new Mock<ICurrentUserService>();
         usuario.Setup(u => u.CodigoUsuario).Returns("USR01");
-        archivos ??= ArchivosDePrueba.Almacenamiento();
+        archivos ??= new Mock<IFileStorageService>();
         archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => new MemoryStream([1, 2, 3]));
 
@@ -247,7 +245,7 @@ public class FirmaInternaYEditarFlujoHandlerTest
             new Mock<IPlantillaCreacionService>().Object,
             new Mock<IWorkflowDomainService>().Object,
             new Mock<IParametroRepository>().Object,
-            new FlujoDiffDomainService(),
+            new Mock<IFlujoDiffDomainService>().Object,
             new Mock<IGeneradorCorrelativoIdRepository>().Object);
     }
 
@@ -270,7 +268,7 @@ public class FirmaInternaYEditarFlujoHandlerTest
         detalle.SolicitudDocumento = documento;
         documento.AgregarDetalleFirma(detalle);
 
-        return (detalle, ArchivosDePrueba.Almacenamiento(), new Mock<IDocumentoFirmadoValidator>(), new Mock<IPdfContentHashService>());
+        return (detalle, new Mock<IFileStorageService>(), new Mock<IDocumentoFirmadoValidator>(), new Mock<IPdfContentHashService>());
     }
 
     private static DetalleFirma DetallePendiente() =>

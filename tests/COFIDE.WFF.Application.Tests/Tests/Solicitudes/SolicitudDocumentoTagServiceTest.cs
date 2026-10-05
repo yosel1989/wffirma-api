@@ -7,7 +7,7 @@ using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
-namespace COFIDE.WFF.Application.Tests.Features.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudDocumentoTagServiceTest
 {

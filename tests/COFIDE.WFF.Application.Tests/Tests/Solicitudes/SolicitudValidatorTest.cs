@@ -10,7 +10,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using FluentAssertions;
 using FluentValidation.TestHelper;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudValidatorTest
 {

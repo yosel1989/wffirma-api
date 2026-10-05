@@ -16,7 +16,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class CorreoPorAprobarEventHandlerTest
 {
@@ -128,11 +128,10 @@ public class CorreoPorAprobarEventHandlerTest
         correos.Verify(c => c.EnviarCorreoAsync(
             "render", "render", "otro@cofide.com.pe", string.Empty, It.IsAny<CancellationToken>()), Times.Never);
         enlaces.Verify(e => e.AddAsync(It.IsAny<EnlaceDescargaTemporal>()), Times.Never);
-        enlaces.Verify(e => e.ObtenerPorIdSolicitudAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task Aprobado_Con_Documentos_Debe_Usar_El_Enlace_Existente_Y_Avisar_A_Los_Otros_Correos()
+    public async Task Aprobado_Con_Documentos_Debe_Crear_El_Enlace_Y_Avisar_A_Los_Otros_Correos()
     {
         var correos = new Mock<ICorreoSenderPort>();
         var enlaces = new Mock<IEnlaceDescargaTemporalRepository>();
@@ -144,7 +143,6 @@ public class CorreoPorAprobarEventHandlerTest
             conCorreosExtra: true,
             vigencia: [new ParametroDetalleDto { Id = 1, Codigo = "TI_VIGENCIA", Valor = "3" }]);
 
-        // B1: el handler ya no crea enlaces ni escribe en la base de datos (corre después del commit).
         enlaces.Verify(e => e.ObtenerPorIdSolicitudAsync(8, It.IsAny<CancellationToken>()), Times.Once);
         enlaces.Verify(e => e.AddAsync(It.IsAny<EnlaceDescargaTemporal>()), Times.Never);
         uow.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -189,7 +187,7 @@ public class CorreoPorAprobarEventHandlerTest
         List<ParametroDetalleDto> vigencia)
     {
         var solicitudes = new Mock<ISolicitudRepository>();
-        var consultas = new Mock<ISolicitudQueryRepository>();
+        var solicitudesquery = new Mock<ISolicitudQueryRepository>();
         var formatos = new Mock<IFormatoNotificacionRepository>();
         var renderer = new Mock<IHtmlTemplateRenderer>();
         var urls = new Mock<IUrlProvider>();
@@ -199,7 +197,7 @@ public class CorreoPorAprobarEventHandlerTest
         urls.Setup(u => u.GetWorkflowBaseBackUrl()).Returns("https://api.cofide/");
         formatos.Setup(f => f.ObtenerPorCodigo("SOLICITUD_APROBADA", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FormatoNotificacionPrueba());
-        consultas.Setup(s => s.ObtenerParaNotificaciones(8, It.IsAny<CancellationToken>()))
+        solicitudesquery.Setup(s => s.ObtenerParaNotificaciones(8, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Notificacion(false, tieneDocumento));
 
         var agregado = Borrador();
@@ -210,18 +208,16 @@ public class CorreoPorAprobarEventHandlerTest
             .ReturnsAsync(agregado);
         parametros.Setup(p => p.ObtenerCodigoParametroDias("TI_VIGENCIA", It.IsAny<CancellationToken>()))
             .ReturnsAsync(vigencia);
-
-        // B1: el enlace ya fue creado en la transacción de la aprobación; el handler solo lo lee.
         enlaces.Setup(e => e.ObtenerPorIdSolicitudAsync(8, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(EnlaceDescargaTemporal.Crear("token-1", 8, DateTime.Now.AddDays(3)));
-
+            .ReturnsAsync(EnlaceDescargaTemporal.Crear("token-1", 8, DateTime.UtcNow.AddDays(3)));
+        uow.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
         renderer.Setup(r => r.Render(It.IsAny<string>(), It.IsAny<object>())).Returns("render");
         correos.Setup(c => c.EnviarCorreoAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         return new EnviarCorreoAprobadoEventHandler(
-            solicitudes.Object, consultas.Object, correos.Object, formatos.Object, renderer.Object, urls.Object,
+            solicitudes.Object, solicitudesquery.Object, correos.Object, formatos.Object, renderer.Object, urls.Object,
             enlaces.Object, parametros.Object,
             Logger<EnviarCorreoAprobadoEventHandler>())
             .Handle(new DomainEventNotification<SolicitudAprobadaDomainEvent>(

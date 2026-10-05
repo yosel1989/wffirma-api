@@ -1,4 +1,5 @@
-﻿using COFIDE.WFF.Application.Common.Ports.Out;
+﻿using COFIDE.WFF.Application.Common.Files;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Features.Solicitudes.UseCases;
@@ -9,9 +10,8 @@ using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
 using FluentAssertions;
 using Moq;
-using COFIDE.WFF.Application.Common.Files;
 
-namespace COFIDE.WFF.Application.Tests.Tests.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 #region Datos del caso (mapean el JSON de Resources)
 public sealed record UsuarioActualData(
