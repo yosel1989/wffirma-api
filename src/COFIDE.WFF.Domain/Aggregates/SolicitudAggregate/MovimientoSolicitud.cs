@@ -10,7 +10,7 @@ public class MovimientoSolicitud : AuditableEntity<long>
     public long IdUsuarioEstado { get; private set; }
     public DateTime FechaEstado { get; private set; }
     public ValueObject.MotivoCambio? MotivoCambio { get; private set; }
-    public Usuario UsuarioEstado { get; set; } = null!;
+    public Usuario UsuarioEstado { get; private set; } = null!;
     public bool EsNuevo { get; private set; } = false;
     private MovimientoSolicitud() { }
     private MovimientoSolicitud(

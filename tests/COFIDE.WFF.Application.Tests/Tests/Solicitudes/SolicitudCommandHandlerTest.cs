@@ -22,6 +22,7 @@ using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
+using COFIDE.WFF.Application.Tests.Support;
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudCommandHandlerTest
@@ -270,7 +271,7 @@ public class SolicitudCommandHandlerTest
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
         var detalle = DetalleFirma.Crear(1, 10, documento.Id, null, null, null, null, 100);
-        detalle.SolicitudDocumento = documento;
+        NavegacionEf.Asignar(detalle, x => x.SolicitudDocumento, documento);
         detalle.Bloquear();
 
         _detalles

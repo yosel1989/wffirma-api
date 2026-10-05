@@ -3,7 +3,7 @@ namespace COFIDE.WFF.Domain.Entities;
 
 public class TipoOperacion : AuditableEntity<long>
 {
-    public string NombreTipoOperacion { get; set; } = null!;
-    public long IdArea { get; set; }
-    public Area Area { get; set; } = default!;
+    public string NombreTipoOperacion { get; private set; } = null!;
+    public long IdArea { get; private set; }
+    public Area Area { get; private set; } = default!;
 }

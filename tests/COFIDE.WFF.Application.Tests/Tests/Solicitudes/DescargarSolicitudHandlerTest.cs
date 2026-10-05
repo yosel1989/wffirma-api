@@ -12,6 +12,7 @@ using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
+using COFIDE.WFF.Application.Tests.Support;
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class DescargarSolicitudHandlerTest
@@ -203,7 +204,7 @@ public class DescargarSolicitudHandlerTest
             4, nombre, "PDF", "originales", "hash-original",
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        documento.Solicitud = solicitud;
+        NavegacionEf.Asignar(documento, x => x.Solicitud, solicitud);
 
         if (conTag)
             documento.AsignarDocumentoConTag("contrato-tag", "pdf", "tags", "hash-tag");

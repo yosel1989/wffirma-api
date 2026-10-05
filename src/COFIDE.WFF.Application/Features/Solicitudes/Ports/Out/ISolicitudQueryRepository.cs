@@ -2,7 +2,7 @@
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
-using COFIDE.WFF.Domain.Common.Pageds;
+using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Domain.ValueObjects;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;

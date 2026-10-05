@@ -15,12 +15,12 @@ public class SolicitudEvento : AuditableEntity<long>
     public string? AreaUsuario { get; private set; }
     public long? IdSolicitudSustento { get; private set; }   
     public DateTime? FechaEvento { get; private set; }
-    public Solicitud Solicitud { get; set; } = null!;
-    public TipoEvento TipoEvento { get; set; } = null!;
-    public Usuario UsuarioOrigen { get; set; } = null!;
-    public Usuario? UsuarioDestino { get; set; }
-    public PlantillaEtapa? PlantillaEtapa { get; set; }
-    public SolicitudSustento? SolicitudSustento { get; set; }
+    public Solicitud Solicitud { get; private set; } = null!;
+    public TipoEvento TipoEvento { get; private set; } = null!;
+    public Usuario UsuarioOrigen { get; private set; } = null!;
+    public Usuario? UsuarioDestino { get; private set; }
+    public PlantillaEtapa? PlantillaEtapa { get; private set; }
+    public SolicitudSustento? SolicitudSustento { get; private set; }
     public bool EsNuevo { get; private set; } = false;
 
     private SolicitudEvento() { } // EF

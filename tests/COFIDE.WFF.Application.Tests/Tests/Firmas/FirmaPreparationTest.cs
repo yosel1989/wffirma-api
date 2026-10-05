@@ -9,6 +9,7 @@ using COFIDE.WFF.Domain.DomainServices;
 using FluentAssertions;
 using Moq;
 
+using COFIDE.WFF.Application.Tests.Support;
 namespace COFIDE.WFF.Application.Tests.Firmas;
 
 public class FirmaPreparationTest
@@ -114,7 +115,7 @@ public class FirmaPreparationTest
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash",
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        documento.Solicitud = solicitud;
+        NavegacionEf.Asignar(documento, x => x.Solicitud, solicitud);
         return documento;
     }
 

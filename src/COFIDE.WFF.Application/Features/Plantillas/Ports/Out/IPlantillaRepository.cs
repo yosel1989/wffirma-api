@@ -3,7 +3,7 @@ using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPlantillaPaginad
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPorId;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Common.Enums;
-using COFIDE.WFF.Domain.Common.Pageds;
+using COFIDE.WFF.Application.Common.Pageds;
 namespace COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 
 public interface IPlantillaRepository : IGenericRepository<Plantilla, long>

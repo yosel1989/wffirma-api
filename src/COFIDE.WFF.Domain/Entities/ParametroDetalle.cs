@@ -5,11 +5,11 @@ namespace COFIDE.WFF.Domain.Entities;
 
 public class ParametroDetalle : AuditableEntity<long>
 {
-    public long IdParametroCabecera { get; set; }
-    public string CodigoDetalle { get; set; } = default!;
-    public string? DescripcionDetalle { get; set; }
-    public string ValorParametro { get; set; } = default!;
-    public ParametroCabecera Cabecera { get; set; } = null!;
+    public long IdParametroCabecera { get; private set; }
+    public string CodigoDetalle { get; private set; } = default!;
+    public string? DescripcionDetalle { get; private set; }
+    public string ValorParametro { get; private set; } = default!;
+    public ParametroCabecera Cabecera { get; private set; } = null!;
 
     private ParametroDetalle() { } // EF   
 

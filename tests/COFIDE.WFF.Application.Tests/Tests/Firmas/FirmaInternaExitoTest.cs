@@ -74,7 +74,7 @@ public class FirmaInternaExitoTest
         var firmante = new Usuario(10, RolUsuario.SolicitanteAprobador);
         typeof(Usuario).GetField("<NumeroDocumento>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
             .SetValue(firmante, "12345678");
-        detalle.UsuarioFirmante = firmante;
+        NavegacionEf.Asignar(detalle, x => x.UsuarioFirmante, firmante);
         detalle.Firmar("contrato [F]", "pdf", "firmados", "hash", true);
         var lecturas = new Mock<ISolicitudReadPort>();
         var archivos = new Mock<IFileStorageService>();
@@ -148,9 +148,9 @@ public class FirmaInternaExitoTest
         solicitud.AgregarDocumento(4, "contrato", "pdf", "originales", "hash-original",
             null, null, null, null, null, null, null, null, 10);
         var documento = solicitud.Documentos.Single();
-        documento.Solicitud = solicitud;
+        NavegacionEf.Asignar(documento, x => x.Solicitud, solicitud);
         var detalle = DetalleFirma.Crear(1, 2, 4, null, null, null, null, 10);
-        detalle.SolicitudDocumento = documento;
+        NavegacionEf.Asignar(detalle, x => x.SolicitudDocumento, documento);
         documento.AgregarDetalleFirma(detalle);
         return (documento, detalle);
     }

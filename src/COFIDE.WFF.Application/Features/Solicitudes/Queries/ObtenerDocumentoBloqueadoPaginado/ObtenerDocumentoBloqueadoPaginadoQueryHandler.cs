@@ -1,6 +1,5 @@
 ﻿using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Domain.Common.Pageds;
 using MediatR;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
 

@@ -16,7 +16,7 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
 
     #region Relaciones
     public FirmanteFlujo FirmanteFlujo { get; private set; } = default!;
-    public SolicitudPlantilla SolicitudPlantilla { get; set; } = default!;
+    public SolicitudPlantilla SolicitudPlantilla { get; private set; } = default!;
 
     #endregion
 

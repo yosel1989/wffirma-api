@@ -5,7 +5,7 @@ public class SolicitudCodReferencia : AuditableEntity<long>
 {
     public long IdSolicitud { get; private set; }
     public CodigoReferencia CodigoReferencia { get; private set; } = default!;
-    public Solicitud Solicitud { get; set; } = default!;
+    public Solicitud Solicitud { get; private set; } = default!;
 
     public bool EsNuevo { get; private set; } = false;
     private SolicitudCodReferencia() { }

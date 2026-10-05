@@ -34,11 +34,11 @@ public class Solicitud : AuditableEntity<long>
     #endregion
 
     #region Relaciones
-    public TipoSolicitud TipoSolicitud { get; set; } = null!;
-    public SubTipoSolicitud SubTipoSolicitud { get; set; } = null!;
-    public TipoOperacion TipoOperacion { get; set; } = null!;
-    public Usuario UsuarioSolicitante { get; set; } = null!;
-    public SolicitudPlantilla SolicitudPlantilla { get; set; } = default!;
+    public TipoSolicitud TipoSolicitud { get; private set; } = null!;
+    public SubTipoSolicitud SubTipoSolicitud { get; private set; } = null!;
+    public TipoOperacion TipoOperacion { get; private set; } = null!;
+    public Usuario UsuarioSolicitante { get; private set; } = null!;
+    public SolicitudPlantilla SolicitudPlantilla { get; private set; } = default!;
 
     private readonly List<SolicitudDocumento> _documentos = [];
     private readonly List<SolicitudSustento> _sustentos = [];
@@ -676,7 +676,7 @@ public class Solicitud : AuditableEntity<long>
         return !estaEnEtapaActual;
     }
 
-    public IList<EstadoEtapaDto> ObtenerEstadoEtapas()
+    public IReadOnlyList<ValueObject.EstadoEtapa> ObtenerEstadoEtapas()
     {
         return
             [
@@ -684,15 +684,13 @@ public class Solicitud : AuditableEntity<long>
                 .Where(d => d.Estado)
                 .SelectMany(d => d.DetallesFirma)
                 .GroupBy(df => df.SolicitudFirmanteFlujo.OrdenEtapa)
-                .Select(g => new EstadoEtapaDto
-                {
-                    OrdenEtapa = g.Key ?? 0,
-                    Bloqueado = g.Any(df =>
+                .Select(g => new ValueObject.EstadoEtapa(
+                    OrdenEtapa: g.Key ?? 0,
+                    Bloqueado: g.Any(df =>
                         df.SolicitudFirmanteFlujo.RevAprobado ||
                         df.EstadoDocumento == ValueObject.EstadoDocumento.Firmado ||
                         df.EstadoDocumento == ValueObject.EstadoDocumento.Bloqueado
-                    )
-                })
+                    )))
                 .OrderBy(x => x.OrdenEtapa)
            ];
     }
