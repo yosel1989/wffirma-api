@@ -1,9 +1,17 @@
 #####################
 # .NET & Build Artifacts
 #####################
-bin/
-obj/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rtifacts/
+[Pp]ublish/
 *.user
+*.csproj.user
+*.rsuser
 *.suo
 *.userosscache
 *.sln.docstates
@@ -12,13 +20,10 @@ obj/
 *.cache
 *.dbmdl
 *.pdb
-*.log
 *.tlog
 *.ilk
 *.tmp
-*.csproj.user
-.vs/
-
+*.binlog
 
 #####################
 # ASP.NET Core
@@ -27,20 +32,45 @@ appsettings.Development.json
 appsettings.Local.json
 appsettings.*.json.local
 .env
+.env.*
 *.secret.json
 
 #####################
-# Visual Studio
+# Publicación
+#####################
+# Los perfiles de publicación pueden contener credenciales
+*.pubxml.user
+*.publishsettings
+
+#####################
+# Certificados y claves
+#####################
+*.pfx
+*.p12
+*.pem
+*.key
+
+#####################
+# Visual Studio / VS Code
 #####################
 .vs/
 .vscode/
 *.code-workspace
+*.VisualState.xml
+ScaffoldingReadMe.txt
 
 #####################
 # Rider / JetBrains
 #####################
 .idea/
 *.sln.iml
+
+#####################
+# ReSharper
+#####################
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
 
 #####################
 # User-specific Files
@@ -53,8 +83,7 @@ appsettings.*.json.local
 # Logs
 #####################
 *.log
-logs/
-Logs/
+[Ll]ogs/
 
 #####################
 # Database files
@@ -64,27 +93,50 @@ Logs/
 *.ndf
 
 #####################
-# Test Results
+# Test Results / Coverage / Reports
 #####################
-TestResults/
+[Tt]est[Rr]esults/
 *.trx
 *.coverage
 *.coveragexml
+coverage*.json
+coverage*.xml
+# Anclados a la raíz: en Windows git no distingue mayúsculas y "reports/" ignoraría src/.../Services/Reports
+/coverage/
+/coverage-results/
+/reports/
+/test-output/
 
 #####################
 # Packages
 #####################
 *.nupkg
 *.snupkg
+*.symbols.nupkg
 *.nuspec
 packages/
 .nuget/
-*.symbols.nupkg
 
 #####################
-# Entity Framework
+# Dotnet Tools
 #####################
-Migrations/
+.dotnet-tools/
+
+#####################
+# Secrets
+#####################
+secrets.json
+
+#####################
+# Pruebas de integración: conexiones y credenciales locales
+# (usar conexiones.example.json como plantilla)
+#####################
+tests/COFIDE.WFF.Api.IntegrationTests/Resources/Configuracion/conexiones.json
+
+#####################
+# Docker
+#####################
+**/docker-compose.override.yml
 
 #####################
 # Others
@@ -97,40 +149,3 @@ desktop.ini
 *.swo
 *.orig
 *.rej
-
-#####################
-# Secrets
-#####################
-secrets.json
-
-#####################
-# Dotnet Tools
-#####################
-.dotnet-tools/
-
-#####################
-# Global JSON
-#####################
-global.json.user
-
-#####################
-# Logs / Coverage / Report folders
-#####################reports/
-coverage/
-coverage-results/
-test-output/
-
-#####################
-# Docker
-#####################
-**/docker-compose.override.yml
-docker-compose.override.yml
-
-#####################
-# ReSharper
-#####################
-_ReSharper*/
-*.[Rr]e[Ss]harper
-*.DotSettings.user
-
-
