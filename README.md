@@ -129,8 +129,59 @@ dotnet run --project src/COFIDE.WFF.Api
 dotnet run --project src/COFIDE.WFF.Worker
 ```
 
-- La Api se publica bajo el path base `/API-WFF`. Las rutas son versionadas: `/API-WFF/api/v1/...`
-- Swagger: `/API-WFF/swagger`
+En local, la Api levanta en `http://localhost:5117` y `https://localhost:7220` (perfiles de
+`Properties/launchSettings.json`) y abre Swagger directamente.
+
+### Rutas
+
+Todo se publica bajo el path base **`/API-WFF`**:
+
+| Qué | Ruta |
+|---|---|
+| Endpoints de negocio (versionados) | `/API-WFF/api/v1/...` |
+| Swagger UI | `/API-WFF/swagger` |
+| Definición OpenAPI (JSON) | `/API-WFF/swagger/v1/swagger.json` |
+| Descarga pública por token (sin autenticación) | `/API-WFF/api/v1/public/{token}` |
+
+## Swagger
+
+- UI: `https://<host>/API-WFF/swagger`
+- Definición: `https://<host>/API-WFF/swagger/v1/swagger.json` (una por versión de la Api; hoy solo `v1`).
+- Para probar endpoints protegidos, usar el botón **Authorize** e ingresar el token del SSO
+  (sin el prefijo `Bearer`, Swagger lo agrega).
+
+> Hoy Swagger está habilitado en todos los ambientes. Si en producción no debe estar expuesto, hay que
+> condicionarlo al ambiente en `Program.cs` (`app.UseSwaggerConfig()`).
+
+## Validación del despliegue
+
+Después de desplegar, en este orden:
+
+```bash
+# 1. La Api responde y Swagger está publicado
+curl -I https://<host>/API-WFF/swagger/index.html
+#    -> HTTP 200
+
+# 2. La definición de la Api se genera correctamente
+curl -i https://<host>/API-WFF/swagger/v1/swagger.json
+#    -> HTTP 200 con el JSON de OpenAPI
+
+# 3. Un endpoint protegido rechaza peticiones sin token
+curl -i https://<host>/API-WFF/api/v1/maestros/areas
+#    -> HTTP 401 / 403 (no 500)
+
+# 4. La Api llega a la base de datos (endpoint público, sin token)
+curl -i https://<host>/API-WFF/api/v1/public/validacion-despliegue
+#    -> HTTP 4xx con el código APP_SOL_010 (token inexistente).
+#       Un 500 indica un problema con Oracle o con la configuración obtenida del SUC.
+```
+
+Si fallan los pasos 1 o 2, revisar que el servicio esté levantado y el log de arranque. Si falla el paso 4,
+revisar la conectividad con Oracle y con el SUC (`ExternalServices:SucWCF`) desde el servidor.
+
+> La Api redirige HTTP a HTTPS. Si las verificaciones se hacen por HTTP, deben seguir la redirección o
+> apuntar directamente al puerto HTTPS.
+
 ## Autenticación
 
 La API utiliza autenticación basada en JWT.
