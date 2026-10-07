@@ -30,6 +30,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloque
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -458,5 +459,21 @@ public class SolicitudController : BaseApiController
     }
 
     #endregion
+
+
+    [HttpGet("seguimiento-solicitudes")]
+    [ProducesResponseType(typeof(ResponseDto<SeguimientoSolicitudesResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<SeguimientoSolicitudesResponseDto>>> SeguimientoSolicitudesPaginado(
+    [FromQuery] SeguimientoSolicitudesQuery query)
+    {
+        var result = await _mediator.Send(query);
+
+        var response = ResponseDto<SeguimientoSolicitudesResponseDto>.Ok(
+            result,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
 }
 
