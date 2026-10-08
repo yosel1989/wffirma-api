@@ -3,7 +3,7 @@ using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Features.Firmas.DTOs;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using System.Text.Json;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;

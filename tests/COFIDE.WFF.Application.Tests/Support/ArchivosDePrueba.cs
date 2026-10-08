@@ -1,5 +1,5 @@
 ﻿using COFIDE.WFF.Application.Common.Files;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using Moq;
 
 namespace COFIDE.WFF.Application.Tests.Support;

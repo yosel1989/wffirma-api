@@ -6,6 +6,7 @@ using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Domain.Entities;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Common.Constants;
 namespace COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 
 public sealed class EditarPlantillaCommandHandler(
@@ -32,14 +33,14 @@ public sealed class EditarPlantillaCommandHandler(
         plantilla.PermitirActualizarPlantilla(usuarioActual, gerenciaUsuario, usuario);
 
         var tipoAprobadorDict = (await _parametroRepository
-           .ObtenerDetallePorCodigoParametro("TIPO_APROBADOR", cancellationToken))
+           .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoAprobador, cancellationToken))
            .ToDictionary(
                x => x.Id,
                x => new ParametroDetalle(x.Id, x.Codigo, x.Valor)
            );
 
         var tipoEtapaDict = (await _parametroRepository
-              .ObtenerDetallePorCodigoParametro("TIPO_ETAPA", cancellationToken))
+              .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoEtapa, cancellationToken))
               .ToDictionary(
                   x => x.Id,
                   x => new ParametroDetalle(x.Id, x.Codigo, x.Valor)

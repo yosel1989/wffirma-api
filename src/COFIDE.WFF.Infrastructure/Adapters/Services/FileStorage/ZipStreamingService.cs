@@ -1,8 +1,9 @@
 ﻿using COFIDE.WFF.Application.Features.Firmas.DTOs;
 using COFIDE.WFF.Application.Features.Publico.DescargaDocumento;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using Microsoft.Extensions.Logging;
 using System.IO.Compression;
+using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Infrastructure.Adapters.Services.FileStorage;
 
 public sealed class ZipStreamingService(

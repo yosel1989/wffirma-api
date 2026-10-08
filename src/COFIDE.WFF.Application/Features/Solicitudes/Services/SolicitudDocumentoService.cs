@@ -4,7 +4,7 @@ using COFIDE.WFF.Application.Features.Firmas.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Vo;

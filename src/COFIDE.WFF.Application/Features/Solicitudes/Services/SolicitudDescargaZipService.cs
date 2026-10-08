@@ -1,9 +1,10 @@
 ﻿using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 
+using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Services;
 
 /// <summary>

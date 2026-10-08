@@ -6,6 +6,7 @@ using COFIDE.WFF.Domain.Exceptions;
 using COFIDE.WFF.Domain.ValueObjects;
 using ValueObject = COFIDE.WFF.Domain.ValueObjects;
 
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 
 public class DetalleFirma : AuditableEntity<long>
@@ -104,7 +105,7 @@ public class DetalleFirma : AuditableEntity<long>
         ExtensionDocumentoFirmado = extensionDocumentoFirmado;
         RutaDocumentoFirmado = rutaDocumentoFirmado;
         HashDocumentoFirmado = hashDocumentoFirmado;
-        FechaHoraFirma = DateTime.Now;
+        FechaHoraFirma = HoraSistema.Ahora;
         InternoExterno = (EsInterno ? ValueObject.InternoExterno.Interno : ValueObject.InternoExterno.Externo);
         EstadoDocumento = ValueObject.EstadoDocumento.Firmado;
     }
@@ -130,7 +131,7 @@ public class DetalleFirma : AuditableEntity<long>
 
     public void FechaInicioFechaFin(long tiempoFirma)
     {
-        FechaInicioProceso = DateTime.Now;
+        FechaInicioProceso = HoraSistema.Ahora;
         FechaFinEsperado = FechaInicioProceso.Value.AddSeconds(tiempoFirma);
     }
 

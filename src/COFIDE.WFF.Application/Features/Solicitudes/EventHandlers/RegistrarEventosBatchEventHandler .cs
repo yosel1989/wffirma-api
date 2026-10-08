@@ -5,6 +5,7 @@ using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class RegistrarEventosBatchHandler(
@@ -44,7 +45,7 @@ public class RegistrarEventosBatchHandler(
                     e.IdPlantillaEtapa,
                     e.AreaUsuario,
                     e.IdSolicitudSustento,
-                    DateTime.Now
+                    HoraSistema.Ahora
                 );
 
                 await _solicitudEventoRepository.AddAsync(entity);

@@ -2,6 +2,7 @@
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors;
 using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Exceptions;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 
 public class SolicitudFirmanteFlujo : AuditableEntity<long>
@@ -92,7 +93,7 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
             throw new DomainException(SolicitudErrors.FirmanteAprobado);
 
         RevAprobado = true;
-        FechaRevision = DateTime.Now;
+        FechaRevision = HoraSistema.Ahora;
     }
 
     public void ActualizarDatosSolicitudFirmante(

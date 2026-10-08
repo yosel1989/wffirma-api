@@ -1,7 +1,7 @@
 using COFIDE.WFF.Application.Features.Firmas.DTOs;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using FluentAssertions;
 using Moq;

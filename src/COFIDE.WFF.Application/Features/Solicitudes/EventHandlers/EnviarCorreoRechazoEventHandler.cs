@@ -1,9 +1,11 @@
 ﻿using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Application.Common.Constants;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoRechazoEventHandler(
@@ -32,7 +34,7 @@ public class EnviarCorreoRechazoEventHandler(
             var domainEvent = notification.DomainEvent;
 
             var templateCorreo = await _formatoNotificacionRepository
-                .ObtenerPorCodigo("SOLICITUD_RECHAZADA", cancellationToken)
+                .ObtenerPorCodigo(CodigosPlantillaCorreo.SolicitudRechazada, cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_RECHAZADA no configurado.");
 
             var solicitud = await _solicitudQueryRepository
@@ -55,8 +57,8 @@ public class EnviarCorreoRechazoEventHandler(
                 solicitud.MotivoRechazo,
                 NombreAprobadorRechazo = domainEvent.nombreAprobador,
                 etapaActual.NombreEtapa,
-                Anio = DateTime.Now.Year.ToString(),
-                FechaRechazo = DateTime.Now.ToString("dd/MM/yyyy"),
+                Anio = HoraSistema.Ahora.Year.ToString(),
+                FechaRechazo = HoraSistema.Ahora.ToString("dd/MM/yyyy"),
                 LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/visualizar?id={domainEvent.IdSolicitud}"
             };
 

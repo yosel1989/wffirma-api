@@ -5,6 +5,7 @@ using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class RegistrarEventoSolicitudEventHandler(
@@ -38,7 +39,7 @@ public class RegistrarEventoSolicitudEventHandler(
                    domainEvent.IdPlantillaEtapa,
                    domainEvent.AreaUsuario,
                    domainEvent.IdSolicitudSustento,
-                   DateTime.Now);
+                   HoraSistema.Ahora);
 
             // Registramos la solicitud evento
             await _solicitudEventoRepository.AddAsync(solicitudEvento);

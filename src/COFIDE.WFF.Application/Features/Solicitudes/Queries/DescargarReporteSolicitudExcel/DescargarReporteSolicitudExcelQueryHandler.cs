@@ -5,6 +5,7 @@ using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
 
 public sealed class DescargarReporteSolicitudExcelQueryHandler(
@@ -67,7 +68,7 @@ public sealed class DescargarReporteSolicitudExcelQueryHandler(
         {
             Contenido = contenidoExcel,
             ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            NombreArchivo = $"Reporte_Solicitudes_Cantidad_{solicitudes.Count}_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+            NombreArchivo = $"Reporte_Solicitudes_Cantidad_{solicitudes.Count}_{HoraSistema.Ahora:yyyyMMdd_HHmmss}.xlsx"
         };
     }
 }

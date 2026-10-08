@@ -9,6 +9,7 @@ using COFIDE.WFF.Application.Features.Usuarios.Commands.CerrarSesion;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 [ApiController]
@@ -22,25 +23,25 @@ public class SeguridadController : BaseApiController
 
     [HttpGet("plantillas/{id}/permisos")]
     [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<bool>>> ValidarPermisoPlantilla(long id)
+    public async Task<ActionResult<ResponseDto<bool>>> ValidarPermisoPlantilla(long id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new PermisoEditarPlantillaQuery(id));
+        var result = await _mediator.Send(new PermisoEditarPlantillaQuery(id), cancellationToken);
         return Ok(ResponseDto<bool>.Ok(result));
     }
 
     [HttpGet("solicitudes/{id}/permisos")]
     [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<bool>>> ValidarPermisoSolicitud(long id, bool revisar)
+    public async Task<ActionResult<ResponseDto<bool>>> ValidarPermisoSolicitud(long id, bool revisar, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new PermisoSolicitudQuery(id, revisar));
+        var result = await _mediator.Send(new PermisoSolicitudQuery(id, revisar), cancellationToken);
         return Ok(ResponseDto<bool>.Ok(result));
     }
 
     [HttpPost("seguridad/cerrar-sesion")]
     [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<bool>>> CerrarSesion()
+    public async Task<ActionResult<ResponseDto<bool>>> CerrarSesion(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new CerrarSesionCommand());
+        var result = await _mediator.Send(new CerrarSesionCommand(), cancellationToken);
         var response = ResponseDto<bool>.Ok(
           result,
           "Operacion exitosa",

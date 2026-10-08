@@ -10,6 +10,7 @@ using COFIDE.WFF.Application.Features.Usuarios.Queries.UsuarioBuscador;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 [ApiController]
@@ -29,9 +30,9 @@ public class UsuarioController : BaseApiController
     [HttpGet("me")]
     [ProducesResponseType(typeof(ResponseDto<UsuarioContextoDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseDto<object>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UsuarioContextoDto>> ObtenerContextoUsuario()
+    public async Task<ActionResult<UsuarioContextoDto>> ObtenerContextoUsuario(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerContextoUsuarioQuery());
+        var result = await _mediator.Send(new ObtenerContextoUsuarioQuery(), cancellationToken);
 
         var response = ResponseDto<UsuarioContextoDto>.Ok(
             result,
@@ -45,9 +46,9 @@ public class UsuarioController : BaseApiController
     [HttpGet("buscar")]
     [ProducesResponseType(typeof(ResponseDto<List<UsuarioBuscadorDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<List<UsuarioBuscadorDto>>>> BuscarUsuarios(
-    [FromQuery] string texto)
+    [FromQuery] string texto, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new BuscarUsuariosQuery(texto));
+        var result = await _mediator.Send(new BuscarUsuariosQuery(texto), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<UsuarioBuscadorDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));

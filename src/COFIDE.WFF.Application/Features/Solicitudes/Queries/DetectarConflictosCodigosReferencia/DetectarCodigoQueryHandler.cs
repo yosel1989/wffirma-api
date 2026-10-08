@@ -4,6 +4,7 @@ using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Vo;
 using COFIDE.WFF.Domain.Exceptions;
+using COFIDE.WFF.Application.Common.Constants;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
 
 public sealed class DetectarCodigoQueryHandler(
@@ -26,7 +27,7 @@ public sealed class DetectarCodigoQueryHandler(
         var codigosValidos = new List<CodigoReferencia>();
 
         var parametrosCodReferencia = await _parametroRepository
-        .ObtenerDetallePorCodigoParametro("COD_REFERENCIA", cancellationToken);
+        .ObtenerDetallePorCodigoParametro(CodigosParametro.CodigoReferencia, cancellationToken);
 
         var maxLongitudCodReferencia = parametrosCodReferencia
             .Select(x => int.TryParse(x.Valor, out var valor) ? valor : CodigoReferencia.MaxLongitud)

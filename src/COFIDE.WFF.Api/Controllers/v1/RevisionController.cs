@@ -7,11 +7,13 @@ using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaZip;
 using COFIDE.WFF.Application.Features.Firmas.DTOs;
 using COFIDE.WFF.Application.Features.Revisiones.EditarFlujo;
-using COFIDE.WFF.Application.Features.Revisiones.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net.Mime;
+using COFIDE.WFF.Api.Request.Revisiones;
+using COFIDE.WFF.Api.Mappings;
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 [ApiController]
@@ -28,15 +30,11 @@ public class RevisionController : BaseApiController
 
     #region FLUJOS
     [HttpPut("{id}/plantilla/{idPlantilla}/etapas")]
-    public async Task<ActionResult<EditarFlujoResponseDto>> EditarFlujo([FromRoute] long id, [FromRoute] long idPlantilla, [FromBody] EditarFlujoRequest request)
+    public async Task<ActionResult<EditarFlujoResponseDto>> EditarFlujo([FromRoute] long id, [FromRoute] long idPlantilla, [FromBody] ActualizarFlujoRequest request, CancellationToken cancellationToken)
     {
-        var command = new EditarFlujoCommand(
-             id,
-             idPlantilla,
-             request.Etapas
-         );
+        var command = request.ToCommand(id, idPlantilla);
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         var response = ResponseDto<EditarFlujoResponseDto>.Ok(
             result,

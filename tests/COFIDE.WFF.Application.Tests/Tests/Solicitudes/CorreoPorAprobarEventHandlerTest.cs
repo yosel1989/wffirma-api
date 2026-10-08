@@ -7,7 +7,6 @@ using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPorId;
 using COFIDE.WFF.Application.Features.Publico.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using COFIDE.WFF.Domain.Entities;

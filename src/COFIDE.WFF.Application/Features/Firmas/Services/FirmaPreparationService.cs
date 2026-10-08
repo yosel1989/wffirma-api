@@ -7,6 +7,7 @@ using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 using ValueObject = COFIDE.WFF.Domain.ValueObjects;
+using COFIDE.WFF.Application.Common.Constants;
 namespace COFIDE.WFF.Application.Features.Firmas.Services;
 
 public class FirmaPreparationService(
@@ -36,7 +37,7 @@ public class FirmaPreparationService(
         var tipoAprobadorDict =
             (await _parametroRepository
                 .ObtenerDetallePorCodigoParametro(
-                    "TIPO_APROBADOR",
+                    CodigosParametro.TipoAprobador,
                     cancellationToken))
             .ToDictionary(
                 x => x.Id,

@@ -1,9 +1,10 @@
 ﻿using System.IO.Compression;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Infrastructure.Exceptions;
 using COFIDE.WFF.Infrastructure.Tests.Support;
 using FluentAssertions;
 
+using COFIDE.WFF.Application.Common.Files;
 namespace COFIDE.WFF.Infrastructure.Tests.Tests.Adapters.FileStorage;
 
 /// <summary>H2: el ZIP lo arma Infraestructura con los nombres y carpetas que decide Application.</summary>
