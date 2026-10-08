@@ -4,7 +4,6 @@ using COFIDE.WFF.Application.Features.Firmas.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Infrastructure.Adapters.ExternalServices.Correo;
 using COFIDE.WFF.Infrastructure.Adapters.ExternalServices.Firmas;
 using COFIDE.WFF.Infrastructure.Adapters.ExternalServices.Realtime;
@@ -32,12 +31,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using COFIDE.WFF.Infrastructure.Eventos;
+using COFIDE.WFF.Infrastructure.Configuracion.Tiempo;
 namespace COFIDE.WFF.Infrastructure;
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(
         this IServiceCollection services, IConfiguration configuration)
     {
+        HoraSistemaConfiguracion.Configurar(configuration);
+
         PdfSharpBootstrap.Configure();
 
         services.AddHttpContextAccessor();
@@ -212,6 +214,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        HoraSistemaConfiguracion.Configurar(configuration);
+
         services.Configure<SucWcfOptions>(configuration.GetSection(SucWcfOptions.SectionName));
 
         services.AddSingleton<ISucConfigurationClient, SucConfigurationClient>();

@@ -1,5 +1,6 @@
 ﻿using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Exceptions;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Entities;
 
 public class EnlaceDescargaTemporal : AuditableEntity<long>
@@ -21,7 +22,7 @@ public class EnlaceDescargaTemporal : AuditableEntity<long>
     {
         Token = token;
         IdSolicitud = idSolicitud;
-        FechaCreada = DateTime.UtcNow;
+        FechaCreada = HoraSistema.Ahora;
         FechaExpiracion = fechaExpiracion;
         DescargasMaximas = descargasMaximas;
         Estado = true;
@@ -44,7 +45,7 @@ public class EnlaceDescargaTemporal : AuditableEntity<long>
         if (!Estado)
             throw new DomainException(new Common.Errors.DomainError("", "El enlace está inactivo."));
 
-        if (FechaExpiracion < DateTime.UtcNow)
+        if (FechaExpiracion < HoraSistema.Ahora)
             throw new DomainException(new Common.Errors.DomainError("", "El enlace ha expirado."));
 
         if (DescargasMaximas.HasValue &&

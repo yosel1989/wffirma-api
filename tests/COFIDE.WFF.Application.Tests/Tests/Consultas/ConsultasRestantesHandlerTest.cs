@@ -17,7 +17,6 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloque
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.PermisoSolicitud;
 using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerContextoUsuario;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;

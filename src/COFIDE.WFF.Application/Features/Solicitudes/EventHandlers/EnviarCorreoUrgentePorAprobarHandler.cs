@@ -1,12 +1,14 @@
 ﻿using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPorId;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.ValueObjects;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Application.Common.Constants;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoUrgentePorAprobarHandler(
@@ -37,7 +39,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
             var domainEvent = notification.DomainEvent;
 
             var templateCorreoUrgente = await _formatoNotificacionRepository
-                .ObtenerPorCodigo("SOLICITUD_POR_APROBAR_URGENTE", cancellationToken)
+                .ObtenerPorCodigo(CodigosPlantillaCorreo.SolicitudPorAprobarUrgente, cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_POR_APROBAR_URGENTE no configurado.");
 
             var solicitud = await _solicitudQueryRepository
@@ -170,7 +172,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
             solicitud.TipoOperacion,
             solicitud.AsuntoSolicitud,
             solicitud.FechaCreacion,
-            Anio = DateTime.Now.Year.ToString(),
+            Anio = HoraSistema.Ahora.Year.ToString(),
             LinkSolicitud = $"{baseUrl}/mis_solicitudes/detalle/visualizar?id={idSolicitud}",
             LinkAprobarSolicitud = $"{baseUrl}/bandejas/detalle-solicitud?id={idSolicitud}"
         };

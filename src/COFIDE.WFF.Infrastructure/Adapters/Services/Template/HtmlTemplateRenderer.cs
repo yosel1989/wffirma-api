@@ -1,4 +1,4 @@
-﻿using COFIDE.WFF.Application.Ports.Out;
+﻿using COFIDE.WFF.Application.Common.Ports.Out;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Services.Template;
 public sealed class HtmlTemplateRenderer: IHtmlTemplateRenderer

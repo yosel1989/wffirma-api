@@ -2,6 +2,7 @@
 using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 
 public class FirmanteFlujo : AuditableEntity<long>
@@ -36,7 +37,7 @@ public class FirmanteFlujo : AuditableEntity<long>
         CargoUsuario = cargoUsuario;
         AreaUsuario = areaUsuario;
         GerenciaUsuario = gerenciaUsuario;
-        FechaAsignacion = DateTime.Now;
+        FechaAsignacion = HoraSistema.Ahora;
         EsSuplente = false;
         EsDelegado = false;
         IdUsuarioOrigen = idUsuarioOrigen;

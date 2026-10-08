@@ -1,7 +1,6 @@
 ﻿using COFIDE.WFF.Application.Common.Behaviors;
 using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Features.Firmas.Services;
-using COFIDE.WFF.Application.Features.Firmas.UseCases;
 using COFIDE.WFF.Application.Features.Jobs.Services;
 using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
@@ -33,7 +32,6 @@ public static class DependencyInjection
 
 
         services.AddScoped<ISolicitudDescargaZipService, SolicitudDescargaZipService>();
-        services.AddScoped<ISolicitudAnulacionService, SolicitudAnulacionService>();
         services.AddScoped<IPlantillaCreacionService, PlantillaCreacionService>();
         services.AddScoped<IWorkflowDomainService, WorkflowDomainService>();
 
@@ -44,18 +42,14 @@ public static class DependencyInjection
 
         //Nuevo
         services.AddScoped<ISolicitudCreacionService, SolicitudCreacionService>();
+        services.AddScoped<ISolicitudRegistroService, SolicitudRegistroService>();
+        services.AddScoped<ISolicitudEdicionService, SolicitudEdicionService>();
+        services.AddScoped<ISolicitudReusoService, SolicitudReusoService>();
+        services.AddScoped<ISolicitudRevisionService, SolicitudRevisionService>();
         services.AddScoped<ISolicitudDocumentoService, SolicitudDocumentoService>();
         services.AddScoped<ISolicitudSustentoService, SolicitudSustentoService>();
         services.AddScoped<ISolicitudPlantillaService, SolicitudPlantillaService>();
 
-
-        // Use Case
-        services.Scan(scan => scan
-           .FromAssemblyOf<FirmaInternaPdfUseCase>()
-           .AddClasses(classes => classes
-           .Where(type => type.Name.EndsWith("UseCase") && !type.IsAbstract))
-           .AsImplementedInterfaces()
-           .WithScopedLifetime());
 
         // Services
         services.Scan(scan => scan

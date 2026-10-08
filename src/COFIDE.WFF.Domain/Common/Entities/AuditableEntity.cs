@@ -1,12 +1,13 @@
 ﻿using COFIDE.WFF.Domain.Common.Abstractions;
 
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Common.Entities;
 
 public abstract class AuditableEntity<TKey> : BaseEntity<TKey>, IAuditableEntity<TKey> where TKey : struct
 {
     public bool Estado { get; set; }
     // Auditorísa de creación
-    public DateTime FechaCreacion { get; private set; } = DateTime.Now;
+    public DateTime FechaCreacion { get; private set; } = HoraSistema.Ahora;
     public string UsuarioCreacion { get; private set; } = string.Empty;
     public string TerminalCreacion { get; private set; } = string.Empty;
 
@@ -18,14 +19,14 @@ public abstract class AuditableEntity<TKey> : BaseEntity<TKey>, IAuditableEntity
     public void SetCreationAudit(string nombreUsuario, string terminalUsuario)
     {
         UsuarioCreacion = nombreUsuario;
-        FechaCreacion = DateTime.Now;
+        FechaCreacion = HoraSistema.Ahora;
         TerminalCreacion = terminalUsuario;
     }
 
     public void SetUpdateAudit(string nombreUsuario, string terminalUsuario)
     {
         UsuarioModificacion = nombreUsuario;
-        FechaModificacion = DateTime.Now;
+        FechaModificacion = HoraSistema.Ahora;
         TerminalModificacion = terminalUsuario;
     }
     public void Activar() => Estado = true;

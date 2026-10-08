@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using VO = COFIDE.WFF.Domain.ValueObjects;
+using COFIDE.WFF.Domain.Common.Enums;
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories;
 
 /// <summary>
@@ -110,17 +111,16 @@ public partial class SolicitudQueryRepository
     bool? usuario,
     bool? usuariodepartamento)
     {
-        if (!string.IsNullOrWhiteSpace(roLUsuario))
+        var rol = RolUsuarioCodigo.Desde(roLUsuario);
+        if (rol is not null)
         {
-            var rol = roLUsuario.Trim().ToUpper();
-
-            if (rol == "COORD" && areaUsuario.HasValue)
+            if (rol == RolUsuario.Coordinador && areaUsuario.HasValue)
             {
                 query = query.Where(s =>
                     s.UsuarioSolicitante.IdArea.HasValue &&
                     s.UsuarioSolicitante.IdArea.Value == areaUsuario.Value);
             }
-            else if (rol == "SOLAPR" && codigoUsuario.HasValue)
+            else if (rol == RolUsuario.SolicitanteAprobador && codigoUsuario.HasValue)
             {
                 query = query.Where(s =>
                     s.UsuarioSolicitante.Id == codigoUsuario.Value);

@@ -16,6 +16,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
 
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 [ApiController]
@@ -29,9 +30,9 @@ public class MaestroController : BaseApiController
 
     [HttpGet("areas")]
     [ProducesResponseType(typeof(ResponseDto<List<AreasComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<AreasComboDto>>>> ObtenerCombosAreas()
+    public async Task<ActionResult<ResponseDto<List<AreasComboDto>>>> ObtenerCombosAreas(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerAreasComboQuery());
+        var result = await _mediator.Send(new ObtenerAreasComboQuery(), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<AreasComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -41,9 +42,9 @@ public class MaestroController : BaseApiController
     [HttpGet("departamentos")]
     [ProducesResponseType(typeof(ResponseDto<List<DepartamentosComboDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<List<DepartamentosComboDto>>>> ObtenerCombosDepartamentos(
-       [FromQuery] List<long> codigoGerencia)
+       [FromQuery] List<long> codigoGerencia, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerDepartamentosComboQuery(codigoGerencia));
+        var result = await _mediator.Send(new ObtenerDepartamentosComboQuery(codigoGerencia), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<DepartamentosComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -52,9 +53,9 @@ public class MaestroController : BaseApiController
 
     [HttpGet("usuarios")]
     [ProducesResponseType(typeof(ResponseDto<List<UsuariosComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<UsuariosComboDto>>>> ObtenerComboUsuarios()
+    public async Task<ActionResult<ResponseDto<List<UsuariosComboDto>>>> ObtenerComboUsuarios(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerUsuariosComboQuery());
+        var result = await _mediator.Send(new ObtenerUsuariosComboQuery(), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<UsuariosComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -63,9 +64,9 @@ public class MaestroController : BaseApiController
 
     [HttpGet("tipos-solicitud")]
     [ProducesResponseType(typeof(ResponseDto<List<TipoSolicitudComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<TipoSolicitudComboDto>>>> ObtenerCombosTipoSolicitud([FromQuery] List<long>? idArea)
+    public async Task<ActionResult<ResponseDto<List<TipoSolicitudComboDto>>>> ObtenerCombosTipoSolicitud([FromQuery] List<long>? idArea, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerTipoSolicitudPorAreaQuery(idArea));
+        var result = await _mediator.Send(new ObtenerTipoSolicitudPorAreaQuery(idArea), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<TipoSolicitudComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -76,9 +77,9 @@ public class MaestroController : BaseApiController
     [ProducesResponseType(typeof(ResponseDto<List<SubTipoSolicitudComboDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<List<SubTipoSolicitudComboDto>>>> ObtenerCombosTipoSolicitud(
        [FromQuery] List<long>? idArea,
-       [FromQuery] List<long>? idTipoSolicitud)
+       [FromQuery] List<long>? idTipoSolicitud, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerSubTipoSolicitudPorAreaQuery(idArea, idTipoSolicitud));
+        var result = await _mediator.Send(new ObtenerSubTipoSolicitudPorAreaQuery(idArea, idTipoSolicitud), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<SubTipoSolicitudComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -87,9 +88,9 @@ public class MaestroController : BaseApiController
 
     [HttpGet("tipos-operacion")]
     [ProducesResponseType(typeof(ResponseDto<List<TipoOperacionComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<TipoOperacionComboDto>>>> ObtenerCombosTipoOperacion([FromQuery] List<long>? idArea)
+    public async Task<ActionResult<ResponseDto<List<TipoOperacionComboDto>>>> ObtenerCombosTipoOperacion([FromQuery] List<long>? idArea, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerTipoOperacionPorAreaQuery(idArea));
+        var result = await _mediator.Send(new ObtenerTipoOperacionPorAreaQuery(idArea), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<TipoOperacionComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -98,9 +99,9 @@ public class MaestroController : BaseApiController
 
     [HttpGet("estados-solicitud")]
     [ProducesResponseType(typeof(ResponseDto<List<EstadoSolicitudComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<EstadoSolicitudComboDto>>>> ObtenerCombosEstadoSolicitud()
+    public async Task<ActionResult<ResponseDto<List<EstadoSolicitudComboDto>>>> ObtenerCombosEstadoSolicitud(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerEstadoSolicitudComboQuery());
+        var result = await _mediator.Send(new ObtenerEstadoSolicitudComboQuery(), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<EstadoSolicitudComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -109,9 +110,9 @@ public class MaestroController : BaseApiController
 
     [HttpGet("parametro")]
     [ProducesResponseType(typeof(ResponseDto<List<ListadoParametroDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<ListadoParametroDto>>>> GetParametroSolicitud()
+    public async Task<ActionResult<ResponseDto<List<ListadoParametroDto>>>> GetParametroSolicitud(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerListadoParametroQuery());
+        var result = await _mediator.Send(new ObtenerListadoParametroQuery(), cancellationToken);
 
         if (result.Count == 0)
             return NotFound(ResponseDto<List<ListadoParametroDto>>

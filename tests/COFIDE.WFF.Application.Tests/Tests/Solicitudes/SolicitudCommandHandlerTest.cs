@@ -13,9 +13,8 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Features.Solicitudes.Ports.In;
-using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
+using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using FluentAssertions;
@@ -28,14 +27,13 @@ namespace COFIDE.WFF.Application.Tests.Solicitudes;
 public class SolicitudCommandHandlerTest
 {
     private readonly Mock<IMapper> _mapper = new();
-    private readonly Mock<ICrearSolicitudUseCase> _crear = new();
-    private readonly Mock<IEditarSolicitudUseCase> _editar = new();
-    private readonly Mock<IReusarSolicitudUseCase> _reusar = new();
-    private readonly Mock<IRevisarSolicitudUseCase> _revisar = new();
+    private readonly Mock<ISolicitudRegistroService> _crear = new();
+    private readonly Mock<ISolicitudEdicionService> _editar = new();
+    private readonly Mock<ISolicitudReusoService> _reusar = new();
+    private readonly Mock<ISolicitudRevisionService> _revisar = new();
     private readonly Mock<IPlantillaRepository> _plantillas = new();
     private readonly Mock<ISolicitudRepository> _solicitudes = new();
     private readonly Mock<ICurrentUserService> _usuario = new();
-    private readonly Mock<ISolicitudAnulacionService> _anulacion = new();
     private readonly Mock<IDetalleFirmaRepository> _detalles = new();
 
     public SolicitudCommandHandlerTest()
@@ -204,7 +202,7 @@ public class SolicitudCommandHandlerTest
             .ReturnsAsync((Solicitud?)null);
 
         var act = () => new AnularSolicitudCommandHandler(
-            _mapper.Object, _usuario.Object, _solicitudes.Object, _anulacion.Object)
+            _mapper.Object, _usuario.Object, _solicitudes.Object)
             .Handle(new AnularSolicitudCommand(9), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
@@ -220,13 +218,10 @@ public class SolicitudCommandHandlerTest
             .ReturnsAsync(Borrador(solicitante: 10));
 
         var act = () => new AnularSolicitudCommandHandler(
-            _mapper.Object, _usuario.Object, _solicitudes.Object, _anulacion.Object)
+            _mapper.Object, _usuario.Object, _solicitudes.Object)
             .Handle(new AnularSolicitudCommand(1), CancellationToken.None);
 
         await act.Should().ThrowAsync<AppEx.ApplicationException>();
-        _anulacion.Verify(
-            s => s.AnularSolicitudAsync(It.IsAny<Solicitud>(), It.IsAny<long>(), It.IsAny<CancellationToken>()),
-            Times.Never);
     }
 
     [Fact]
@@ -239,13 +234,11 @@ public class SolicitudCommandHandlerTest
             .ReturnsAsync(solicitud);
 
         var codigo = await new AnularSolicitudCommandHandler(
-            _mapper.Object, _usuario.Object, _solicitudes.Object, _anulacion.Object)
+            _mapper.Object, _usuario.Object, _solicitudes.Object)
             .Handle(new AnularSolicitudCommand(1), CancellationToken.None);
 
         codigo.Should().Be(solicitud.CodigoSolicitud);
-        _anulacion.Verify(
-            s => s.AnularSolicitudAsync(solicitud, 10, It.IsAny<CancellationToken>()),
-            Times.Once);
+        solicitud.EstadoSolicitud.Should().Be(Domain.ValueObjects.EstadoSolicitud.Anulado);
     }
 
     [Fact]

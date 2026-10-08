@@ -2,7 +2,7 @@
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Features.Solicitudes.Ports.In;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
@@ -10,12 +10,12 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
 
 public sealed class ReusarSolicitudCommandHandler(
         IMapper mapper,
-        IReusarSolicitudUseCase usecase,
+        ISolicitudReusoService usecase,
         IPlantillaRepository plantillaRepository,
         ISolicitudRepository solicitudRepository
     ) : BaseCommandHandler<ReusarSolicitudCommand, string?>(mapper)
 {
-    private readonly IReusarSolicitudUseCase _usecase = usecase;
+    private readonly ISolicitudReusoService _usecase = usecase;
     private readonly IPlantillaRepository _plantillaRepository = plantillaRepository;
     private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
 

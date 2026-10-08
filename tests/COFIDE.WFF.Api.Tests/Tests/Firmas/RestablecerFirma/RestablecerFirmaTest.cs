@@ -1,6 +1,7 @@
 using COFIDE.WFF.Api.Constants;
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Controllers.v1;
+using COFIDE.WFF.Api.Request.Firmas;
 using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Features.Firmas.Commands.RestablecerDocumentoFirmado;
 using FluentAssertions;
@@ -8,6 +9,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Tests.Tests.Firmas.RestablecerFirma;
 public class RestablecerFirmaTest
 {
@@ -16,7 +18,7 @@ public class RestablecerFirmaTest
     public async Task ReestablecerDocumentosFirmados_Debe_Enviar_Command_Y_Retornar_ResponseDto_Ok()
     {
         var ids = new List<long> { 10, 20 };
-        var request = new RestablecerDocumentoFirmadoRequest(ids);
+        var request = new RestablecerFirmasRequest { IdDetalleFirma = ids };
         var mediatorMock = new Mock<IMediator>();
         mediatorMock
         .Setup(m => m.Send(
@@ -36,7 +38,7 @@ public class RestablecerFirmaTest
 
         };
 
-        var actionResult = await controller.ReestablecerDocumentosFirmados(request);
+        var actionResult = await controller.ReestablecerDocumentosFirmados(request, CancellationToken.None);
 
         var ok = actionResult.Result.Should().BeOfType<OkObjectResult>().Subject;
         var body = ok.Value.Should().BeOfType<ResponseDto<string?>>().Subject;

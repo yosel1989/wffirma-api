@@ -1,9 +1,11 @@
 ﻿using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Application.Common.Constants;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoCreadoEventHandler(
@@ -30,7 +32,7 @@ public class EnviarCorreoCreadoEventHandler(
             var domainEvent = notification.DomainEvent;
 
             var templateCorreo = await _formatoNotificacionRepository
-                .ObtenerPorCodigo("SOLICITUD_ENVIO", cancellationToken)
+                .ObtenerPorCodigo(CodigosPlantillaCorreo.SolicitudEnvio, cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_ENVIO no configurado.");
 
             var solicitud = await _solicitudQueryRepository
@@ -46,7 +48,7 @@ public class EnviarCorreoCreadoEventHandler(
                 solicitud.TipoOperacion,
                 solicitud.AsuntoSolicitud,
                 solicitud.FechaCreacion,
-                Anio = DateTime.Now.Year.ToString(),
+                Anio = HoraSistema.Ahora.Year.ToString(),
                 LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/editar?id={domainEvent.IdSolicitud}"
             };
 

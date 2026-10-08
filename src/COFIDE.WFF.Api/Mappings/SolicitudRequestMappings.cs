@@ -5,6 +5,11 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
 
 namespace COFIDE.WFF.Api.Mappings
 {
@@ -77,6 +82,41 @@ namespace COFIDE.WFF.Api.Mappings
 
         public static ValidarDocumentoFirmadoQuery ToQuery(this ValidarDocumentoFirmadoRequest r) =>
             new(r.Archivos.Select(a => a.ToArchivoEntrada()).ToList());
-    }
 
+        public static ObtenerSolicitudPaginadoQuery ToQuery(this SolicitudPaginadoRequest r) =>
+            new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Tiposolicitud,
+                r.Subtiposolicitud, r.TipoOperacion, r.AprobadorActual, r.Estado, r.Codigosolicitud, r.Asunto,
+                r.Referencia, r.Urgente, r.Usuario, r.Usuariodepartamento, r.IncluirResumen)
+            {
+                PageNumber = r.PageNumber,
+                PageSize = r.PageSize,
+                Sorts = r.Sorts
+            };
+
+        public static ObtenerBandejaEntradaQuery ToQuery(this BandejaEntradaRequest r) =>
+            new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Tiposolicitud,
+                r.Subtiposolicitud, r.TipoOperacion, r.Codigosolicitud, r.Asunto, r.Referencia, r.Urgente,
+                r.IncluirResumen)
+            {
+                PageNumber = r.PageNumber,
+                PageSize = r.PageSize,
+                Sorts = r.Sorts
+            };
+
+        public static ObtenerDocumentoBloqueadoPaginadoQuery ToQuery(this DocumentoBloqueadoPaginadoRequest r) =>
+            new(r.FechaInicio, r.FechaFin, r.NombreArchivo, r.CodigoSolicitud, r.FirmanteActual)
+            {
+                PageNumber = r.PageNumber,
+                PageSize = r.PageSize,
+                Sorts = r.Sorts
+            };
+
+        public static DescargarReporteSolicitudExcelQuery ToQuery(this ReporteSolicitudRequest r) =>
+            new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Tiposolicitud,
+                r.Subtiposolicitud, r.TipoOperacion, r.AprobadorActual, r.Estado, r.Codigosolicitud, r.Asunto,
+                r.Referencia, r.Urgente, r.Usuario, r.Usuariodepartamento);
+
+        public static DetectarCodigoQuery ToQuery(this DetectarCodigosReferenciaRequest r) =>
+            new(r.IdSolicitud, r.CodigosReferencia);
+    }
 }

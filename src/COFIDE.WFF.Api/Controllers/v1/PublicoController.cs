@@ -4,7 +4,7 @@ using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Application.Common.Enums;
 using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Features.Publico.DescargaDocumento;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Exceptions;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

@@ -2,6 +2,7 @@
 using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 public class SolicitudComentario : AuditableEntity<long>
 {
@@ -25,7 +26,7 @@ public class SolicitudComentario : AuditableEntity<long>
         Id = idSolicitudComentario;
         IdUsuario = idUsuario;
         Comentario = comentario;
-        FechaComentario = DateTime.Now;
+        FechaComentario = HoraSistema.Ahora;
         Estado = true;
     }
 

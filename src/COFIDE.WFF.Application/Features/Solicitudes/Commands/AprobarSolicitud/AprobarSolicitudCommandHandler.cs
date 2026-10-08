@@ -1,14 +1,14 @@
 ﻿using AutoMapper;
 using COFIDE.WFF.Application.Common.Handlers;
-using COFIDE.WFF.Application.Features.Solicitudes.Ports.In;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Commands.AprobarSolicitud;
 
 public sealed class AprobarSolicitudCommandHandler(
         IMapper mapper,
-        IRevisarSolicitudUseCase usecase
+        ISolicitudRevisionService usecase
     ) : BaseCommandHandler<AprobarSolicitudCommand, string?>(mapper)
 {
-    private readonly IRevisarSolicitudUseCase _usecase = usecase;
+    private readonly ISolicitudRevisionService _usecase = usecase;
 
     public override async Task<string?> Handle(AprobarSolicitudCommand cmd, CancellationToken cancellationToken)
     {

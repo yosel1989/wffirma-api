@@ -3,6 +3,7 @@ using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.Common;
 
 public abstract class BaseApiController : ControllerBase
@@ -19,9 +20,9 @@ public abstract class BaseApiController : ControllerBase
     /// <summary>
     /// Envía un request a MediatR y devuelve un ResponseDto con manejo automático de códigos de respuesta.
     /// </summary>
-    protected async Task<ActionResult<ResponseDto<T>>> Send<T>(IRequest<ResponseDto<T>> request)
+    protected async Task<ActionResult<ResponseDto<T>>> Send<T>(IRequest<ResponseDto<T>> request, CancellationToken cancellationToken = default)
     {
-        var dto = await _mediator.Send(request);
+        var dto = await _mediator.Send(request, cancellationToken);
 
         // Aseguramos que el DTO tenga CorrelationId
         dto.CorrelationId ??= _correlationContext.CorrelationId;

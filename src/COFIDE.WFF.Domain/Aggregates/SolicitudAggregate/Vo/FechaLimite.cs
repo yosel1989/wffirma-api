@@ -1,6 +1,7 @@
 ﻿using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors;
 using COFIDE.WFF.Domain.Common.ValueObjects;
 using COFIDE.WFF.Domain.Exceptions;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Vo;
 public sealed class FechaLimite : ValueObject
 {
@@ -15,17 +16,17 @@ public sealed class FechaLimite : ValueObject
 
     public static FechaLimite Crear(DateTime valor)
     {
-        if (valor < DateTime.Now)
+        if (valor < HoraSistema.Ahora)
             throw new DomainException(SolicitudErrors.FechaLimiteFuturo);
 
         return new FechaLimite(valor);
     }
 
     public bool EstaVencida()
-        => Valor < DateTime.Now;
+        => Valor < HoraSistema.Ahora;
 
     public bool EstaPorVencer(TimeSpan margen)
-        => Valor - DateTime.Now <= margen;
+        => Valor - HoraSistema.Ahora <= margen;
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

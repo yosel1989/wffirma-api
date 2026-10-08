@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net.Mime;
 
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 [ApiController]
@@ -36,11 +37,11 @@ public class FirmaController : BaseApiController
         Description = DescriptionSwagger.FirmaController.FirmaInternaPdf.Description,
         OperationId = "FirmaInternaPdf"
         )]
-    public async Task<ActionResult<FirmaInternaResponseDto>> FirmaInternaPdf([FromRoute] long id, [FromBody] FirmaInternaPdfRequest request)
+    public async Task<ActionResult<FirmaInternaResponseDto>> FirmaInternaPdf([FromRoute] long id, [FromBody] FirmarDocumentoRequest request, CancellationToken cancellationToken)
     {
-        var command = new FirmaInternaPdfCommand(id, request.idSolicitudDocumento);
+        var command = request.ToCommand(id);
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         var response = ResponseDto<FirmaInternaResponseDto?>.Ok(
             result,
@@ -57,11 +58,11 @@ public class FirmaController : BaseApiController
          Description = DescriptionSwagger.FirmaController.FirmaInternaZip.Description,
          OperationId = "FirmaInternaZip"
          )]
-    public async Task<ActionResult<FirmaInternaResponseDto>> FirmaInternaZip([FromRoute] long id, [FromBody] FirmaInternaZipRequest request)
+    public async Task<ActionResult<FirmaInternaResponseDto>> FirmaInternaZip([FromRoute] long id, [FromBody] FirmarDocumentosZipRequest request, CancellationToken cancellationToken)
     {
-        var command = new FirmaInternaZipCommand(id, request.Documentos);
+        var command = request.ToCommand(id);
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         var response = ResponseDto<FirmaInternaResponseDto?>.Ok(
             result,
@@ -78,10 +79,9 @@ public class FirmaController : BaseApiController
          Description = DescriptionSwagger.FirmaController.FirmaInternaResultado.Description,
          OperationId = "FirmaInternaResultado"
          )]
-    public async Task<ActionResult<string>> FirmaInternaResultado(
-    [FromBody] FirmaInternaWebHookCommand cmd)
+    public async Task<ActionResult<string>> FirmaInternaResultado([FromBody] FirmaInternaResultadoRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(cmd);
+        var result = await _mediator.Send(request.ToCommand(), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -112,11 +112,11 @@ public class FirmaController : BaseApiController
 
 
     [HttpPost("solicitudes/{id}/firma/detalle/validaciones")]
-    public async Task<ActionResult<ValidarEstadoDetalleFirmaDto>> ValidarDetalleFirma([FromRoute] long id, [FromBody] ValidarEstadoDetalleFirmaRequest request)
+    public async Task<ActionResult<ValidarEstadoDetalleFirmaDto>> ValidarDetalleFirma([FromRoute] long id, [FromBody] ValidarDetallesFirmaRequest request, CancellationToken cancellationToken)
     {
-        var command = new ValidarEstadoDetalleFirmaCommand(id, request.Detalles);
+        var command = request.ToCommand(id);
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         var response = ResponseDto<ValidarEstadoDetalleFirmaDto?>.Ok(
             result,
@@ -127,11 +127,11 @@ public class FirmaController : BaseApiController
     }
 
     [HttpPost("solicitudes/firma/detalle/restablecer-firmados")]
-    public async Task<ActionResult<string>> ReestablecerDocumentosFirmados([FromBody] RestablecerDocumentoFirmadoRequest request)
+    public async Task<ActionResult<string>> ReestablecerDocumentosFirmados([FromBody] RestablecerFirmasRequest request, CancellationToken cancellationToken)
     {
-        var command = new RestablecerDocumentoFirmadoCommand(request.idDetalleFirma);
+        var command = request.ToCommand();
 
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
