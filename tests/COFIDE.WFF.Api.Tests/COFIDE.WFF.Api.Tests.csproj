@@ -28,4 +28,14 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Resources\Solicitudes\" />
+    <Folder Include="Support\" />
+    <Folder Include="Tests\Solicitudes\" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Update="Resources\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
 </Project>
