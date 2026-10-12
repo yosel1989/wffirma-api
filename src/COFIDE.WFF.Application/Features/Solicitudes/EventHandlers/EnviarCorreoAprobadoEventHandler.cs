@@ -73,7 +73,7 @@ public class EnviarCorreoAprobadoEventHandler(
                 var linkDescarga = $"{baseBackUrl.TrimEnd('/')}/API-WFF/api/v1/public/{enlaceDocumento.Token}";
 
                 LinkDescargaDocumentos =
-                    $"Si desea descargue los documentos, estarán habilitados por {vigenciaDias} día(s): " +
+                    $"Si desea descargar los documentos, estarán habilitados por {vigenciaDias} día(s): " +
                     $"<a href='{linkDescarga}' style='color:#004F91; text-decoration:underline;'>Descarga</a>" +
                     "<br/>";
             }
