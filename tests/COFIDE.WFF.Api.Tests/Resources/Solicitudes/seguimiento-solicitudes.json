@@ -1,0 +1,82 @@
+[
+  {
+    "caso": "Listado con resumen",
+    "pageNumber": 2,
+    "pageSize": 10,
+    "searchTerm": "ana",
+    "consulta": {
+      "fechainicio": "2026-01-01",
+      "fechafin": "2026-01-31",
+      "gerencia": [ 1 ],
+      "departamento": [ 2 ],
+      "solicitante": [ 10 ],
+      "tiposolicitud": [ 3 ],
+      "subtiposolicitud": [ 4 ],
+      "tipoOperacion": [ 5 ],
+      "asunto": "Contrato",
+      "referencia": "REF",
+      "estado": [ 2 ],
+      "firmante": [ 20 ],
+      "codigosolicitud": "GTI-SOL",
+      "encurso": true,
+      "aprobada": false,
+      "rechazada": null,
+      "incluirResumen": true
+    },
+    "respuesta": {
+      "total": 12,
+      "enCurso": 5,
+      "aprobado": 4,
+      "rechazado": 3,
+      "items": [
+        { "idSolicitud": 8, "codigoSolicitud": "GTI-SOL-00000008-2026", "estado": "En curso" }
+      ],
+      "pageNumber": 2,
+      "pageSize": 10,
+      "totalCount": 12
+    },
+    "esperado": {
+      "success": true,
+      "message": "Operación exitosa"
+    }
+  },
+  {
+    "caso": "Listado vacio",
+    "pageNumber": 1,
+    "pageSize": 10,
+    "searchTerm": null,
+    "consulta": {
+      "fechainicio": null,
+      "fechafin": null,
+      "gerencia": null,
+      "departamento": null,
+      "solicitante": null,
+      "tiposolicitud": null,
+      "subtiposolicitud": null,
+      "tipoOperacion": null,
+      "asunto": null,
+      "referencia": null,
+      "estado": null,
+      "firmante": null,
+      "codigosolicitud": null,
+      "encurso": null,
+      "aprobada": null,
+      "rechazada": null,
+      "incluirResumen": false
+    },
+    "respuesta": {
+      "total": 0,
+      "enCurso": 0,
+      "aprobado": 0,
+      "rechazado": 0,
+      "items": [],
+      "pageNumber": 1,
+      "pageSize": 10,
+      "totalCount": 0
+    },
+    "esperado": {
+      "success": true,
+      "message": "Operación exitosa"
+    }
+  }
+]
