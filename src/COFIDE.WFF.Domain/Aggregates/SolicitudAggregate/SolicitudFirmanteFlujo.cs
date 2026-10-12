@@ -14,6 +14,9 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
     public DateTime? FechaRevision { get; private set; }
     #endregion
 
+    private readonly List<HistorialRevision> _historialRevision = [];
+    public IReadOnlyCollection<HistorialRevision> HistRevision => _historialRevision;
+
     #region Relaciones
     public FirmanteFlujo FirmanteFlujo { get; private set; } = default!;
     public SolicitudPlantilla SolicitudPlantilla { get; private set; } = default!;
@@ -129,6 +132,24 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
     public void MarcarComoNuevo()
     {
         EsNuevo = true;
+    }
+
+    public void AgregarHistorialRevision(long idHistorialRevision, bool RevAprobado, DateTime? FechaRevision,int ciclo)
+    {
+        var historialRevision = HistorialRevision.Crear(
+            idHistorialRevision,
+            this.Id,
+            this.IdFirmanteFlujo,
+            this.IdSolicitudPlantilla,
+            this.IdPlantillaEtapa,
+            RevAprobado,
+            FechaRevision,
+            ciclo
+        );
+
+        historialRevision.MarcarComoNuevo();
+
+        _historialRevision.Add(historialRevision);
     }
 
     #endregion

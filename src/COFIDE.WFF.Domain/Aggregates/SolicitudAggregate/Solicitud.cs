@@ -444,7 +444,7 @@ public class Solicitud : AuditableEntity<long>
 
     #region Aprobacion
 
-    public void AprobarFirmante(long usuarioAccionId, string nombreAprobador)
+    public void AprobarFirmante(long usuarioAccionId, string nombreAprobador, long idHistorialRevision, int ciclo)
     {
         ValidarUsuarioFirmoDocumento(usuarioAccionId);
 
@@ -456,6 +456,8 @@ public class Solicitud : AuditableEntity<long>
             throw new DomainException(SolicitudErrors.NoPuedeAprobarEstaEtapaSolicitud);
 
         firmante.Aprobar();
+
+        firmante.AgregarHistorialRevision(idHistorialRevision, firmante.RevAprobado, firmante.FechaRevision, ciclo);
 
         if (TodoFlujoFirmaCompleto())
         {
@@ -541,7 +543,7 @@ public class Solicitud : AuditableEntity<long>
 
     #region Rechazo
     public void RechazarSolicitud(long usuarioAccionId, string nombreAprobador,
-        string motivoRechazo, long? idPlantillaEtapa, string nombreArea)
+        string motivoRechazo, long? idPlantillaEtapa, string nombreArea, long idHistorialRevision, int ciclo)
     {
         if (EstadoSolicitud != ValueObject.EstadoSolicitud.EnCurso)
             throw new DomainException(SolicitudErrors.RechazarSoloEnCurso);
@@ -563,8 +565,11 @@ public class Solicitud : AuditableEntity<long>
         {
             doc.RechazarFirmas();
         }
+        var firmante = SolicitudPlantilla.ObtenerFirmanteActivo(usuarioAccionId);
 
         SolicitudPlantilla.ResetearFirmantes();
+        firmante.AgregarHistorialRevision(idHistorialRevision, false, FechaAccion,ciclo);
+
 
         AddDomainEvent(new SolicitudEstadoCambiadoDomainEvent(this.Id, estadoAnterior, IdUsuarioAccion, "Por rechazo de la solicitud"));
         AddDomainEvent(new SolicitudEventoRegistradoDomainEvent(this.Id, ValueObjects.TipoEvento.AprovalRejected.Codigo, usuarioAccionId, null, idPlantillaEtapa, nombreArea, null));

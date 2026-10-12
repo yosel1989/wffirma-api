@@ -1,46 +1,143 @@
 ﻿using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
+using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Vo;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
 using VO = COFIDE.WFF.Domain.ValueObjects;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
 {
     public partial class SolicitudQueryRepository
     {
-
-        private static readonly Expression<Func<Solicitud, SeguimientoSolicitudesDto>> ProyeccionListadoSeguimiento =
-        s => new SeguimientoSolicitudesDto
+        private static IQueryable<SeguimientoSolicitudesDto> ProyectarListadoSeguimiento(IQueryable<Solicitud> query)
         {
-            IdSolicitud = s.Id,
-            CodigoSolicitud = s.CodigoSolicitud,
-            TipoSolicitud = s.TipoSolicitud.NombreTipoSolicitud,
-            SubTipoSolicitud = s.SubTipoSolicitud.NombreSubTipoSolicitud,
-            Estado = s.EstadoSolicitud.Nombre,
-            FechaCreacion = s.FechaSolicitud,
-            Urgente = s.EsUrgente ? "Sí" : "No",
-            Firmantes = s.SolicitudPlantilla.FirmantesFlujo
-                                .Where(sf => sf.Estado && sf.FirmanteFlujo.Estado)
-                                .OrderBy(sf => sf.FirmanteFlujo.PlantillaEtapa.OrdenEtapa)
-                                .Select(sf => new
-                                {
-                                    NombreCompleto = ((sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Contains(" ")
-                                                            ? sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Substring(
-                                                                0, sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.IndexOf(" "))
-                                                            : sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres)
-                                                        + " " +
-                                                        (sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.ApellidoPaterno ?? "")
-                                    ).Trim(),
-                                    Estado = (sf.FirmanteFlujo.Estado && sf.RevAprobado && sf.FechaRevision != null) ? "APROBADO"
-                                                : (sf.FirmanteFlujo.Estado && !sf.RevAprobado && sf.FechaRevision == null && s.IdEstadoSolicitud == VO.EstadoSolicitud.Rechazado.Codigo) ? "RECHAZADO"
-                                                    : "PENDIENTE"
-                                })
-                                .Select(x => new FirmantesDto { Nombre = x.NombreCompleto, Estado = x.Estado })
-                                .ToList()
-        };
+            return query
+                .Select(s => new
+                {
+                    s.Id,
+                    s.CodigoSolicitud,
+                    TipoSolicitud = s.TipoSolicitud.NombreTipoSolicitud,
+                    SubTipoSolicitud = s.SubTipoSolicitud.NombreSubTipoSolicitud,
+                    Estado = s.EstadoSolicitud.Nombre,
+                    FechaCreacion = s.FechaSolicitud,
+                    Urgente = s.EsUrgente ? "Sí" : "No",
+                    IdEstado = s.IdEstadoSolicitud,
+                    CicloActual = s.SolicitudPlantilla.FirmantesFlujo
+                        .SelectMany(f => f.HistRevision)
+                        .Max(h => (int?)h.Ciclo),
+                    Firmantes = s.SolicitudPlantilla.FirmantesFlujo
+                        .Where(sf => sf.Estado && sf.FirmanteFlujo.Estado)
+                        .OrderBy(sf => sf.FirmanteFlujo.PlantillaEtapa.OrdenEtapa)
+                        .Select(sf => new
+                        {
+                            sf.FirmanteFlujo.PlantillaEtapa.OrdenEtapa,
+                            CodigoTipoEtapa = sf.FirmanteFlujo.PlantillaEtapa.ParametroTipoEtapa.CodigoDetalle,
+                            Nombre = (
+                                (sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Contains(" ")
+                                    ? sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Substring(
+                                        0, sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.IndexOf(" "))
+                                    : sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres)
+                                + " " + (sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.ApellidoPaterno ?? "")
+                            ).Trim(),
+                            sf.RevAprobado,
+                            sf.FechaRevision,
+                            UltimoCiclo = sf.HistRevision
+                                .OrderByDescending(h => h.Id)
+                                .Select(h => (int?)h.Ciclo)
+                                .FirstOrDefault(),
+                            UltimoAprobado = sf.HistRevision
+                                .OrderByDescending(h => h.Id)
+                                .Select(h => (bool?)h.RevAprobado)
+                                .FirstOrDefault()
+                        })
+                        .ToList()
+                })
+                .Select(x => new SeguimientoSolicitudesDto
+                {
+                    IdSolicitud = x.Id,
+                    CodigoSolicitud = x.CodigoSolicitud,
+                    TipoSolicitud = x.TipoSolicitud,
+                    SubTipoSolicitud = x.SubTipoSolicitud,
+                    Estado = x.Estado,
+                    FechaCreacion = x.FechaCreacion,
+                    Urgente = x.Urgente,
+                    Firmantes = x.Firmantes
+                        .Select(f => new FirmantesDto
+                        {
+                            OrdenEtapa = f.OrdenEtapa,
+                            CodigoTipoEtapa = f.CodigoTipoEtapa,
+                            Nombre = f.Nombre,
+                            Estado =
+                                f.UltimoCiclo != null
+                                && f.UltimoCiclo == x.CicloActual
+                                && f.UltimoAprobado == true
+                                && ((f.RevAprobado && f.FechaRevision != null
+                                        && (x.IdEstado == VO.EstadoSolicitud.Aprobado.Codigo
+                                            || x.IdEstado == VO.EstadoSolicitud.EnCurso.Codigo))
+                                    || ((f.RevAprobado == false || f.FechaRevision == null)
+                                        && x.IdEstado == VO.EstadoSolicitud.Rechazado.Codigo))
+                                    ? "APROBADO"
+                                    : f.UltimoCiclo != null
+                                      && f.UltimoCiclo == x.CicloActual
+                                      && f.UltimoAprobado == false
+                                      && (f.RevAprobado == false || f.FechaRevision == null)
+                                      && x.IdEstado == VO.EstadoSolicitud.Rechazado.Codigo
+                                        ? "RECHAZADO"
+                                        : "PENDIENTE"
+                        })
+                        .ToList()
+                });
+        }
+
+        private static List<FirmantesDto> AgruparFirmantesSeguimiento(List<FirmantesDto>? firmantes)
+        {
+            if (firmantes is null || firmantes.Count == 0)
+                return [];
+
+            var resultado = new List<FirmantesDto>();
+            var indice = 0;
+
+            while (indice < firmantes.Count)
+            {
+                var actual = firmantes[indice];
+                var esParalelo = actual.CodigoTipoEtapa == TipoEtapa.Paralelo.Codigo;
+
+                if (!esParalelo)
+                {
+                    resultado.Add(new FirmantesDto
+                    {
+                        Nombre = actual.Nombre,
+                        Estado = actual.Estado
+                    });
+                    indice++;
+                    continue;
+                }
+
+                var paralelos = new List<FirmantesParaleloDto>();
+                var orden = actual.OrdenEtapa;
+
+                while (indice < firmantes.Count
+                       && firmantes[indice].CodigoTipoEtapa == TipoEtapa.Paralelo.Codigo
+                       && firmantes[indice].OrdenEtapa == orden)
+                {
+                    paralelos.Add(new FirmantesParaleloDto
+                    {
+                        Nombre = firmantes[indice].Nombre,
+                        Estado = firmantes[indice].Estado
+                    });
+                    indice++;
+                }
+
+                resultado.Add(new FirmantesDto
+                {
+                    Paralelo = paralelos
+                });
+            }
+
+            return resultado;
+        }
 
         private static IQueryable<Solicitud> AplicarFiltrosPrincipalesSeguimiento(
     IQueryable<Solicitud> query,
@@ -302,10 +399,9 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                 aprobada,
                 rechazada);
 
-            var projectedQuery = querygrilla
-               .OrderByDescending(s => s.EsUrgente)
-               .ThenBy(s => s.FechaSolicitud)
-               .Select(ProyeccionListadoSeguimiento);
+            var projectedQuery = ProyectarListadoSeguimiento(querygrilla
+                                                                    .OrderByDescending(s => s.EsUrgente)
+                                                                    .ThenBy(s => s.FechaSolicitud));
 
             if (paginationParams.Sorts?.Count > 0)
             {
@@ -322,7 +418,8 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                     .Take(paginationParams.PageSize)
                     .ToListAsync(cancellationToken);
 
-
+            foreach (var solicitud in data)
+                solicitud.Firmantes = AgruparFirmantesSeguimiento(solicitud.Firmantes);
 
             var pagedItems = new PagedResult<SeguimientoSolicitudesDto, SeguimientoSolicitudesResumenDto>(
               data,

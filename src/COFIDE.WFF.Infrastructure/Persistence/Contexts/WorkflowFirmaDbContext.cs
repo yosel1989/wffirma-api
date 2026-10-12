@@ -36,6 +36,7 @@ public class WorkflowFirmaDbContext : DbContext
     public DbSet<EstadoDocumento> EstadoDocumento => Set<EstadoDocumento>();
     public DbSet<EstadoSolicitud> EstadoSolicitud => Set<EstadoSolicitud>();
     public DbSet<EnlaceDescargaTemporal> EnlaceDescargaTemporales => Set<EnlaceDescargaTemporal>();
+    public DbSet<HistorialRevision> HistorialRevisiones => Set<HistorialRevision>();
 
 
     /// <summary>
@@ -97,6 +98,7 @@ public class WorkflowFirmaDbContext : DbContext
         modelBuilder.Entity<SolicitudCorreo>().Ignore(e => e.EsNuevo);
         modelBuilder.Entity<MovimientoSolicitud>().Ignore(e => e.EsNuevo);
         modelBuilder.Entity<SolicitudEvento>().Ignore(e => e.EsNuevo);
+        modelBuilder.Entity<HistorialRevision>().Ignore(e => e.EsNuevo);
 
         modelBuilder.Entity<Plantilla>().Ignore(e => e.EsNuevo);
         modelBuilder.Entity<PlantillaEtapa>().Ignore(e => e.EsNuevo);

@@ -1,22 +1,10 @@
-﻿using COFIDE.WFF.Application.Features.Publico.DescargaDocumento;
-using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
+﻿using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Common.Abstractions;
-using COFIDE.WFF.Application.Common.Pageds;
-using COFIDE.WFF.Domain.Entities;
-using COFIDE.WFF.Domain.ValueObjects;
 using COFIDE.WFF.Infrastructure.Adapters.Repositories.Base;
-using COFIDE.WFF.Infrastructure.Extensions;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Data;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
-using VO = COFIDE.WFF.Domain.ValueObjects;
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories;
 
 public class SolicitudRepository(
@@ -274,6 +262,14 @@ public class SolicitudRepository(
                     firmanteFlujo.EsNuevo
                         ? EntityState.Added
                         : EntityState.Modified;
+
+                foreach (var historialRevision in firmanteFlujo.HistRevision)
+                {
+                    _context.Entry(historialRevision).State =
+                    historialRevision.EsNuevo
+                        ? EntityState.Added
+                        : EntityState.Modified;
+                }
             }
         }
 
@@ -380,5 +376,28 @@ public class SolicitudRepository(
 
 
 
+    #endregion
+
+    #region HISTORIAL REVISIONES
+    public async Task<int> ObtenerSiguienteCicloAsync(long idSolicitudPlantilla, CancellationToken cancellationToken)
+    {
+        var maxCiclo = await _context.Set<HistorialRevision>()
+        .Where(x => x.IdSolicitudPlantilla == idSolicitudPlantilla)
+        .MaxAsync(x => (int?)x.Ciclo, cancellationToken) ?? 0;
+
+        if (maxCiclo == 0)
+            return 1;
+
+        var aprobaciones = await _context.Set<HistorialRevision>()
+            .AsNoTracking()
+            .Where(x => x.IdSolicitudPlantilla == idSolicitudPlantilla
+                            && x.Ciclo == maxCiclo)
+            .Select(x => x.RevAprobado)
+            .ToListAsync(cancellationToken);
+
+        var cicloCerrado = aprobaciones.Any(aprobado => !aprobado);
+
+        return cicloCerrado ? maxCiclo + 1 : maxCiclo;
+    }
     #endregion
 }
