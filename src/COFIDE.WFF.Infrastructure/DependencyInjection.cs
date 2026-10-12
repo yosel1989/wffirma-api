@@ -32,6 +32,7 @@ using Microsoft.Extensions.Options;
 
 using COFIDE.WFF.Infrastructure.Eventos;
 using COFIDE.WFF.Infrastructure.Configuracion.Tiempo;
+using COFIDE.WFF.Infrastructure.Adapters.Services.Pdf.FormatoSolicitud;
 namespace COFIDE.WFF.Infrastructure;
 public static class DependencyInjection
 {
@@ -189,6 +190,7 @@ public static class DependencyInjection
         services.AddScoped<ISolicitudExcelReportService, SolicitudExcelReportService>();
         services.AddScoped<IPdfContentHashService, PdfContentHashService>();
         services.AddScoped<IOrientacionPaginaPdfService, OrientacionPaginaPdfService>();
+        services.AddScoped<ISolicitudPdfGenerator, SolicitudPdfGenerator>();
 
         // Servicio para renderizar HTml
         services.AddScoped<IHtmlTemplateRenderer, HtmlTemplateRenderer>();

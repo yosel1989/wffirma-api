@@ -5,26 +5,21 @@ using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Mappings;
 using COFIDE.WFF.Api.Request.Solicitudes;
-using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqueado;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.AnularSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.AprobarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.EnviarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumentoZip;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSustento;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSustentoZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitudZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
@@ -35,7 +30,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net.Mime;
-using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 
@@ -365,6 +359,19 @@ public class SolicitudController : BaseApiController
     }
 
    
+
+   [HttpGet("{id}/pdf")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseDto<string>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DescargarPdf(long id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerarPdfSolicitudQuery(id), cancellationToken);
+
+        if (result is null)
+            return NotFound(ResponseDto<string>.Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
+
+        return File(result.Archivo, result.ContentType, result.NombreArchivo);
+    }
 
     [HttpGet("{id}/descargar-zip")]
     public async Task<IActionResult> DescargarZip(long id, CancellationToken cancellationToken)
