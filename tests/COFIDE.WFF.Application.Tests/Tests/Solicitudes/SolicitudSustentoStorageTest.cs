@@ -1,5 +1,5 @@
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using FluentAssertions;

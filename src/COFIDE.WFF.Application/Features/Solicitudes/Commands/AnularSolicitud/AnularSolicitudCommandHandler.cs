@@ -10,13 +10,11 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Commands.AnularSolicitud;
 public sealed class AnularSolicitudCommandHandler(
         IMapper mapper,
         ICurrentUserService currentUser,
-        ISolicitudRepository solicitudRepository,
-        ISolicitudAnulacionService solicitudAnulacionService
+        ISolicitudRepository solicitudRepository
     ) : BaseCommandHandler<AnularSolicitudCommand, string>(mapper)
 {
     private readonly ICurrentUserService _currentUser = currentUser;
     private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
-    private readonly ISolicitudAnulacionService _solicitudAnulacionService = solicitudAnulacionService;
 
     public override async Task<string> Handle(
     AnularSolicitudCommand request,
@@ -37,10 +35,7 @@ public sealed class AnularSolicitudCommandHandler(
             throw new ValidacionAplicacion.ApplicationException(
                 new ApplicationError("", "Solo puede anular el usuario que creó la solicitud."));
 
-        await _solicitudAnulacionService.AnularSolicitudAsync(
-            solicitud,
-            idUsuario,
-            cancellationToken);
+        solicitud.Anular(idUsuario);
         return solicitud.CodigoSolicitud;
 
     }

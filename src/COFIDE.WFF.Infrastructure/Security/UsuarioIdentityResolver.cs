@@ -57,11 +57,6 @@ public class UsuarioIdentityResolver(
         return snapshot;
     }
 
-    private static RolUsuario MapearRol(string codigo) => codigo switch
-    {
-        "ADMIN" => RolUsuario.Administrador,
-        "COORD" => RolUsuario.Coordinador,
-        "SOLAPR" => RolUsuario.SolicitanteAprobador,
-        _ => throw new Exception($"Rol desconocido: {codigo}")
-    };
+    private static RolUsuario MapearRol(string codigo) =>
+        RolUsuarioCodigo.Desde(codigo) ?? throw new Exception($"Rol desconocido: {codigo}");
 }

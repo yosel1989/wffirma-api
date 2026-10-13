@@ -12,6 +12,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
 
+using COFIDE.WFF.Application.Common.Ports.Out;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 [ApiController]
@@ -26,9 +27,9 @@ public class ConfiguracionController : BaseApiController
    
     [HttpGet("estadoDocumento/combo-estadoDocumento")]
     [ProducesResponseType(typeof(ResponseDto<List<EstadoDocumentosComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<EstadoDocumentosComboDto>>>> ObtenerCombosEstadoDocumentos()
+    public async Task<ActionResult<ResponseDto<List<EstadoDocumentosComboDto>>>> ObtenerCombosEstadoDocumentos(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerEstadoDocumentosComboQuery());
+        var result = await _mediator.Send(new ObtenerEstadoDocumentosComboQuery(), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<EstadoDocumentosComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -40,9 +41,9 @@ public class ConfiguracionController : BaseApiController
     /// <summary>Combo: Tipos de Solicitud filtrados por área y cargo del usuario</summary>
     [HttpGet("solicitudes/tipos")]
     [ProducesResponseType(typeof(ResponseDto<List<TipoSolicitudDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<TipoSolicitudDto>>>> GetTiposSolicitud()
+    public async Task<ActionResult<ResponseDto<List<TipoSolicitudDto>>>> GetTiposSolicitud(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerTipoSolicitudQuery());
+        var result = await _mediator.Send(new ObtenerTipoSolicitudQuery(), cancellationToken);
 
         if (result.Count == 0)
             return NotFound(ResponseDto<List<TipoSolicitudDto>>
@@ -55,9 +56,9 @@ public class ConfiguracionController : BaseApiController
     /// <summary>Combo: Subtipos de Solicitud filtrados por tipo de solicitud</summary>
     [HttpGet("solicitudes/tipos/{idTipoSolicitud}/subtipos")]
     [ProducesResponseType(typeof(ResponseDto<List<SubTipoSolicitudDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<SubTipoSolicitudDto>>>> GetSubtiposSolicitud(long idTipoSolicitud)
+    public async Task<ActionResult<ResponseDto<List<SubTipoSolicitudDto>>>> GetSubtiposSolicitud(long idTipoSolicitud, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerSubTipoSolicitudQuery(idTipoSolicitud));
+        var result = await _mediator.Send(new ObtenerSubTipoSolicitudQuery(idTipoSolicitud), cancellationToken);
 
         if (result.Count == 0)
             return NotFound(ResponseDto<List<SubTipoSolicitudDto>>
@@ -69,9 +70,9 @@ public class ConfiguracionController : BaseApiController
     /// <summary>Combo: Tipos de Operación filtrados por área y cargo del usuario</summary>
     [HttpGet("solicitudes/tipos-operacion")]
     [ProducesResponseType(typeof(ResponseDto<List<TipoOperacionDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<TipoOperacionDto>>>> GetTipoOperacion()
+    public async Task<ActionResult<ResponseDto<List<TipoOperacionDto>>>> GetTipoOperacion(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerTipoOperacionQuery());
+        var result = await _mediator.Send(new ObtenerTipoOperacionQuery(), cancellationToken);
 
         if (result.Count == 0)
             return NotFound(ResponseDto<List<TipoOperacionDto>>

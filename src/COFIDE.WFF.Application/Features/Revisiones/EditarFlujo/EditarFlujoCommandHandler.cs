@@ -6,13 +6,13 @@ using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors;
 using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Factories;
+using COFIDE.WFF.Application.Common.Constants;
 namespace COFIDE.WFF.Application.Features.Revisiones.EditarFlujo;
 
 public sealed class EditarFlujoCommandHandler(
@@ -56,7 +56,7 @@ public sealed class EditarFlujoCommandHandler(
         ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.PlantillaInvalid);
 
         var tipoAprobadorDict = (await _parametroRepository
-                .ObtenerDetallePorCodigoParametro("TIPO_APROBADOR", cancellationToken))
+                .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoAprobador, cancellationToken))
                 .ToDictionary(
                     x => x.Id,
                     x => new ParametroDetalle(x.Id, x.Codigo, x.Valor)
@@ -90,7 +90,7 @@ public sealed class EditarFlujoCommandHandler(
         else
         {
             var tipoEtapaDict = (await _parametroRepository
-               .ObtenerDetallePorCodigoParametro("TIPO_ETAPA", cancellationToken))
+               .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoEtapa, cancellationToken))
                .ToDictionary(
                    x => x.Id,
                    x => new ParametroDetalle(x.Id, x.Codigo, x.Valor)
@@ -129,18 +129,10 @@ public sealed class EditarFlujoCommandHandler(
 
             ActualizarIdEtapasEnDiff(diff, etapaMap);
 
-            var estados = solicitud.ObtenerEstadoEtapas();
-
-            var ultimaEtapaBloqueada = estados
-                .Where(e => e.Bloqueado)
-                .Select(e => e.OrdenEtapa)
-                .DefaultIfEmpty(0)
-                .Max();
-
             var ordenesNuevos = new List<long>();
             ordenesNuevos.AddRange(diff.EtapasAgregadas.Select(x => x.Orden));
             ordenesNuevos.AddRange(diff.EtapasMovidas.Select(x => x.OrdenNuevo));
-            ValidarReordenamiento(ordenesNuevos, ultimaEtapaBloqueada);
+            solicitud.ValidarReordenamientoEtapas(ordenesNuevos);
             _workflowDomainService.ActualizarSolicitudFirmanteNoMaestroFlujo(solicitud.SolicitudPlantilla, plantilla, generarIdSolicitudFirmante, generarIdDetalleFirma, null);
 
             _plantillaRepository.GuardarFlujoPlantillaAsync(plantilla);
@@ -176,11 +168,5 @@ public sealed class EditarFlujoCommandHandler(
                 diff.FirmantesAgregados[i] = f with { IdEtapa = idEtapaReal };
             }
         }
-    }
-
-    private static void ValidarReordenamiento(IEnumerable<long> ordenesNuevos, long ultimaEtapaBloqueada)
-    {
-        if (ordenesNuevos.Any(o => o <= ultimaEtapaBloqueada))
-            throw new DomainException(SolicitudErrors.CrearEtapaPrevia);
     }
 }

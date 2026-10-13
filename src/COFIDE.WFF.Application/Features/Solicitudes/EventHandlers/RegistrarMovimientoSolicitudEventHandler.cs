@@ -1,11 +1,11 @@
 ﻿using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class RegistrarMovimientoSolicitudEventHandler(
@@ -39,7 +39,7 @@ public class RegistrarMovimientoSolicitudEventHandler(
                    id,
                    domainEvent.IdEstadoAnterior,
                    domainEvent.IdUsuarioEstado,
-                   DateTime.Now,
+                   HoraSistema.Ahora,
                    domainEvent.MotivoCambio);
 
             // Registramos el movimiento de solicitud

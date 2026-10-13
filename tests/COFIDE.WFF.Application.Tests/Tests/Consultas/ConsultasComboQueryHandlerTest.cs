@@ -8,7 +8,6 @@ using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaPdf;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaZip;
 using COFIDE.WFF.Application.Features.Firmas.Commands.RestablecerDocumentoFirmado;
 using COFIDE.WFF.Application.Features.Firmas.DTOs;
-using COFIDE.WFF.Application.Features.Firmas.Ports.In;
 using COFIDE.WFF.Application.Features.Jobs.ActualizarEstadoProgramado;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerListadoParametro;
@@ -286,48 +285,6 @@ public class ConsultasComboQueryHandlerTest
             .Handle(new CerrarSesionCommand(), CancellationToken.None);
 
         resultado.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task RestablecerDocumentoFirmado_Debe_Delegar_En_El_Caso_De_Uso()
-    {
-        var usecase = new Mock<IRestablecerDocumentoFirmadoUseCase>();
-        var cmd = new RestablecerDocumentoFirmadoCommand([1, 2]);
-        usecase.Setup(u => u.RestablecerFirma(cmd, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("GTI-SOL-00000001-2026");
-
-        var codigo = await new RestablecerDocumentoFirmadoHandler(_mapper.Object, usecase.Object)
-            .Handle(cmd, CancellationToken.None);
-
-        codigo.Should().Be("GTI-SOL-00000001-2026");
-    }
-
-    [Fact]
-    public async Task FirmaInternaPdf_Debe_Delegar_En_El_Caso_De_Uso()
-    {
-        var usecase = new Mock<IFirmaInternaPdfUseCase>();
-        var cmd = new FirmaInternaPdfCommand(1, 2);
-        var respuesta = new FirmaInternaResponseDto { CodigoProceso = "PROC-1" };
-        usecase.Setup(u => u.Firmar(cmd, It.IsAny<CancellationToken>())).ReturnsAsync(respuesta);
-
-        var resultado = await new FirmaInternaPdfCommandHandler(_mapper.Object, usecase.Object)
-            .Handle(cmd, CancellationToken.None);
-
-        resultado.Should().BeSameAs(respuesta);
-    }
-
-    [Fact]
-    public async Task FirmaInternaZip_Debe_Delegar_En_El_Caso_De_Uso()
-    {
-        var usecase = new Mock<IFirmaInternaZipUseCase>();
-        var cmd = new FirmaInternaZipCommand(1, [10, 11]);
-        var respuesta = new FirmaInternaResponseDto { CodigoProceso = "PROC-2" };
-        usecase.Setup(u => u.Firmar(cmd, It.IsAny<CancellationToken>())).ReturnsAsync(respuesta);
-
-        var resultado = await new FirmaInternaZipCommandHandler(_mapper.Object, usecase.Object)
-            .Handle(cmd, CancellationToken.None);
-
-        resultado.Should().BeSameAs(respuesta);
     }
 
     [Fact]

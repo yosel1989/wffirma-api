@@ -7,6 +7,7 @@ using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
 using COFIDE.WFF.Domain.ValueObjects;
 using ValueObject = COFIDE.WFF.Domain.ValueObjects;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 
 public class Solicitud : AuditableEntity<long>
@@ -89,12 +90,12 @@ public class Solicitud : AuditableEntity<long>
             IdTipoSolicitud = idTipoSolicitud,
             IdSubTipoSolicitud = idSubTipoSolicitud,
             IdUsuarioSolicitante = idUsuarioSolicitante,
-            FechaSolicitud = DateTime.Now,
+            FechaSolicitud = HoraSistema.Ahora,
             IdTipoOperacion = idTipoOperacion,
             IdUsuarioAccion = idUsuarioAccion,
             IdAreaSolicitud = idAreaSolicitud,
             IdAreaPadreSolicitud = idAreaPadreSolicitud,
-            FechaAccion = DateTime.Now,
+            FechaAccion = HoraSistema.Ahora,
             Asunto = asunto,
             Mensaje = mensaje,
             EsUrgente = esUrgente,
@@ -165,7 +166,7 @@ public class Solicitud : AuditableEntity<long>
         DefinirUrgencia(solicitudRequest.EsUrgente, solicitudRequest.FechaLimite);
 
         IdUsuarioAccion = usuarioActualId;
-        FechaAccion = DateTime.Now;
+        FechaAccion = HoraSistema.Ahora;
 
         var idsDocumentosConservar = solicitudRequest.DocumentoIdsConservar.ToHashSet();
         var idsSustentosConservar = solicitudRequest.SustentoIdsConservar.ToHashSet();
@@ -236,7 +237,7 @@ public class Solicitud : AuditableEntity<long>
 
         DefinirUrgencia(solicitudRequest.EsUrgente, solicitudRequest.FechaLimite);
         IdUsuarioAccion = usuarioActualId;
-        FechaAccion = DateTime.Now;
+        FechaAccion = HoraSistema.Ahora;
 
 
         var idsDocumentosConservar = solicitudRequest.DocumentoIdsConservar.ToHashSet();
@@ -303,7 +304,7 @@ public class Solicitud : AuditableEntity<long>
         PesoTotalDocu = pesoTotalDocu;
 
         CambiarEstado(ValueObject.EstadoSolicitud.EnCurso);
-        FechaAccion = DateTime.Now;
+        FechaAccion = HoraSistema.Ahora;
 
         AddDomainEvent(new SolicitudCreadaDomainEvent(this.Id, correoSolicitante));
         AddDomainEvent(new SolicitudPorAprobarFirmantesDomainEvent(this.Id));
@@ -534,7 +535,7 @@ public class Solicitud : AuditableEntity<long>
 
         CambiarEstado(ValueObject.EstadoSolicitud.Aprobado);
 
-        FechaAccion = DateTime.Now;
+        FechaAccion = HoraSistema.Ahora;
         IdUsuarioAccion = usuarioAccionId;
 
         AddDomainEvent(new SolicitudAprobadaDomainEvent(this.Id, nombreAprobador));
@@ -558,7 +559,7 @@ public class Solicitud : AuditableEntity<long>
 
         MotivoRechazo = motivoRechazo;
         CambiarEstado(ValueObject.EstadoSolicitud.Rechazado);
-        FechaAccion = DateTime.Now;
+        FechaAccion = HoraSistema.Ahora;
         IdUsuarioAccion = usuarioAccionId;
 
         foreach (var doc in _documentos)
@@ -584,7 +585,7 @@ public class Solicitud : AuditableEntity<long>
             throw new DomainException(SolicitudErrors.SolicitudYaAnulada);
 
         CambiarEstado(ValueObject.EstadoSolicitud.Anulado);
-        FechaAccion = DateTime.Now;
+        FechaAccion = HoraSistema.Ahora;
         IdUsuarioAccion = usuarioAccionId;
 
         foreach (var documento in _documentos.Where(x => x.Estado))
@@ -679,6 +680,22 @@ public class Solicitud : AuditableEntity<long>
                 f.OrdenEtapa == etapaActual);
 
         return !estaEnEtapaActual;
+    }
+
+    /// <summary>
+    /// No se pueden agregar ni mover etapas a una posición igual o anterior a la última etapa bloqueada
+    /// (una etapa se bloquea cuando ya tiene aprobaciones o firmas).
+    /// </summary>
+    public void ValidarReordenamientoEtapas(IEnumerable<long> ordenesNuevos)
+    {
+        var ultimaEtapaBloqueada = ObtenerEstadoEtapas()
+            .Where(e => e.Bloqueado)
+            .Select(e => e.OrdenEtapa)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        if (ordenesNuevos.Any(orden => orden <= ultimaEtapaBloqueada))
+            throw new DomainException(SolicitudErrors.CrearEtapaPrevia);
     }
 
     public IReadOnlyList<ValueObject.EstadoEtapa> ObtenerEstadoEtapas()

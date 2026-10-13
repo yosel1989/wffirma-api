@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Common.Constants;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.PermisoSolicitud;
 
 public sealed class PermisoSolicitudQueryHandler(
@@ -44,7 +45,7 @@ public sealed class PermisoSolicitudQueryHandler(
                 throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.PlantillaInvalid);
 
             var tipoAprobadorDict = (await _parametroRepository
-                 .ObtenerDetallePorCodigoParametro("TIPO_APROBADOR", cancellationToken))
+                 .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoAprobador, cancellationToken))
                  .ToDictionary(
                      x => x.Id,
                      x => new ParametroDetalle(x.Id, x.Codigo, x.Valor)

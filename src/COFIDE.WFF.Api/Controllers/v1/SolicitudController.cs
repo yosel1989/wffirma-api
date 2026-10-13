@@ -5,26 +5,21 @@ using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Mappings;
 using COFIDE.WFF.Api.Request.Solicitudes;
-using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqueado;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.AnularSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.AprobarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.EnviarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
-using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumentoZip;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSustento;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSustentoZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitudZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
@@ -185,9 +180,9 @@ public class SolicitudController : BaseApiController
         )]
     [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<string>> Anular([FromRoute] long id)
+    public async Task<ActionResult<string>> Anular([FromRoute] long id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new AnularSolicitudCommand(id));
+        var result = await _mediator.Send(new AnularSolicitudCommand(id), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -245,9 +240,9 @@ public class SolicitudController : BaseApiController
 
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ResponseDto<SolicitudDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<SolicitudDto>>> GetSolicitud(long id, [FromQuery] bool esReuso = false)
+    public async Task<ActionResult<ResponseDto<SolicitudDto>>> GetSolicitud(long id, [FromQuery] bool esReuso = false, CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ObtenerSolicitudQuery(id, esReuso));
+        var result = await _mediator.Send(new ObtenerSolicitudQuery(id, esReuso), cancellationToken);
         if (result is null)
             return NotFound(ResponseDto<SolicitudDto>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -263,9 +258,9 @@ public class SolicitudController : BaseApiController
     [ProducesResponseType(typeof(SolicitudPaginadoResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ResponseDto<SolicitudPaginadoResponseDto>>> ObtenerSolicitudPaginado(
-    [FromQuery] ObtenerSolicitudPaginadoQuery query)
+    [FromQuery] SolicitudPaginadoRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
 
         var response = ResponseDto<SolicitudPaginadoResponseDto>.Ok(
             result,
@@ -279,9 +274,9 @@ public class SolicitudController : BaseApiController
     [HttpGet("bandeja-entrada")]
     [ProducesResponseType(typeof(ResponseDto<BandejaEntradaResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<BandejaEntradaResponseDto>>> BandejaEntradaPaginado(
-    [FromQuery] ObtenerBandejaEntradaQuery query)
+    [FromQuery] BandejaEntradaRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
 
         var response = ResponseDto<BandejaEntradaResponseDto>.Ok(
             result,
@@ -295,9 +290,9 @@ public class SolicitudController : BaseApiController
     [HttpGet("documentos/bloqueados/paginado")]
     [ProducesResponseType(typeof(ResponseDto<PagedResultDto<DocumentoBloqueadoPaginadoDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<PagedResultDto<DocumentoBloqueadoPaginadoDto>>>> GetListadoDocumentosBloqueados(
-    [FromQuery] ObtenerDocumentoBloqueadoPaginadoQuery query)
+    [FromQuery] DocumentoBloqueadoPaginadoRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
 
         var response = ResponseDto<PagedResultDto<DocumentoBloqueadoPaginadoDto>>.Ok(
          result,
@@ -312,9 +307,9 @@ public class SolicitudController : BaseApiController
 
     [HttpGet("panel-control")]
     [ProducesResponseType(typeof(ResponseDto<SolicitudPanelControlDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<SolicitudPanelControlDto>>> GetSolicitudPanelControl()
+    public async Task<ActionResult<ResponseDto<SolicitudPanelControlDto>>> GetSolicitudPanelControl(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerSolicitudPanelControlQuery());
+        var result = await _mediator.Send(new ObtenerSolicitudPanelControlQuery(), cancellationToken);
         if (result is null)
             return NotFound(ResponseDto<SolicitudPanelControlDto>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -331,9 +326,9 @@ public class SolicitudController : BaseApiController
     [HttpPost("codigos-referencia/conflictos")]
     [ProducesResponseType(typeof(ResponseDto<DetectarConflictosResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<DetectarConflictosResponse>>> GetDetectarcodigoReferencia(
-        [FromBody] DetectarCodigoQuery request)
+        [FromBody] DetectarCodigosReferenciaRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(request);
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
 
         return Ok(ResponseDto<DetectarConflictosResponse>.Ok(result));
     }
@@ -366,6 +361,19 @@ public class SolicitudController : BaseApiController
 
    
 
+   [HttpGet("{id}/pdf")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseDto<string>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DescargarPdf(long id, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerarPdfSolicitudQuery(id), cancellationToken);
+
+        if (result is null)
+            return NotFound(ResponseDto<string>.Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
+
+        return File(result.Archivo, result.ContentType, result.NombreArchivo);
+    }
+
     [HttpGet("{id}/descargar-zip")]
     public async Task<IActionResult> DescargarZip(long id, CancellationToken cancellationToken)
     {
@@ -385,9 +393,9 @@ public class SolicitudController : BaseApiController
     /// <summary>Obtener areas para combo</summary>
     [HttpGet("documentos/{id}/descarga")]
     [ProducesResponseType(typeof(ResponseDto<DescargarSolicitudDocumentoDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<DescargarSolicitudDocumentoDto>>> ObtenerDocumento(long id)
+    public async Task<ActionResult<ResponseDto<DescargarSolicitudDocumentoDto>>> ObtenerDocumento(long id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new DescargarSolicitudDocumentoQuery(id));
+        var result = await _mediator.Send(new DescargarSolicitudDocumentoQuery(id), cancellationToken);
         if (result is null)
             return NotFound(ResponseDto<DescargarSolicitudDocumentoDto>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -399,9 +407,9 @@ public class SolicitudController : BaseApiController
     [HttpPut("documentos/{id}/activaciones")]
     [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<string>> ActivarDocumento([FromRoute] long id)
+    public async Task<ActionResult<string>> ActivarDocumento([FromRoute] long id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ActivarDocumentoBloqueadoCommand(id));
+        var result = await _mediator.Send(new ActivarDocumentoBloqueadoCommand(id), cancellationToken);
 
         var response = ResponseDto<string?>.Ok(
             result,
@@ -418,9 +426,9 @@ public class SolicitudController : BaseApiController
 
     [HttpGet("sustentos/{id}/descarga")]
     [ProducesResponseType(typeof(ResponseDto<DescargarSolicitudSustentoDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<DescargarSolicitudSustentoDto>>> ObtenerSustento(long id)
+    public async Task<ActionResult<ResponseDto<DescargarSolicitudSustentoDto>>> ObtenerSustento(long id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new DescargarSolicitudSustentoQuery(id));
+        var result = await _mediator.Send(new DescargarSolicitudSustentoQuery(id), cancellationToken);
         if (result is null)
             return NotFound(ResponseDto<DescargarSolicitudSustentoDto>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -446,10 +454,10 @@ public class SolicitudController : BaseApiController
     [HttpGet("reporte")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetReporteSolicitud(
-        [FromQuery] DescargarReporteSolicitudExcelQuery query,
+        [FromQuery] ReporteSolicitudRequest request,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(query, cancellationToken);
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
 
         return File(
             result.Contenido,

@@ -3,11 +3,12 @@ using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Publico.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using COFIDE.WFF.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Application.Common.Constants;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoAprobadoEventHandler(
@@ -42,7 +43,7 @@ public class EnviarCorreoAprobadoEventHandler(
             string correoUsuario = "";
 
             var templateCorreo = await _formatoNotificacionRepository
-                .ObtenerPorCodigo("SOLICITUD_APROBADA", cancellationToken)
+                .ObtenerPorCodigo(CodigosPlantillaCorreo.SolicitudAprobada, cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_APROBADA no configurado.");
 
             var solicitud = await _solicitudQueryRepository
@@ -54,7 +55,7 @@ public class EnviarCorreoAprobadoEventHandler(
                 ?? throw new InvalidOperationException("Agregado de solicitud no encontrado.");
 
             var parametroVigencia = await _parametroRepository
-                .ObtenerCodigoParametroDias("TI_VIGENCIA", cancellationToken);
+                .ObtenerCodigoParametroDias(CodigosParametro.VigenciaEnlaceDescarga, cancellationToken);
 
             var vigenciaDias = int.TryParse(
                 parametroVigencia.FirstOrDefault()?.Valor, out var dias) ? dias : 1;
@@ -62,7 +63,7 @@ public class EnviarCorreoAprobadoEventHandler(
             string LinkDescargaDocumentos = string.Empty;
             var correos = solicitudCorreos.Correos;
 
-            // El enlace se crea en la transacción de la aprobación (RevisarSolicitudUseCase).
+            // El enlace se crea en la transacción de la aprobación (SolicitudRevisionService).
             // Este handler solo lo lee: ya no escribe en la base de datos.
             var enlaceDocumento = solicitud.TieneDocumento
                 ? await _enlaceDescargaTemporalRepository.ObtenerPorIdSolicitudAsync(domainEvent.IdSolicitud, cancellationToken)
@@ -95,8 +96,8 @@ public class EnviarCorreoAprobadoEventHandler(
                 solicitud.AsuntoSolicitud,
                 solicitud.FechaCreacion,
                 UltimoAprobador = domainEvent.nombreAprobador,
-                Anio = DateTime.Now.Year.ToString(),
-                FechaAprobacionFinal = DateTime.Now.ToString("dd/MM/yyyy"),
+                Anio = HoraSistema.Ahora.Year.ToString(),
+                FechaAprobacionFinal = HoraSistema.Ahora.ToString("dd/MM/yyyy"),
                 TiempoLimite = $"{vigenciaDias} día(s)",
                 LinkDescargaDocumentos,
                 LinkSolicitudHtml = linkSolicitudHtml
@@ -132,8 +133,8 @@ public class EnviarCorreoAprobadoEventHandler(
                     solicitud.AsuntoSolicitud,
                     solicitud.FechaCreacion,
                     UltimoAprobador = domainEvent.nombreAprobador,
-                    Anio = DateTime.Now.Year.ToString(),
-                    FechaAprobacionFinal = DateTime.Now.ToString("dd/MM/yyyy"),
+                    Anio = HoraSistema.Ahora.Year.ToString(),
+                    FechaAprobacionFinal = HoraSistema.Ahora.ToString("dd/MM/yyyy"),
                     TiempoLimite = $"{vigenciaDias} día(s)",
                     LinkDescargaDocumentos,
                     LinkSolicitudHtml = string.Empty

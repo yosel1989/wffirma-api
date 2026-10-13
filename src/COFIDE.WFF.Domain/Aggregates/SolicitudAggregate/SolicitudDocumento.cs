@@ -404,8 +404,8 @@ public class SolicitudDocumento : AuditableEntity<long>
         if (esHorizontal && anchoPagina.HasValue && altoPagina.HasValue)
         {
             const int cantidadPosicionesReferencia = 10;
-            const decimal margenHorizontal = 10m;
-            const decimal margenInferior = 10m;
+            const decimal margenHorizontal = 0m;
+            const decimal margenInferior = 0m;
 
             var posicionInicialX =
                 posicionX + margenHorizontal;
@@ -439,10 +439,27 @@ public class SolicitudDocumento : AuditableEntity<long>
         }
 
         /*
-          Documento vertical
+         Documento vertical
          */
+        const decimal margenInferiorVertical = 0m;
+
+        var posicionVerticalY = posicionY;
+
+        if (altoPagina.HasValue)
+        {
+            var posicionMaximaY = Math.Max(
+                0m,
+                altoPagina.Value -
+                altoFirma -
+                margenInferiorVertical);
+
+            posicionVerticalY = Math.Min(
+                posicionY,
+                posicionMaximaY);
+        }
+
         if (_detalleFirma.Count == 0)
-            return (posicionX, posicionY);
+            return (posicionX, posicionVerticalY);
 
         if (visadoresFirmados == 0)
         {
@@ -455,7 +472,7 @@ public class SolicitudDocumento : AuditableEntity<long>
             (altoFirma + margenVertical);
 
         var nuevaY =
-            posicionY -
+            posicionVerticalY -
             desplazamiento;
 
         return (

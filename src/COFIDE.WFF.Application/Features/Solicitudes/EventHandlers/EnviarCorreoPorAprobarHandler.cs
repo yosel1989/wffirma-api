@@ -1,9 +1,11 @@
 ﻿using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using COFIDE.WFF.Application.Common.Constants;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 public class EnviarCorreoPorAprobarHandler(
@@ -35,7 +37,7 @@ public class EnviarCorreoPorAprobarHandler(
             var domainEvent = notification.DomainEvent;
 
             var templateCorreoNoUrgente = await _formatoNotificacionRepository
-                .ObtenerPorCodigo("SOLICITUD_POR_APROBAR", cancellationToken)
+                .ObtenerPorCodigo(CodigosPlantillaCorreo.SolicitudPorAprobar, cancellationToken)
                 ?? throw new InvalidOperationException("Template SOLICITUD_POR_APROBAR no configurado.");
 
             var solicitud = await _solicitudQueryRepository
@@ -74,7 +76,7 @@ public class EnviarCorreoPorAprobarHandler(
                             solicitud.TipoOperacion,
                             solicitud.AsuntoSolicitud,
                             solicitud.FechaCreacion,
-                            Anio = DateTime.Now.Year.ToString(),
+                            Anio = HoraSistema.Ahora.Year.ToString(),
                             LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/editar?id={domainEvent.IdSolicitud}",
                             LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?id={domainEvent.IdSolicitud}"
                         };
@@ -103,7 +105,7 @@ public class EnviarCorreoPorAprobarHandler(
                         solicitud.TipoOperacion,
                         solicitud.AsuntoSolicitud,
                         solicitud.FechaCreacion,
-                        Anio = DateTime.Now.Year.ToString(),
+                        Anio = HoraSistema.Ahora.Year.ToString(),
                         LinkSolicitud = $"{baseFrontUrl}/mis-solicitudes",
                         LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?id={domainEvent.IdSolicitud}"
                     };

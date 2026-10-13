@@ -1,7 +1,7 @@
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Controllers.v1;
 using COFIDE.WFF.Api.Tests.Support;
-using COFIDE.WFF.Application.Common.Interfaces;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using FluentAssertions;
 using MediatR;

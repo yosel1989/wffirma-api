@@ -2,7 +2,7 @@
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Factories;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Inputs;
@@ -12,6 +12,7 @@ using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
 using System.Text.Json;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Common.Constants;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Services;
 
 public class SolicitudPlantillaService(
@@ -34,33 +35,33 @@ public class SolicitudPlantillaService(
         var flujo = ObtenerFlujoDesdeConfiguracion(configuracion);
         var plantilla = await ObtenerPlantillaExistente(idPlantillaReq, cancellationToken);
 
-        if ((idPlantillaRequest is null or 0) || (idPlantillaOrigen == 0 && plantilla.EsPlantillaMaestra && flujo != null))
+        // La decisión es una regla de negocio (dominio); aquí solo se ejecuta.
+        var accion = ReglaPlantillaSolicitud.Decidir(
+            idPlantillaOrigen,
+            idPlantillaRequest,
+            plantilla?.EsPlantillaMaestra ?? false,
+            flujo is not null);
+
+        switch (accion)
         {
-            if (flujo is null)
+            case AccionPlantillaSolicitud.SinPlantilla:
                 return null;
 
-            return await CrearNuevaPlantillaNoMaestra(
-                flujo,
-                idUsuario,
-                gerenciaUsuario,
-                cancellationToken);
+            case AccionPlantillaSolicitud.CrearDesdeConfiguracion:
+                return await CrearNuevaPlantillaNoMaestra(flujo!, idUsuario, gerenciaUsuario, cancellationToken);
+
+            case AccionPlantillaSolicitud.CrearDesdeMaestra:
+                return await CrearDesdePlantillaMaestra(plantilla!, idUsuario, gerenciaUsuario, cancellationToken);
+
+            case AccionPlantillaSolicitud.ActualizarPlantillaOrigen:
+                flujo = flujo is null
+                    ? ClonarPlantillaMaestra_a_FlujoInterno(plantilla!)
+                    : ResetearIdsPlantillaMaestra(flujo);
+                plantilla = await ObtenerPlantillaExistente(idPlantillaOrigen!.Value, cancellationToken);
+                break;
         }
 
-        if (plantilla.EsPlantillaMaestra && idPlantillaOrigen == 0)
-            return await CrearDesdePlantillaMaestra(plantilla, idUsuario, gerenciaUsuario, cancellationToken);
-
-        if (idPlantillaOrigen != idPlantillaRequest)
-        {
-            if (flujo == null)
-                flujo = ClonarPlantillaMaestra_a_FlujoInterno(plantilla);
-            else
-                flujo = ResetearIdsPlantillaMaestra(flujo);
-
-            plantilla = await ObtenerPlantillaExistente(idPlantillaOrigen!.Value, cancellationToken);
-        }
-
-
-        await ActualizarPlantillaSiCorresponde(flujo, plantilla, idPlantillaRequest.Value, idUsuario, cancellationToken);
+        await ActualizarPlantillaSiCorresponde(flujo, plantilla!, idPlantillaRequest!.Value, idUsuario, cancellationToken);
 
         return plantilla;
     }
@@ -245,7 +246,7 @@ public class SolicitudPlantillaService(
     private async Task<Dictionary<long, ParametroDetalle>> ObtenerDiccionarioTipoEtapa(CancellationToken cancellationToken)
     {
         var tipoEtapaDict = (await _parametroRepository
-                .ObtenerDetallePorCodigoParametro("TIPO_ETAPA", cancellationToken))
+                .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoEtapa, cancellationToken))
                 .ToDictionary(
                     x => x.Id,
                     x => new ParametroDetalle(x.Id, x.Codigo, x.Valor)
@@ -257,7 +258,7 @@ public class SolicitudPlantillaService(
     private async Task<Dictionary<long, ParametroDetalle>> ObtenerDiccionarioTipoAprobador(CancellationToken cancellationToken)
     {
         var tipoAprobadorDict =
-         (await _parametroRepository.ObtenerDetallePorCodigoParametro("TIPO_APROBADOR", cancellationToken))
+         (await _parametroRepository.ObtenerDetallePorCodigoParametro(CodigosParametro.TipoAprobador, cancellationToken))
           .ToDictionary(
               x => x.Id,
               x => new ParametroDetalle(x.Id, x.Codigo, x.Valor)

@@ -1,3 +1,5 @@
+using COFIDE.WFF.Application.Features.Firmas.Commands.RestablecerDocumentoFirmado;
+using AutoMapper;
 using System.Reflection;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaPdf;
@@ -5,9 +7,7 @@ using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaZip;
 using COFIDE.WFF.Application.Features.Firmas.DTOs;
 using COFIDE.WFF.Application.Features.Firmas.Ports.Out;
 using COFIDE.WFF.Application.Features.Firmas.Services;
-using COFIDE.WFF.Application.Features.Firmas.UseCases;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Ports.Out;
 using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Common.Enums;
@@ -47,7 +47,7 @@ public class FirmaInternaExitoTest
         puerto.Setup(p => p.FirmarDocumentoAsync(solicitud, It.IsAny<CancellationToken>())).ReturnsAsync(respuesta);
         firmas.Setup(f => f.UpdateAsync(detalle)).Returns(Task.CompletedTask);
 
-        var resultado = await new FirmaInternaPdfUseCase(
+        var resultado = await new FirmaInternaPdfCommandHandler(new Mock<IMapper>().Object, 
             Usuario(),
             lecturas.Object,
             archivos.Object,
@@ -56,8 +56,8 @@ public class FirmaInternaExitoTest
             puerto.Object,
             preparacion.Object,
             orientacion.Object,
-            NullLogger<FirmaInternaPdfUseCase>.Instance)
-            .Firmar(new FirmaInternaPdfCommand(8, 4), CancellationToken.None);
+            NullLogger<FirmaInternaPdfCommandHandler>.Instance)
+            .Handle(new FirmaInternaPdfCommand(8, 4), CancellationToken.None);
 
         resultado!.CodigoProceso.Should().Be("PROC-1");
         resultado.TiempoEspera.Should().Be(5000);
@@ -81,7 +81,7 @@ public class FirmaInternaExitoTest
         lecturas.Setup(l => l.ObtenerDocumentoParaFirmaInternaMasivaRead(8, 4, It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(documento);
 
-        var act = () => new FirmaInternaPdfUseCase(
+        var act = () => new FirmaInternaPdfCommandHandler(new Mock<IMapper>().Object, 
             Usuario(),
             lecturas.Object,
             archivos.Object,
@@ -90,8 +90,8 @@ public class FirmaInternaExitoTest
             new Mock<IFirmaPort>().Object,
             new Mock<IFirmaPreparationService>().Object,
             new Mock<IOrientacionPaginaPdfService>().Object,
-            NullLogger<FirmaInternaPdfUseCase>.Instance)
-            .Firmar(new FirmaInternaPdfCommand(8, 4), CancellationToken.None);
+            NullLogger<FirmaInternaPdfCommandHandler>.Instance)
+            .Handle(new FirmaInternaPdfCommand(8, 4), CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>();
         archivos.Verify(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -123,7 +123,7 @@ public class FirmaInternaExitoTest
             .Returns(Task.CompletedTask);
         puerto.Setup(p => p.FirmarBatchAsync(solicitud, It.IsAny<CancellationToken>())).ReturnsAsync(respuesta);
 
-        var resultado = await new FirmaInternaZipUseCase(
+        var resultado = await new FirmaInternaZipCommandHandler(new Mock<IMapper>().Object, 
             Usuario(),
             lecturas.Object,
             archivos.Object,
@@ -131,7 +131,7 @@ public class FirmaInternaExitoTest
             preparacion.Object,
             puerto.Object,
             orientacion.Object)
-            .Firmar(new FirmaInternaZipCommand(8, [4]), CancellationToken.None);
+            .Handle(new FirmaInternaZipCommand(8, [4]), CancellationToken.None);
 
         resultado!.CodigoProceso.Should().Be("LOTE-1");
         resultado.TiempoEspera.Should().Be(5);

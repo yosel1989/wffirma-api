@@ -18,6 +18,7 @@ public class DescargarTodoSolicitudZipQueryHandler(
             request.Id,
             cancellationToken);
 
+
         return new DescargarTodoSolicitudZipDto
         {
             Archivo = result.Archivo,

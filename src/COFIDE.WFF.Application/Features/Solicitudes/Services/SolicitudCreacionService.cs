@@ -1,9 +1,10 @@
 ﻿using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Ports.Out;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Factories;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
+using COFIDE.WFF.Domain.Common.Tiempo;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Services;
 
 public class SolicitudCreacionService(
@@ -25,7 +26,7 @@ public class SolicitudCreacionService(
         var idSolicitud = await _generadorCorrelativoIdRepository.ObtenerSiguienteIdSolicitudAsync(cancellationToken);
 
         #region 01. Traer la información de Código
-        var fechaActual = DateTime.Now;
+        var fechaActual = HoraSistema.Ahora;
         var anio = fechaActual.Year;
         var tipoSolicitud = await _maestroRepository.GetTipoSolicitudByIdAsync(request.IdTipoSolicitud, cancellationToken, true);
         var codigoTipoSolicitud = tipoSolicitud == null ? "NN" : tipoSolicitud.DescripcionCorta;
