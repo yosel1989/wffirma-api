@@ -180,7 +180,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                 {
                     query = query.Where(s =>
                     s.Documentos
-                        .SelectMany(d => d.DetallesFirma.Where(df => df.Estado))
+                        .SelectMany(d => d.DetallesFirma)
                         .Any(df =>
                             df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado != null &&
                                 df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id == codigoUsuario.Value));
@@ -267,7 +267,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
             {
                 query = query.Where(s =>
                     s.Documentos
-                        .SelectMany(d => d.DetallesFirma.Where(df => df.Estado))
+                        .SelectMany(d => d.DetallesFirma)
                         .Any(df =>
                             df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado != null &&
                             firmante.Contains(
