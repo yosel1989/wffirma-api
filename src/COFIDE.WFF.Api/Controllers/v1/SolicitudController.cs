@@ -472,9 +472,9 @@ public class SolicitudController : BaseApiController
     [HttpGet("seguimiento-solicitudes")]
     [ProducesResponseType(typeof(ResponseDto<SeguimientoSolicitudesResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<SeguimientoSolicitudesResponseDto>>> SeguimientoSolicitudesPaginado(
-    [FromQuery] SeguimientoSolicitudesQuery query)
+    [FromQuery] SeguimientoSolicitudesRequest request)
     {
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(request.ToQuery());
 
         var response = ResponseDto<SeguimientoSolicitudesResponseDto>.Ok(
             result,
