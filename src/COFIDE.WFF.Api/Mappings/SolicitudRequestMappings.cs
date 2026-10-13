@@ -4,12 +4,13 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.EnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
 
 namespace COFIDE.WFF.Api.Mappings
 {
@@ -87,6 +88,15 @@ namespace COFIDE.WFF.Api.Mappings
             new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Tiposolicitud,
                 r.Subtiposolicitud, r.TipoOperacion, r.AprobadorActual, r.Estado, r.Codigosolicitud, r.Asunto,
                 r.Referencia, r.Urgente, r.Usuario, r.Usuariodepartamento, r.IncluirResumen)
+            {
+                PageNumber = r.PageNumber,
+                PageSize = r.PageSize,
+                Sorts = r.Sorts
+            };
+
+        public static SeguimientoSolicitudesQuery ToQuery(this SeguimientoSolicitudesRequest r) =>
+            new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Tiposolicitud, r.Subtiposolicitud,
+                r.TipoOperacion, r.Asunto, r.Referencia, r.Estado, r.Firmante, r.Codigosolicitud, r.Encurso, r.Aprobada, r.Rechazada, r.IncluirResumen)
             {
                 PageNumber = r.PageNumber,
                 PageSize = r.PageSize,
