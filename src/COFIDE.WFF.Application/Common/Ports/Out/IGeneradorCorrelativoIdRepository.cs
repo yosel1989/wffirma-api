@@ -23,6 +23,8 @@ public interface IGeneradorCorrelativoIdRepository
     Task<List<long>> ObtenerBloqueSiguienteIdDocumentoAsync(long cantidad, CancellationToken cancellationToken);
     Task<List<long>> ObtenerBloqueSiguienteIdSustentoAsync(long cantidad, CancellationToken cancellationToken);
     Task<List<long>> ObtenerBloqueSiguienteIdDocumentoTagAsync(long cantidad, CancellationToken cancellationToken);
+
+    Task<long> ObtenerSiguienteIdHistorialRevisionAsync(CancellationToken cancellationToken);
     #endregion
 
     #region CODIGO SOLICITUD

@@ -1,4 +1,6 @@
-﻿namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
+﻿using System.Text.Json.Serialization;
+
+namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 
 public class SeguimientoSolicitudesResumenDto
 {
@@ -23,12 +25,31 @@ public class SeguimientoSolicitudesDto
 
 public class FirmantesDto
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Nombre { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Estado { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<FirmantesParaleloDto>? Paralelo { get; set; }
+
+    [JsonIgnore]
+    public long OrdenEtapa { get; set; }
+
+    [JsonIgnore]
+    public string? CodigoTipoEtapa { get; set; }
+}
+
+public class FirmantesParaleloDto
+{
+    public string? Nombre { get; set; }
+
     public string? Estado { get; set; }
 }
 
 
-    public class SeguimientoSolicitudesResponseDto
+public class SeguimientoSolicitudesResponseDto
 {
     public long Total { get; set; }
     public long EnCurso { get; set; }

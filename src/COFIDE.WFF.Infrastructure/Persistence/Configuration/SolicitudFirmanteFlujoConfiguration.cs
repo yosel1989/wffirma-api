@@ -1,5 +1,4 @@
-﻿using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
-using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
+﻿using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Infrastructure.Persistence.Configuration.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

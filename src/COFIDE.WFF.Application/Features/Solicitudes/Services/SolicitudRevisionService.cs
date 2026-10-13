@@ -49,7 +49,11 @@ public class SolicitudRevisionService(
 
         var solicitud = await PrepararAprobacionRechazo(cmd.Id, cmd.Sustentos, cancellationToken);
 
-        solicitud.AprobarFirmante(IsUsuarioAccion, datosCompletos);
+        long idHistorialRevision = await _generadorCorrelativoIdRepository.ObtenerSiguienteIdHistorialRevisionAsync(cancellationToken);
+
+        int ciclo = await _solicitudRepository.ObtenerSiguienteCicloAsync(solicitud.SolicitudPlantilla.Id,cancellationToken);
+
+        solicitud.AprobarFirmante(IsUsuarioAccion, datosCompletos, idHistorialRevision, ciclo);
         if (!string.IsNullOrWhiteSpace(cmd.Comentario))
         {
             long idComentario = await _generadorCorrelativoIdRepository.ObtenerSiguienteIdComentarioAsync(cancellationToken);
@@ -91,8 +95,10 @@ public class SolicitudRevisionService(
 
         var solicitud = await PrepararAprobacionRechazo(cmd.Id, cmd.Sustentos, cancellationToken);
         var idPñantillaEtapaActual = solicitud.SolicitudPlantilla.ObtenerIdPlantillaEtapaActualPorUsuarioAsignado(IsUsuarioAccion);
+        long idHistorialRevision = await _generadorCorrelativoIdRepository.ObtenerSiguienteIdHistorialRevisionAsync(cancellationToken);
+        int ciclo = await _solicitudRepository.ObtenerSiguienteCicloAsync(solicitud.SolicitudPlantilla.Id, cancellationToken);
 
-        solicitud.RechazarSolicitud(IsUsuarioAccion, datosCompletos, cmd.MotivoRechazo, idPñantillaEtapaActual, areaUsuario);
+        solicitud.RechazarSolicitud(IsUsuarioAccion, datosCompletos, cmd.MotivoRechazo, idPñantillaEtapaActual, areaUsuario, idHistorialRevision, ciclo);
 
         if (!string.IsNullOrWhiteSpace(cmd.Comentario))
         {

@@ -26,4 +26,8 @@ public interface ISolicitudRepository : IGenericRepository<Solicitud, long>
     Task<SolicitudDocumento?> ObtenerSolicitudDocumentoPorId(long id, CancellationToken cancellationToken, bool tracking = false);
 
     #endregion
+
+    #region HISTORIAL REVISIONES
+    Task<int> ObtenerSiguienteCicloAsync(long idSolicitudPlantilla, CancellationToken cancellationToken);
+    #endregion
 }

@@ -240,6 +240,14 @@ public class GeneradorCorrelativoIdRepository(
         return result;
     }
 
+    public async Task<long> ObtenerSiguienteIdHistorialRevisionAsync(CancellationToken cancellationToken)
+    {
+        var maxId = await _context.Set<HistorialRevision>()
+        .MaxAsync(x => (long?)x.Id, cancellationToken) ?? 0;
+
+        return maxId + 1;
+    }
+
 
     #endregion
 
