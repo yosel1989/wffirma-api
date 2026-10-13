@@ -4,7 +4,6 @@ using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Publico.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
-using COFIDE.WFF.Domain.Entities;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using COFIDE.WFF.Application.Common.Constants;

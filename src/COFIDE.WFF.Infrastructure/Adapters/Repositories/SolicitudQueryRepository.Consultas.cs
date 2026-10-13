@@ -1,17 +1,7 @@
 using COFIDE.WFF.Application.Features.Publico.DescargaDocumento;
-using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Common.Abstractions;
-using COFIDE.WFF.Application.Common.Pageds;
-using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.ValueObjects;
-using COFIDE.WFF.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
-using VO = COFIDE.WFF.Domain.ValueObjects;
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories;
 
 /// <summary>
@@ -30,7 +20,7 @@ public partial class SolicitudQueryRepository
              .AsNoTracking()
              .Include(s => s.Documentos.Where(sd => sd.Estado))
              .Include(s => s.SolicitudPlantilla)
-             .Where(x => x.Id == id)
+             .Where(x => x.Id == id && x.UsuarioSolicitante.Notificacion.HasValue && x.UsuarioSolicitante.Notificacion == true)
              .Select(x => new FormatoNotificacionSolicitud(
                  x.TipoSolicitud.NombreTipoSolicitud,
                  x.CodigoSolicitud,

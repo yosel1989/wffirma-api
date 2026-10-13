@@ -66,7 +66,8 @@ public class SolicitudPlantillaRepository(
                         Correo = f.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Email ?? "",
                         CargoUsuario = f.FirmanteFlujo.CargoUsuario,
                         AreaUsuario = f.FirmanteFlujo.AreaUsuario,
-                        GerenciaUsuario = f.FirmanteFlujo.GerenciaUsuario
+                        GerenciaUsuario = f.FirmanteFlujo.GerenciaUsuario,
+                        Notificacion = f.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Notificacion
                     })
                     .ToList()
             })

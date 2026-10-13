@@ -54,10 +54,14 @@ public class UsuarioConfiguration : AuditableEntityConfiguration<Usuario, long>
         builder.Property(u => u.IdCargo)
                .HasColumnName("ID_CARGO");
 
-        builder.Property(u => u.Notificacion)
-              .HasColumnName("CH_NOTIFICACION")
-              .HasColumnType("CHAR(1)")
-              .IsRequired(false); 
+        builder.Property(x => x.Notificacion)
+               .HasColumnName("CH_NOTIFICACION")
+               .HasColumnType("CHAR(1)")
+               .HasConversion(
+                    v => v.HasValue ? (v.Value ? "S" : "N") : null,
+                    v => v == null ? null : v.Trim() == "S"
+                )
+               .IsRequired(false);
 
 
         //Claves foraneas

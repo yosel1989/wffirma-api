@@ -12,7 +12,7 @@ public class Usuario : AuditableEntity<long>
     public string CuentaLogueo { get; private set; } = null!;
     public long? IdArea { get; }
     public long? IdCargo { get; }
-    public char? Notificacion { get; }
+    public bool? Notificacion { get; }
     public Area Area { get; private set; } = default!;
     public Cargo Cargo { get; private set; } = default!;
 
