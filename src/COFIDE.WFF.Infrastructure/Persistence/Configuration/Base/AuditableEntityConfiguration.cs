@@ -28,12 +28,6 @@ public abstract class AuditableEntityConfiguration<TEntity, TKey> : IEntityTypeC
         builder.Property(a => a.FechaCreacion)
                .HasColumnName("TS_FECHA_CREACION")
                .HasColumnType("TIMESTAMP")
-               .HasConversion(
-                    v => v.Kind == DateTimeKind.Local
-                        ? v
-                        : v.ToUniversalTime(),               // C# → Oracle
-                        v => DateTime.SpecifyKind(v, DateTimeKind.Local) // Oracle → C#
-                    )
                .IsRequired();
 
         builder.Property(a => a.TerminalCreacion)
@@ -48,16 +42,6 @@ public abstract class AuditableEntityConfiguration<TEntity, TKey> : IEntityTypeC
         builder.Property(a => a.FechaModificacion)
                .HasColumnName("TS_FECHA_MODIFICACION")
                .HasColumnType("TIMESTAMP")
-               .HasConversion(
-                    v => v == null
-                            ? (DateTime?)null
-                            : (v.Value.Kind == DateTimeKind.Local
-                                ? v.Value
-                                : v.Value.ToUniversalTime()),        // C# → Oracle
-                    v => v == null
-                            ? (DateTime?)null
-                            : DateTime.SpecifyKind(v.Value, DateTimeKind.Local) // Oracle → C#
-                )
                .IsRequired(false);
 
         builder.Property(a => a.TerminalModificacion)
