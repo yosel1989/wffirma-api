@@ -46,7 +46,7 @@ public class UsuarioConfiguration : AuditableEntityConfiguration<Usuario, long>
         builder.Property(x => x.CuentaLogueo)
                .HasColumnName("VC_CUENTA_LOGUEO")
                .HasMaxLength(50)
-               .IsRequired();
+               .IsRequired(false);
 
         builder.Property(u => u.IdArea)
                .HasColumnName("ID_AREA");

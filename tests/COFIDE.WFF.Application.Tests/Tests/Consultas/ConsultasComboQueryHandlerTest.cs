@@ -1,4 +1,5 @@
 using AutoMapper;
+using COFIDE.WFF.Application.Common.Constants;
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Areas.Ports.Out;
@@ -26,6 +27,7 @@ using COFIDE.WFF.Application.Features.Usuarios.Commands.CerrarSesion;
 using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerUsuariosCombo;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.UsuarioBuscador;
+using COFIDE.WFF.Domain.Common.Enums;
 using COFIDE.WFF.Domain.Entities;
 using FluentAssertions;
 using Moq;
@@ -168,13 +170,80 @@ public class ConsultasComboQueryHandlerTest
         var repo = new Mock<IMaestroRepository>();
         var entidades = new List<TipoSolicitud>();
         var mapeado = new List<TipoSolicitudDto> { new() };
+        var estado = EstadoFiltro.Activo;
 
-        repo.Setup(r => r.GetTipoSolicitudByIdAreaAsync(5, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+        repo.Setup(r => r.GetTipoSolicitudByIdAreaAsync(5, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
             .ReturnsAsync(entidades);
         _mapper.Setup(m => m.Map<List<TipoSolicitudDto>>(entidades)).Returns(mapeado);
 
         var resultado = await new ObtenerTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
-            .Handle(new ObtenerTipoSolicitudQuery(), CancellationToken.None);
+            .Handle(new ObtenerTipoSolicitudQuery(estado), CancellationToken.None);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task TipoSolicitud_Debe_Devolver_Inactivos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<TipoSolicitud>();
+        var mapeado = new List<TipoSolicitudDto> { new() };
+        var estado = EstadoFiltro.Inactivo;
+
+        repo.Setup(r => r.GetTipoSolicitudByIdAreaAsync(5, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<TipoSolicitudDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerTipoSolicitudQuery(estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetTipoSolicitudByIdAreaAsync(5, EstadoFiltro.Inactivo, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task TipoSolicitud_Debe_Devolver_Activos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<TipoSolicitud>();
+        var mapeado = new List<TipoSolicitudDto> { new() };
+        var estado = EstadoFiltro.Activo;
+
+        repo.Setup(r => r.GetTipoSolicitudByIdAreaAsync(5, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<TipoSolicitudDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerTipoSolicitudQuery(estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetTipoSolicitudByIdAreaAsync(5, EstadoFiltro.Activo, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task TipoSolicitud_Debe_Devolver_Inactivos_Y_Activos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<TipoSolicitud>();
+        var mapeado = new List<TipoSolicitudDto> { new() };
+        var estado = EstadoFiltro.Todos;
+
+        repo.Setup(r => r.GetTipoSolicitudByIdAreaAsync(5, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<TipoSolicitudDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerTipoSolicitudQuery(estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetTipoSolicitudByIdAreaAsync(5, EstadoFiltro.Todos, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
 
         resultado.Should().BeSameAs(mapeado);
     }
@@ -187,7 +256,7 @@ public class ConsultasComboQueryHandlerTest
 
         var act = () => new ObtenerSubTipoSolicitudQueryHandler(
             _mapper.Object, usuario.Object, new Mock<IMaestroRepository>().Object)
-            .Handle(new ObtenerSubTipoSolicitudQuery(2), CancellationToken.None);
+            .Handle(new ObtenerSubTipoSolicitudQuery(2, EstadoFiltro.Activo), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
         ex.Which.Error.Code.Should().Be(ApplicationErrors.UsuarioAreaAsignado.Code);
@@ -202,15 +271,82 @@ public class ConsultasComboQueryHandlerTest
         var entidades = new List<SubTipoSolicitud>();
         var mapeado = new List<SubTipoSolicitudDto> { new() };
 
-        repo.Setup(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+        repo.Setup(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, EstadoFiltro.Activo, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
             .ReturnsAsync(entidades);
         _mapper.Setup(m => m.Map<List<SubTipoSolicitudDto>>(entidades)).Returns(mapeado);
 
         var resultado = await new ObtenerSubTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
-            .Handle(new ObtenerSubTipoSolicitudQuery(2), CancellationToken.None);
+            .Handle(new ObtenerSubTipoSolicitudQuery(2, EstadoFiltro.Activo), CancellationToken.None);
 
         resultado.Should().BeSameAs(mapeado);
     }
+
+    [Fact]
+    public async Task SubTipoSolicitud_Debe_Devolver_Inactivos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<SubTipoSolicitud>();
+        var mapeado = new List<SubTipoSolicitudDto> { new() };
+        var estado = EstadoFiltro.Inactivo;
+
+        repo.Setup(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<SubTipoSolicitudDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerSubTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerSubTipoSolicitudQuery(2, estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, EstadoFiltro.Inactivo, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task SubTipoSolicitud_Debe_Devolver_Activos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<SubTipoSolicitud>();
+        var mapeado = new List<SubTipoSolicitudDto> { new() };
+        var estado = EstadoFiltro.Activo;
+
+        repo.Setup(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<SubTipoSolicitudDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerSubTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerSubTipoSolicitudQuery(2, estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, EstadoFiltro.Activo, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task SubTipoSolicitud_Debe_Devolver_Inactivos_Y_Activos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<SubTipoSolicitud>();
+        var mapeado = new List<SubTipoSolicitudDto> { new() };
+        var estado = EstadoFiltro.Todos;
+
+        repo.Setup(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<SubTipoSolicitudDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerSubTipoSolicitudQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerSubTipoSolicitudQuery(2, estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetByIdTipoSolicitudAndIdAreaAsync(5, 2, EstadoFiltro.Todos, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
 
     [Fact]
     public async Task TipoOperacion_Sin_Area_Debe_Lanzar_APP_SOL_018()
@@ -220,7 +356,7 @@ public class ConsultasComboQueryHandlerTest
 
         var act = () => new ObtenerTipoOperacionQueryHandler(
             _mapper.Object, usuario.Object, new Mock<IMaestroRepository>().Object)
-            .Handle(new ObtenerTipoOperacionQuery(), CancellationToken.None);
+            .Handle(new ObtenerTipoOperacionQuery(EstadoFiltro.Activo), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
         ex.Which.Error.Code.Should().Be(ApplicationErrors.UsuarioAreaAsignado.Code);
@@ -235,12 +371,78 @@ public class ConsultasComboQueryHandlerTest
         var entidades = new List<TipoOperacion>();
         var mapeado = new List<TipoOperacionDto> { new() };
 
-        repo.Setup(r => r.GetByIdAreaAsync(5, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+        repo.Setup(r => r.GetByIdAreaAsync(5, EstadoFiltro.Activo, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
             .ReturnsAsync(entidades);
         _mapper.Setup(m => m.Map<List<TipoOperacionDto>>(entidades)).Returns(mapeado);
 
         var resultado = await new ObtenerTipoOperacionQueryHandler(_mapper.Object, usuario.Object, repo.Object)
-            .Handle(new ObtenerTipoOperacionQuery(), CancellationToken.None);
+            .Handle(new ObtenerTipoOperacionQuery(EstadoFiltro.Activo), CancellationToken.None);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task TipoOperacion_Debe_Devolver_Inactivos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<TipoOperacion>();
+        var mapeado = new List<TipoOperacionDto> { new() };
+        var estado = EstadoFiltro.Inactivo;
+
+        repo.Setup(r => r.GetByIdAreaAsync(5, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<TipoOperacionDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerTipoOperacionQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerTipoOperacionQuery(estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetByIdAreaAsync(5, EstadoFiltro.Inactivo, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task TipoOperacion_Debe_Devolver_Activos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<TipoOperacion>();
+        var mapeado = new List<TipoOperacionDto> { new() };
+        var estado = EstadoFiltro.Activo;
+
+        repo.Setup(r => r.GetByIdAreaAsync(5, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<TipoOperacionDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerTipoOperacionQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerTipoOperacionQuery(estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetByIdAreaAsync(5, EstadoFiltro.Activo, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
+
+        resultado.Should().BeSameAs(mapeado);
+    }
+
+    [Fact]
+    public async Task TipoOperacion_Debe_Devolver_Inactivos_Y_Activos()
+    {
+        var usuario = new Mock<ICurrentUserService>();
+        usuario.Setup(u => u.UserAreaId).Returns(5);
+        var repo = new Mock<IMaestroRepository>();
+        var entidades = new List<TipoOperacion>();
+        var mapeado = new List<TipoOperacionDto> { new() };
+        var estado = EstadoFiltro.Todos;
+
+        repo.Setup(r => r.GetByIdAreaAsync(5, estado, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
+            .ReturnsAsync(entidades);
+        _mapper.Setup(m => m.Map<List<TipoOperacionDto>>(entidades)).Returns(mapeado);
+
+        var resultado = await new ObtenerTipoOperacionQueryHandler(_mapper.Object, usuario.Object, repo.Object)
+            .Handle(new ObtenerTipoOperacionQuery(estado), CancellationToken.None);
+
+        repo.Verify(r => r.GetByIdAreaAsync(5, EstadoFiltro.Todos, It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Once);
 
         resultado.Should().BeSameAs(mapeado);
     }

@@ -9,7 +9,7 @@ public class Usuario : AuditableEntity<long>
     public string ApellidoMaterno { get; private set; } = null!;
     public string NumeroDocumento { get; private set; } = null!;
     public string Email { get; private set; } = null!;
-    public string CuentaLogueo { get; private set; } = null!;
+    public string? CuentaLogueo { get; private set; }
     public long? IdArea { get; }
     public long? IdCargo { get; }
     public bool? Notificacion { get; }
