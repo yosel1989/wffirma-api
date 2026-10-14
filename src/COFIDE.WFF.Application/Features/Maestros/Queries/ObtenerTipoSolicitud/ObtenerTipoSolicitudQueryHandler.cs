@@ -16,7 +16,7 @@ public sealed class ObtenerTipoSolicitudQueryHandler(
     public override async Task<List<TipoSolicitudDto>> Handle(ObtenerTipoSolicitudQuery request, CancellationToken cancellationToken)
     {
         long idArea = _currentUser.UserAreaId!.Value;
-        var data = await _maestroRepository.GetTipoSolicitudByIdAreaAsync(idArea, cancellationToken);
+        var data = await _maestroRepository.GetTipoSolicitudByIdAreaAsync(idArea, request.Estado, cancellationToken);
         var dtoItems = _mapper.Map<List<TipoSolicitudDto>>(data);
         return dtoItems;
     }

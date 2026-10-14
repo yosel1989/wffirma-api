@@ -20,7 +20,7 @@ public sealed class ObtenerTipoOperacionQueryHandler(
         long idArea = _currentUser.UserAreaId
             ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.UsuarioAreaAsignado);
 
-        var data = await _tipoOperacionRepository.GetByIdAreaAsync(idArea, cancellationToken);
+        var data = await _tipoOperacionRepository.GetByIdAreaAsync(idArea, request.Estado, cancellationToken);
         var dtoItems = _mapper.Map<List<TipoOperacionDto>>(data);
         return dtoItems;
     }
