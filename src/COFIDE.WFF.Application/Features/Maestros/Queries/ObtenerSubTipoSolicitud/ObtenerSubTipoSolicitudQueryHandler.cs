@@ -20,7 +20,7 @@ public sealed class ObtenerSubTipoSolicitudQueryHandler(
         long idArea = _currentUser.UserAreaId
         ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.UsuarioAreaAsignado);
 
-        var data = await _maestroRepository.GetByIdTipoSolicitudAndIdAreaAsync(idArea, request.IdTipoSolicitud, cancellationToken);
+        var data = await _maestroRepository.GetByIdTipoSolicitudAndIdAreaAsync(idArea, request.IdTipoSolicitud, request.Estado, cancellationToken);
         var dtoItems = _mapper.Map<List<SubTipoSolicitudDto>>(data);
         return dtoItems;
     }

@@ -1,4 +1,5 @@
-﻿using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
+﻿using COFIDE.WFF.Application.Common.Constants;
+using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerSubTipoSolicitudPorArea;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerTipoOperacionPorArea;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerTipoSolicitudPorArea;
@@ -12,18 +13,27 @@ public class MaestroRepository(
         WorkflowFirmaDbContext context
     ) : GenericRepository<TipoOperacion, long>(context), IMaestroRepository
 {
-    public async Task<List<TipoOperacion>> GetByIdAreaAsync(long idArea, CancellationToken cancellationToken, bool tracking = false)
+    public async Task<List<TipoOperacion>> GetByIdAreaAsync(long idArea, char Estado, CancellationToken cancellationToken, bool tracking = false)
     {
         IQueryable<TipoOperacion> query = _context.Set<TipoOperacion>();
 
         if (!tracking)
             query = query.AsNoTracking();
 
+        if (Estado == EstadoFiltro.Activo)
+        {
+            query = query.Where(u => u.Estado);
+        }
+        else if (Estado == EstadoFiltro.Inactivo)
+        {
+            query = query.Where(u => !u.Estado);
+        }
+
         return await query
             .Include(u => u.Area)
             .Where(u =>
                 u.IdArea == idArea
-                && u.Estado)
+            )
             .OrderBy(ts => ts.NombreTipoOperacion)
             .ToListAsync(cancellationToken);
     }
@@ -57,18 +67,27 @@ public class MaestroRepository(
         return await query.FirstOrDefaultAsync(e => e.Id.Equals(id) && e.Estado, cancellationToken);
     }
 
-    public async Task<List<TipoSolicitud>> GetTipoSolicitudByIdAreaAsync(long idArea, CancellationToken cancellationToken, bool tracking = false)
+    public async Task<List<TipoSolicitud>> GetTipoSolicitudByIdAreaAsync(long idArea, char Estado, CancellationToken cancellationToken, bool tracking = false)
     {
         IQueryable<TipoSolicitud> query = _context.Set<TipoSolicitud>();
 
         if (!tracking)
             query = query.AsNoTracking();
 
+        if (Estado == EstadoFiltro.Activo)
+        {
+            query = query.Where(u => u.Estado);
+        }
+        else if(Estado == EstadoFiltro.Inactivo)
+        {
+            query = query.Where(u => !u.Estado);
+        }
+
         return await query
             .Include(u => u.Area)
             .Where(u =>
                 u.IdArea == idArea
-                && u.Estado)
+            )
             .OrderBy(ts => ts.NombreTipoSolicitud)
             .ToListAsync(cancellationToken);
     }
@@ -92,20 +111,28 @@ public class MaestroRepository(
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<SubTipoSolicitud>> GetByIdTipoSolicitudAndIdAreaAsync(long idArea, long idTipoSolicitud, CancellationToken cancellationToken, bool tracking = false)
+    public async Task<List<SubTipoSolicitud>> GetByIdTipoSolicitudAndIdAreaAsync(long idArea, long idTipoSolicitud, char Estado, CancellationToken cancellationToken, bool tracking = false)
     {
         IQueryable<SubTipoSolicitud> query = _context.Set<SubTipoSolicitud>();
 
         if (!tracking)
             query = query.AsNoTracking();
 
+        if (Estado == EstadoFiltro.Activo)
+        {
+            query = query.Where(u => u.Estado);
+        }
+        else if (Estado == EstadoFiltro.Inactivo)
+        {
+            query = query.Where(u => !u.Estado);
+        }
+
         return await query
             .Include(u => u.TipoSolicitud)
             .Include(u => u.Area)
             .Where(u =>
                 u.IdTipoSolicitud == idTipoSolicitud
-                && u.IdArea == idArea
-                && u.Estado)
+                && u.IdArea == idArea)
             .OrderBy(ts => ts.NombreSubTipoSolicitud)
             .ToListAsync(cancellationToken);
     }
