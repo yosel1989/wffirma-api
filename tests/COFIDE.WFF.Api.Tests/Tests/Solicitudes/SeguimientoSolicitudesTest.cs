@@ -54,7 +54,9 @@ public class SeguimientoSolicitudesTest
         var consulta = Consulta(caso);
         var listado = Respuesta(caso.Respuesta);
         var mediator = new Mock<IMediator>();
-        mediator.Setup(m => m.Send(consulta, It.IsAny<CancellationToken>())).ReturnsAsync(listado);
+        mediator
+    .Setup(m => m.Send(It.IsAny<SeguimientoSolicitudesQuery>(), It.IsAny<CancellationToken>()))
+    .ReturnsAsync(listado);
         var controller = new SolicitudController(mediator.Object, new Mock<ICorrelationContext>().Object)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
