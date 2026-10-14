@@ -276,7 +276,8 @@ public class CorreoPorAprobarEventHandlerTest
         Firmantes = correos.Select((correo, i) => new FirmanteFlujoDto
         {
             Correo = correo,
-            NombreUsuarioAsignado = $"Firmante {i + 1}"
+            NombreUsuarioAsignado = $"Firmante {i + 1}",
+            Notificacion = true
         }).ToList()
     };
 
