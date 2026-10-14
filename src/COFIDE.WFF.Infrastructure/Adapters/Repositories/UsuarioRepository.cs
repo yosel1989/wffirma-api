@@ -99,7 +99,9 @@ public class UsuarioRepository(
 
     public async Task<List<UsuariosComboDto>> GetUsuarioCombo(CancellationToken cancellationToken)
     {
-        var usuarios = await _context.Usuarios
+        try
+        {
+var usuarios = await _context.Usuarios
                 .AsNoTracking()
                 .Where(u => u.Estado)
                 .OrderBy(u => u.ApellidoPaterno)
@@ -111,10 +113,18 @@ public class UsuarioRepository(
                     NombreCompleto =
                         u.Nombres + " " +
                         u.ApellidoPaterno + " " +
-                        (u.ApellidoMaterno ?? "")
+                        (u.ApellidoMaterno ?? ""),
+                    CodigoUsuario = u.CuentaLogueo ?? ""
                 })
                 .ToListAsync(cancellationToken);
 
-        return usuarios;
+            return usuarios;
+        }
+        catch (Exception e)
+        {
+
+            throw;
+        }
+ 
     }
 }

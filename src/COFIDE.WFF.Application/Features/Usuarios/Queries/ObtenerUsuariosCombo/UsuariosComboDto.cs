@@ -4,4 +4,5 @@ public class UsuariosComboDto
 {
     public long IdUsuario { get; set; }
     public string NombreCompleto { get; set; } = string.Empty;
+    public string CodigoUsuario { get; set; } = string.Empty;
 }
