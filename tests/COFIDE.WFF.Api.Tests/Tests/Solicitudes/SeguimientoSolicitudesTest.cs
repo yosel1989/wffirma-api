@@ -1,6 +1,8 @@
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Controllers.v1;
+using COFIDE.WFF.Api.Request.Solicitudes;
 using COFIDE.WFF.Api.Tests.Support;
+using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using FluentAssertions;
@@ -32,6 +34,7 @@ public sealed record SeguimientoApiCase(
     int PageNumber,
     int PageSize,
     string? SearchTerm,
+    List<SortDto>? Sort,
     SeguimientoApiFiltrosData Consulta,
     SeguimientoApiRespuestaData Respuesta,
     SeguimientoApiEsperadoData Esperado)
@@ -80,19 +83,33 @@ public class SeguimientoSolicitudesTest
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    private static SeguimientoSolicitudesQuery Consulta(SeguimientoApiCase caso)
+    private static SeguimientoSolicitudesRequest Consulta(SeguimientoApiCase caso)
     {
         var filtros = caso.Consulta;
-        return new SeguimientoSolicitudesQuery(
-            filtros.Fechainicio, filtros.Fechafin,
-            filtros.Gerencia, filtros.Departamento, filtros.Solicitante,
-            filtros.Tiposolicitud, filtros.Subtiposolicitud, filtros.TipoOperacion,
-            filtros.Asunto, filtros.Referencia, filtros.Estado, filtros.Firmante, filtros.Codigosolicitud,
-            filtros.Encurso, filtros.Aprobada, filtros.Rechazada, filtros.IncluirResumen)
+
+        return new SeguimientoSolicitudesRequest
         {
+            Fechainicio = filtros.Fechainicio,
+            Fechafin = filtros.Fechafin,
+            Gerencia = filtros.Gerencia,
+            Departamento = filtros.Departamento,
+            Solicitante = filtros.Solicitante,
+            Tiposolicitud = filtros.Tiposolicitud,
+            Subtiposolicitud = filtros.Subtiposolicitud,
+            TipoOperacion = filtros.TipoOperacion,
+            Asunto = filtros.Asunto,
+            Referencia = filtros.Referencia,
+            Estado = filtros.Estado,
+            Firmante = filtros.Firmante,
+            Codigosolicitud = filtros.Codigosolicitud,
+            Encurso = filtros.Encurso,
+            Aprobada = filtros.Aprobada,
+            Rechazada = filtros.Rechazada,
+            IncluirResumen = filtros.IncluirResumen,
+
             PageNumber = caso.PageNumber,
             PageSize = caso.PageSize,
-            SearchTerm = caso.SearchTerm
+            Sorts = caso.Sort,
         };
     }
 
