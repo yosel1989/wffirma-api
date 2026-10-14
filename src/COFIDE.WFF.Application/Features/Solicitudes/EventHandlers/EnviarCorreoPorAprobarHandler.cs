@@ -52,11 +52,10 @@ public class EnviarCorreoPorAprobarHandler(
 
                 var tipoEtapa = etapaActual.ValorTipoEtapa;
 
-                var listaUsuarios = new List<(string, string)>();
-                foreach (var item in etapaActual.Firmantes)
-                {
-                    listaUsuarios.Add((item.Correo, item.NombreUsuarioAsignado ?? string.Empty));
-                }
+                var listaUsuarios = etapaActual.Firmantes
+                .Where(f => f.Notificacion.HasValue && f.Notificacion == true)
+                .Select(f => (f.Correo, f.NombreUsuarioAsignado ?? string.Empty))
+                .ToList();
 
                 asunto = _htmlTemplateRenderer.Render(
                     templateCorreoNoUrgente.AsuntoCorreo ?? string.Empty, solicitud);

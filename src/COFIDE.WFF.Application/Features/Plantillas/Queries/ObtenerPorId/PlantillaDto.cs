@@ -36,4 +36,5 @@ public class FirmanteFlujoDto
     public string Correo { get; init; } = null!;
     public bool EsSuplente { get; init; }
     public bool EsDelegado { get; init; }
+    public bool? Notificacion { get; init; }
 }

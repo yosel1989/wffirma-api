@@ -5,7 +5,7 @@ using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using FluentAssertions;
 using Moq;
 
-namespace COFIDE.WFF.Application.Tests.Features.Solicitudes;
+namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class SolicitudSustentoStorageTest
 {

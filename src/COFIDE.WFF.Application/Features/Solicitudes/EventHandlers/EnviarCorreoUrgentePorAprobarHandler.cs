@@ -55,6 +55,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
 
             var tipoEtapa = etapaActual.ValorTipoEtapa;
             var listaUsuarios = etapaActual.Firmantes
+                .Where(f => f.Notificacion.HasValue && f.Notificacion == true)
                 .Select(f => (f.Correo, f.NombreUsuarioAsignado ?? string.Empty))
                 .ToList();
 
