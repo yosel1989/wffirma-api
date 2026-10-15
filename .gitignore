@@ -149,3 +149,4 @@ desktop.ini
 *.swo
 *.orig
 *.rej
+/src/COFIDE.WFF.Api/Properties/PublishProfiles/FolderProfile.pubxml

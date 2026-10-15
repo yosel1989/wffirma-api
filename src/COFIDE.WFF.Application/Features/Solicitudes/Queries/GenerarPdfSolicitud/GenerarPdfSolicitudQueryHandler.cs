@@ -113,7 +113,7 @@ public sealed class GenerarPdfSolicitudQueryHandler(
         string.IsNullOrWhiteSpace(extension) ? nombre ?? string.Empty : $"{nombre}.{extension.TrimStart('.')}";
 
     private async Task<string> NombreTipoSolicitudAsync(long id, CancellationToken cancellationToken) =>
-        (await _maestroRepository.GetTipoSolicitudByIdAsync(id, cancellationToken))?.NombreTipoSolicitud ?? string.Empty;
+        (await _maestroRepository.GetTipoSolicitudByIdSinEstadoAsync(id, cancellationToken))?.NombreTipoSolicitud ?? string.Empty;
 
     private async Task<string> NombreSubTipoSolicitudAsync(long idTipo, long id, CancellationToken cancellationToken) =>
         (await _maestroRepository.GetSubTipoSolicitudCombo(null, [idTipo], cancellationToken))
