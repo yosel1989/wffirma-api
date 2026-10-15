@@ -428,9 +428,9 @@ public class SolicitudDocumento : AuditableEntity<long>
                     MidpointRounding.AwayFromZero);
 
             var posicionHorizontalY =
-                altoPagina.Value -
+                Math.Floor(altoPagina.Value -
                 altoFirma -
-                margenInferior;
+                margenInferior);
 
             return (
                 posicionHorizontalX,
@@ -449,9 +449,9 @@ public class SolicitudDocumento : AuditableEntity<long>
         {
             var posicionMaximaY = Math.Max(
                 0m,
-                altoPagina.Value -
+                Math.Floor(altoPagina.Value -
                 altoFirma -
-                margenInferiorVertical);
+                margenInferiorVertical));
 
             posicionVerticalY = Math.Min(
                 posicionY,
