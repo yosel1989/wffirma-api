@@ -67,6 +67,16 @@ public class MaestroRepository(
         return await query.FirstOrDefaultAsync(e => e.Id.Equals(id) && e.Estado, cancellationToken);
     }
 
+    public async Task<TipoSolicitud?> GetTipoSolicitudByIdSinEstadoAsync(long id, CancellationToken cancellationToken, bool tracking = false)
+    {
+        IQueryable<TipoSolicitud> query = _context.Set<TipoSolicitud>();
+
+        if (!tracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(e => e.Id.Equals(id), cancellationToken);
+    }
+
     public async Task<List<TipoSolicitud>> GetTipoSolicitudByIdAreaAsync(long idArea, char Estado, CancellationToken cancellationToken, bool tracking = false)
     {
         IQueryable<TipoSolicitud> query = _context.Set<TipoSolicitud>();

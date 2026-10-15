@@ -11,6 +11,8 @@ public interface IMaestroRepository : IGenericRepository<TipoOperacion, long>
     Task<List<TipoOperacionComboDto>> GetTipoOperacionCombo(List<long>? idArea, CancellationToken cancellationToken);
 
     Task<TipoSolicitud?> GetTipoSolicitudByIdAsync(long id, CancellationToken cancellationToken, bool tracking = false);
+
+    Task<TipoSolicitud?> GetTipoSolicitudByIdSinEstadoAsync(long id, CancellationToken cancellationToken, bool tracking = false);
     Task<List<TipoSolicitud>> GetTipoSolicitudByIdAreaAsync(long idArea, char Estado, CancellationToken cancellationToken, bool tracking = false);
     Task<List<TipoSolicitudComboDto>> GetTipoSolicitudCombo(List<long>? idArea, CancellationToken cancellationToken);
 
