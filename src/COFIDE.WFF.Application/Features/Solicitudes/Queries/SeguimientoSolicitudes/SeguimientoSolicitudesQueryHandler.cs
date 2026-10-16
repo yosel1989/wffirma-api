@@ -9,11 +9,11 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicit
 
 public sealed class SeguimientoSolicitudesQueryHandler(
     ICurrentUserService currentUser,
-        ISolicitudQueryRepository solicitudQueryRepository
+        ISolicitudSeguimientoRepository solicitudQueryRepository
     ) : IRequestHandler<SeguimientoSolicitudesQuery, SeguimientoSolicitudesResponseDto>
 {
     private readonly ICurrentUserService _currentUser = currentUser;
-    private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
+    private readonly ISolicitudSeguimientoRepository _solicitudQueryRepository = solicitudQueryRepository;
 
     public async Task<SeguimientoSolicitudesResponseDto> Handle(SeguimientoSolicitudesQuery request, CancellationToken cancellationToken)
     {

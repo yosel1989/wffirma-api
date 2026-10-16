@@ -78,30 +78,7 @@ public interface ISolicitudQueryRepository
       bool? incluirresumen,
       CancellationToken cancellationToken);
 
-    Task<PagedResult<SeguimientoSolicitudesDto, SeguimientoSolicitudesResumenDto>> ObtenerPaginadoSeguimiento(
-        PagedQueryParams paginationParams,
-        long? codigoUsuario,
-        long? areaUsuario,
-        string? roLUsuario,
-        long? departamentoUsuario,
-        string? fechainicio,
-        string? fechafin,
-        List<long>? gerencia,
-        List<long>? departamento,
-        List<long>? solicitante,
-        List<long>? tiposolicitud,
-        List<long>? subtiposolicitud,
-        List<long>? tipoOperacion,
-        string? asunto,
-        string? referencia,
-        List<long>? estado,
-        List<long>? firmante,
-        string? codigosolicitud,
-        bool? encurso,
-        bool? aprobada,
-        bool? rechazada,
-        bool? incluirresumen,
-        CancellationToken cancellationToken);
+    
 
     #endregion
 }
