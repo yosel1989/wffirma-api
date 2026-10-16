@@ -2,6 +2,7 @@
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Vo;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
+using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -18,8 +19,16 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                 {
                     s.Id,
                     s.CodigoSolicitud,
+                    Solicitante = (
+                                (s.UsuarioSolicitante.Nombres.Contains(" ")
+                                    ? s.UsuarioSolicitante.Nombres.Substring(
+                                        0, s.UsuarioSolicitante.Nombres.IndexOf(" "))
+                                    : s.UsuarioSolicitante.Nombres)
+                                + " " + (s.UsuarioSolicitante.ApellidoPaterno ?? "")
+                            ).Trim(),
                     TipoSolicitud = s.TipoSolicitud.NombreTipoSolicitud,
                     SubTipoSolicitud = s.SubTipoSolicitud.NombreSubTipoSolicitud,
+                    TipoOperacion = s.TipoOperacion.NombreTipoOperacion,
                     Estado = s.EstadoSolicitud.Nombre,
                     FechaCreacion = s.FechaSolicitud,
                     Urgente = s.EsUrgente ? "Sí" : "No",
@@ -58,8 +67,10 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                 {
                     IdSolicitud = x.Id,
                     CodigoSolicitud = x.CodigoSolicitud,
+                    Solicitante = x.Solicitante,
                     TipoSolicitud = x.TipoSolicitud,
                     SubTipoSolicitud = x.SubTipoSolicitud,
+                    TipoOperacion = x.TipoOperacion,
                     Estado = x.Estado,
                     FechaCreacion = x.FechaCreacion,
                     Urgente = x.Urgente,
@@ -401,7 +412,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
 
             var projectedQuery = ProyectarListadoSeguimiento(querygrilla
                                                                     .OrderByDescending(s => s.EsUrgente)
-                                                                    .ThenBy(s => s.FechaSolicitud));
+                                                                    .ThenByDescending(s => s.FechaSolicitud));
 
             if (paginationParams.Sorts?.Count > 0)
             {
