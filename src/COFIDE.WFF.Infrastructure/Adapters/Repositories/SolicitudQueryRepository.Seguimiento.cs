@@ -401,7 +401,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
 
             var projectedQuery = ProyectarListadoSeguimiento(querygrilla
                                                                     .OrderByDescending(s => s.EsUrgente)
-                                                                    .ThenBy(s => s.FechaSolicitud));
+                                                                    .ThenByDescending(s => s.FechaSolicitud));
 
             if (paginationParams.Sorts?.Count > 0)
             {
