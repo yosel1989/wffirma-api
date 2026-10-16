@@ -51,7 +51,7 @@ public class SeguimientoSolicitudesQueryHandlerTest
     [MemberData(nameof(Casos))]
     public async Task Handle_Debe_Responder_Segun_El_Caso(SeguimientoCase caso)
     {
-        var repositorio = new Mock<ISolicitudQueryRepository>(MockBehavior.Strict);
+        var repositorio = new Mock<ISolicitudSeguimientoRepository>(MockBehavior.Strict);
         if (caso.Repositorio is not null)
             ConfigurarRepositorio(repositorio, caso);
 
@@ -99,7 +99,7 @@ public class SeguimientoSolicitudesQueryHandlerTest
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
-    private static void ConfigurarRepositorio(Mock<ISolicitudQueryRepository> repositorio, SeguimientoCase caso)
+    private static void ConfigurarRepositorio(Mock<ISolicitudSeguimientoRepository> repositorio, SeguimientoCase caso)
     {
         var datos = caso.Repositorio!;
         var pagina = new PagedResult<SeguimientoSolicitudesDto, SeguimientoSolicitudesResumenDto>(
