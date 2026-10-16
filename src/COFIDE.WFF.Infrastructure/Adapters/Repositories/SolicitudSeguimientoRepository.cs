@@ -1,17 +1,19 @@
 ﻿using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Vo;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Infrastructure.Extensions;
+using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using VO = COFIDE.WFF.Domain.ValueObjects;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
 {
-    public partial class SolicitudQueryRepository
+    public partial class SolicitudSeguimientoRepository(WorkflowFirmaDbContext context) : ISolicitudSeguimientoRepository
     {
+        private readonly WorkflowFirmaDbContext _context = context;
         private static IQueryable<SeguimientoSolicitudesDto> ProyectarListadoSeguimiento(IQueryable<Solicitud> query)
         {
             return query
@@ -189,12 +191,9 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                 }
                 else if (rol == "SOLAPR" && codigoUsuario.HasValue)
                 {
-                    query = query.Where(s =>
-                    s.Documentos
-                        .SelectMany(d => d.DetallesFirma)
-                        .Any(df =>
-                            df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado != null &&
-                                df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id == codigoUsuario.Value));
+
+                    query = query.Where(s => s.SolicitudPlantilla.FirmantesFlujo.Any(sf => sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id == codigoUsuario.Value));
+
                 }
             }
 
@@ -276,13 +275,9 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
 
             if (firmante?.Count > 0)
             {
-                query = query.Where(s =>
-                    s.Documentos
-                        .SelectMany(d => d.DetallesFirma)
-                        .Any(df =>
-                            df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado != null &&
-                            firmante.Contains(
-                                df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id)));
+
+                query = query.Where(s => s.SolicitudPlantilla.FirmantesFlujo.Any(sf => firmante.Contains(sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id)));
+
             }
 
             if (!string.IsNullOrWhiteSpace(codigosolicitud))
