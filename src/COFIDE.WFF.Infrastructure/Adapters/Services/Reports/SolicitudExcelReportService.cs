@@ -51,7 +51,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Services.Reports
                 worksheet.Cell(row, 2).Value = item.CodigoSolicitud ?? string.Empty;
                 worksheet.Cell(row, 3).Value = item.TipoSolicitud ?? string.Empty;
                 worksheet.Cell(row, 4).Value = item.SubTipoSolicitud ?? string.Empty;
-                worksheet.Cell(row, 5).Value = item.SubTipoSolicitud ?? string.Empty;
+                worksheet.Cell(row, 5).Value = item.TipoOperacion ?? string.Empty;
                 worksheet.Cell(row, 6).Value = item.Urgente ?? string.Empty;
                 worksheet.Cell(row, 7).Value = item.Solicitante ?? string.Empty;
                 worksheet.Cell(row, 8).Value = item.Estado ?? string.Empty;
