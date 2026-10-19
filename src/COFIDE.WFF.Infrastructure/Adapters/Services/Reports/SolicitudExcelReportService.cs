@@ -109,12 +109,13 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Services.Reports
             worksheet.Column(2).Width = 25;
             worksheet.Column(3).Width = 25;
             worksheet.Column(4).Width = 25;
-            worksheet.Column(5).Width = 15;
-            worksheet.Column(6).Width = 35;
-            worksheet.Column(7).Width = 20;
-            worksheet.Column(8).Width = 22;
-            worksheet.Column(9).Width = 25;
-            worksheet.Column(10).Width = 35;
+            worksheet.Column(5).Width = 25;
+            worksheet.Column(6).Width = 15;
+            worksheet.Column(7).Width = 35;
+            worksheet.Column(8).Width = 20;
+            worksheet.Column(9).Width = 22;
+            worksheet.Column(10).Width = 25;
+            worksheet.Column(11).Width = 35;
         }
     }
 }
