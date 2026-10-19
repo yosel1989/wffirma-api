@@ -28,12 +28,13 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Services.Reports
             worksheet.Cell(1, 2).Value = "Código Solicitud";
             worksheet.Cell(1, 3).Value = "Tipo Solicitud";
             worksheet.Cell(1, 4).Value = "Sub Tipo Solicitud";
-            worksheet.Cell(1, 5).Value = "Urgente";
-            worksheet.Cell(1, 6).Value = "Solicitante";
-            worksheet.Cell(1, 7).Value = "Estado";
-            worksheet.Cell(1, 8).Value = "Fecha Creación";
-            worksheet.Cell(1, 9).Value = "Aprobadores Pendientes";
-            worksheet.Cell(1, 10).Value = "Aprobador Actual";
+            worksheet.Cell(1, 5).Value = "Tipo Operación";
+            worksheet.Cell(1, 6).Value = "Urgente";
+            worksheet.Cell(1, 7).Value = "Solicitante";
+            worksheet.Cell(1, 8).Value = "Estado";
+            worksheet.Cell(1, 9).Value = "Fecha Creación";
+            worksheet.Cell(1, 10).Value = "Aprobadores Pendientes";
+            worksheet.Cell(1, 11).Value = "Aprobador Actual";
         }
 
         private static void LlenarDatos(
@@ -50,22 +51,23 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Services.Reports
                 worksheet.Cell(row, 2).Value = item.CodigoSolicitud ?? string.Empty;
                 worksheet.Cell(row, 3).Value = item.TipoSolicitud ?? string.Empty;
                 worksheet.Cell(row, 4).Value = item.SubTipoSolicitud ?? string.Empty;
-                worksheet.Cell(row, 5).Value = item.Urgente ?? string.Empty;
-                worksheet.Cell(row, 6).Value = item.Solicitante ?? string.Empty;
-                worksheet.Cell(row, 7).Value = item.Estado ?? string.Empty;
+                worksheet.Cell(row, 5).Value = item.TipoOperacion ?? string.Empty;
+                worksheet.Cell(row, 6).Value = item.Urgente ?? string.Empty;
+                worksheet.Cell(row, 7).Value = item.Solicitante ?? string.Empty;
+                worksheet.Cell(row, 8).Value = item.Estado ?? string.Empty;
 
                 if (item.FechaCreacion.HasValue)
                 {
-                    worksheet.Cell(row, 8).Value = item.FechaCreacion.Value;
-                    worksheet.Cell(row, 8).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
+                    worksheet.Cell(row, 9).Value = item.FechaCreacion.Value;
+                    worksheet.Cell(row, 9).Style.DateFormat.Format = "dd/MM/yyyy HH:mm";
                 }
                 else
                 {
-                    worksheet.Cell(row, 8).Value = string.Empty;
+                    worksheet.Cell(row, 9).Value = string.Empty;
                 }
 
-                worksheet.Cell(row, 9).Value = item.AprobadoresPendientes;
-                worksheet.Cell(row, 10).Value = item.AprobadorActual ?? string.Empty;
+                worksheet.Cell(row, 10).Value = item.AprobadoresPendientes;
+                worksheet.Cell(row, 11).Value = item.AprobadorActual ?? string.Empty;
             }
         }
 
