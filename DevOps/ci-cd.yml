@@ -1,0 +1,143 @@
+# =============================================================================
+# CICD-api-wf-firmas
+# Repositorio: api-wf-firmas · Workflow de Firmas (Backend .NET 8, hexagonal)
+#
+# Pipeline unificado CI + CD. Manifiesto delgado: toda la logica vive en la
+# plantilla padre del catalogo infra-corp-delivery (9.5, Etapa B).
+#
+# ALCANCE: solo COFIDE.WFF.Api. El proyecto COFIDE.WFF.Worker es un proceso
+# aparte (servicio de Windows / tarea programada, no IIS) con su propio
+# appsettings.json; su automatizacion queda pendiente.
+#
+# Desviacion documentada frente a GOB-DEVOPS-FUENTE-001 v2.2 § 9.4:
+#   el lineamiento define pipelines CI y CD separados. Aqui se unifican por
+#   decision del equipo; requiere excepcion aprobada por Arquitectura DevOps.
+# =============================================================================
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - develop
+      - release/*
+      - main
+  paths:
+    exclude:
+      - README.md
+      - docs/*
+
+pr: none   # La validacion de PR se configura en Branch Policies (§ 9.1)
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: infra-templates/infra-corp-delivery
+      ref: refs/tags/v1.6.0
+
+extends:
+  template: azure-devops/api/TMPL-cicd-dotnet-iis.yml@templates
+  parameters:
+    # ---------------------------- Identidad ------------------------------
+    # Produce el artefacto api-wf-firmas-{version}.zip
+    tipo: 'api'
+    dominio: 'wf'
+    contexto: 'firmas'
+
+    # ------------------------------- CI -----------------------------------
+    poolCompilacion: 'Grupo_compilacion'
+    agenteCompilacion: 'SRVAPPDEVOPS'
+    dotnetVersion: '8.0.x'
+    proyectoPrincipal: 'src/COFIDE.WFF.Api/COFIDE.WFF.Api.csproj'
+
+    # Api.IntegrationTests requiere Oracle y el SUC, que el agente de
+    # compilacion no alcanza. El filtro es el que documenta el README.
+    ejecutarPruebas: true
+    proyectosPrueba: 'tests/**/*Tests.csproj'
+    filtroPruebas: 'Categoria!=Integracion&Categoria!=ApisExternas'
+
+    # DESACTIVADO TEMPORALMENTE — alinear con la decision tomada para el
+    # frontend sobre el Quality Gate (§ 9.2.2). Reactivar cuando se defina
+    # el umbral de cobertura aplicable al backend.
+    ejecutarSonar: false
+    # sonarProjectKey: 'api-wf-firmas'
+    # sonarEndpoint: 'SonarqubeConnection'
+
+    # DESACTIVADO — pendiente el protocolo del Artifacts Repository.
+    publicarEnArtifacts: false
+
+    # DESACTIVADO — requiere Contribute y Manage tags para el Build Service.
+    crearTagGit: false
+
+    # ------------------------------- CD -----------------------------------
+    # La cadena de conexion y la clave JWT NO van aqui: la Api las obtiene
+    # del SUC al arrancar (ExternalServices:SucWCF). Las claves anidadas del
+    # Variable Group usan notacion de punto: ExternalServices.SucApi.BaseUrl
+    configJsonPath: 'appsettings.json'
+
+    ambientes:
+      # ------------------------------ DEV ---------------------------------
+      # Inventario verificado 20/10/2026 contra el IIS de SRVWEBBEDEV.
+      #
+      # API-WFF NO es un sitio: es una aplicacion virtual dentro del sitio
+      # WEB-BEDEV, que hospeda ademas API-SNT, API-SPB, API-UNICAS y otras.
+      # Por eso el despliegue usa aplicacionVirtual: el sitio y sus bindings
+      # son compartidos y no deben tocarse.
+      - clave: 'dev'
+        environment: 'api-wf-firmas-dev'
+        variableGroup: 'VG-api-wf-firmas-dev'
+        ramaAutorizada: 'refs/heads/develop'
+        pool: 'Grupo_despliegue_desarrollo'
+        agente: 'SRVWEBBEDEV'            # CONFIRMAR el nombre del agente
+        # El app pool appPoolApiWFF corre como COFIDE\USRADMWFFDEV, una
+        # identidad de dominio que el pipeline no puede recrear (requeriria
+        # almacenar su contrasena). Con gestionarIIS: 'no' el pipeline solo
+        # despliega contenido y no toca sitio, aplicacion ni app pool.
+        gestionarIIS: 'no'
+        sitioIIS: 'WEB-BEDEV'
+        aplicacionVirtual: 'API-WFF'
+        rutaFisica: 'C:\inetpub\wwwroot\WEB-BEDEV\API-WFF'
+        appPool: 'appPoolApiWFF'
+        urlSmokeTest: 'https://web-bedev.cofide.com.pe/API-WFF/swagger/index.html'
+        # Las carpetas de idioma (cs, de, es, fr, ...) SI las produce el build:
+        # son los satellite assemblies de .NET y deben reemplazarse.
+        # Solo se preservan los respaldos manuales.
+        carpetasPreservadas:
+          - '-skip:objectName=dirPath,absolutePath=.*\\BK_.*'
+          - '-skip:objectName=filePath,absolutePath=.*\\BK_.*'
+
+      # ------------------------------ QA ----------------------------------
+      # PENDIENTE DE INVENTARIO: confirmar contra el IIS de QA.
+      - clave: 'qa'
+        environment: 'api-wf-firmas-qa'
+        variableGroup: 'VG-api-wf-firmas-qa'
+        ramaAutorizada: 'refs/heads/release/'
+        pool: 'Grupo_despliegue_calidad'
+        agente: 'PENDIENTE'
+        gestionarIIS: 'no'
+        sitioIIS: 'PENDIENTE'
+        aplicacionVirtual: 'API-WFF'
+        rutaFisica: 'PENDIENTE'
+        appPool: 'appPoolApiWFF'
+        urlSmokeTest: ''
+        carpetasPreservadas:
+          - '-skip:objectName=dirPath,absolutePath=.*\\BK_.*'
+          - '-skip:objectName=filePath,absolutePath=.*\\BK_.*'
+
+      # ----------------------------- PROD ---------------------------------
+      # PENDIENTE DE INVENTARIO: confirmar contra el IIS de PROD.
+      - clave: 'prod'
+        environment: 'api-wf-firmas-prod'
+        variableGroup: 'VG-api-wf-firmas-prod'
+        ramaAutorizada: 'refs/heads/main'
+        pool: 'Grupo_despliegue_produccion'
+        agente: 'PENDIENTE'
+        gestionarIIS: 'no'
+        sitioIIS: 'PENDIENTE'
+        aplicacionVirtual: 'API-WFF'
+        rutaFisica: 'PENDIENTE'
+        appPool: 'appPoolApiWFF'
+        urlSmokeTest: ''
+        carpetasPreservadas:
+          - '-skip:objectName=dirPath,absolutePath=.*\\BK_.*'
+          - '-skip:objectName=filePath,absolutePath=.*\\BK_.*'
