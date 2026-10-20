@@ -57,7 +57,7 @@ extends:
     filtroPruebas: 'Categoria!=Integracion&Categoria!=ApisExternas'
 
     # DESACTIVADO TEMPORALMENTE — alinear con la decision tomada para el
-    # frontend sobre el Quality Gate (§ 9.2.2). Reactivar cuando se defina
+    # frontend sobre el Quality Gate ( 9.2.2). Reactivar cuando se defina
     # el umbral de cobertura aplicable al backend.
     ejecutarSonar: false
     # sonarProjectKey: 'api-wf-firmas'
