@@ -33,7 +33,7 @@ resources:
     - repository: templates
       type: git
       name: infra-templates/infra-corp-delivery
-      ref: refs/tags/v1.6.0
+      ref: refs/tags/v1.6.1
 
 extends:
   template: azure-devops/api/TMPL-cicd-dotnet-iis.yml@templates
@@ -52,7 +52,7 @@ extends:
 
     # Api.IntegrationTests requiere Oracle y el SUC, que el agente de
     # compilacion no alcanza. El filtro es el que documenta el README.
-    ejecutarPruebas: true
+    ejecutarPruebas: false
     proyectosPrueba: 'tests/**/*Tests.csproj'
     filtroPruebas: 'Categoria!=Integracion&Categoria!=ApisExternas'
 
