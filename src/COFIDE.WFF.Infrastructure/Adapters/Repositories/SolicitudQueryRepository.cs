@@ -65,19 +65,15 @@ public partial class SolicitudQueryRepository(
         var estadoEnCurso = VO.EstadoSolicitud.EnCurso.Codigo;
         var estadoRechazado = VO.EstadoSolicitud.Rechazado.Codigo;
 
-        var etapasPendientesMinimas = detalleFirmasQuery
-            .Where(df =>
-                df.Estado &&
-                (df.EstadoDocumento == VO.EstadoDocumento.Pendiente ||
-                df.EstadoDocumento == VO.EstadoDocumento.Firmado && !df.SolicitudFirmanteFlujo.RevAprobado) &&
-                df.SolicitudDocumento.Estado &&
-                df.SolicitudDocumento.Solicitud.Estado &&
-                df.SolicitudDocumento.Solicitud.IdEstadoSolicitud == estadoEnCurso)
-            .GroupBy(df => df.SolicitudFirmanteFlujo.SolicitudPlantilla.Solicitud.Id)
+        var etapasPendientesMinimas = solicitudFirmanteFlujoQuery
+            .Where(sf => sf.Estado && sf.FirmanteFlujo.Estado &&
+                !sf.RevAprobado &&
+                sf.FechaRevision == null)
+            .GroupBy(sf => sf.SolicitudPlantilla.Solicitud.Id)
             .Select(g => new
             {
                 IdSolicitud = g.Key,
-                OrdenEtapaMinima = g.Min(x => x.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.OrdenEtapa)
+                OrdenEtapaMinima = g.Min(x => x.FirmanteFlujo.PlantillaEtapa.OrdenEtapa)
             });
 
         var etapasPendientesMinimasSinDocumentos = solicitudFirmanteFlujoQuery
@@ -96,28 +92,30 @@ public partial class SolicitudQueryRepository(
 
         IQueryable<DetalleFirma> queryConDocumentos = detalleFirmasQuery
             .Where(df =>
-                ( df.EstadoDocumento == VO.EstadoDocumento.Pendiente ||
-                df.EstadoDocumento == VO.EstadoDocumento.Firmado && !df.SolicitudFirmanteFlujo.RevAprobado) &&
                 df.Estado &&
-                df.SolicitudDocumento.Estado &&
-                df.SolicitudDocumento.Solicitud.Estado &&
+                codigoUsuario.HasValue &&
                 df.SolicitudDocumento.Solicitud.IdEstadoSolicitud == estadoEnCurso &&
+                df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Estado &&
                 df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id == codigoUsuario.Value &&
+
                 etapasPendientesMinimas.Any(e =>
                     e.IdSolicitud == df.SolicitudDocumento.Solicitud.Id &&
                     e.OrdenEtapaMinima == df.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.OrdenEtapa
                 ) &&
+                !df.SolicitudFirmanteFlujo.RevAprobado &&
+                df.SolicitudFirmanteFlujo.FechaRevision == null &&
+                (
+                    df.EstadoDocumento == VO.EstadoDocumento.Pendiente ||
+                    df.EstadoDocumento == VO.EstadoDocumento.Firmado ||
+                    df.EstadoDocumento == VO.EstadoDocumento.Bloqueado
+                ) &&
+
                 (
                     (
-                        df.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.OrdenEtapa == 1 &&
-                        !df.SolicitudFirmanteFlujo.RevAprobado &&
-                        df.SolicitudFirmanteFlujo.FechaRevision == null
+                        df.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.OrdenEtapa == 1
                     )
                     ||
                     detalleFirmasQuery.Any(dfAnt =>
-                        dfAnt.Estado &&
-                        dfAnt.SolicitudDocumento.Estado &&
-                        dfAnt.SolicitudDocumento.Solicitud.Estado &&
                         dfAnt.SolicitudDocumento.Solicitud.Id == df.SolicitudDocumento.Solicitud.Id &&
                         dfAnt.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.Plantilla.Id ==
                             df.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.Plantilla.Id &&
