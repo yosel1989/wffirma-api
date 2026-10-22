@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExce
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerGestionSolicitudes;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
@@ -97,6 +98,14 @@ namespace COFIDE.WFF.Api.Mappings
         public static SeguimientoSolicitudesQuery ToQuery(this SeguimientoSolicitudesRequest r) =>
             new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Tiposolicitud, r.Subtiposolicitud,
                 r.TipoOperacion, r.Asunto, r.Referencia, r.Estado, r.Firmante, r.Codigosolicitud, r.Encurso, r.Aprobada, r.Rechazada, r.IncluirResumen)
+            {
+                PageNumber = r.PageNumber,
+                PageSize = r.PageSize,
+                Sorts = r.Sorts
+            };
+
+        public static ObtenerGestionSolicitudesQuery ToQuery(this GestionSolicitudesRequest r) =>
+            new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Firmante, r.Estado, r.Codigosolicitud)
             {
                 PageNumber = r.PageNumber,
                 PageSize = r.PageSize,

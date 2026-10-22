@@ -1,0 +1,121 @@
+[
+    {
+        "caso": "Primera pagina sin filtros",
+        "pageNumber": 1,
+        "pageSize": 10,
+        "sort": null,
+        "consulta": {
+            "fechainicio": null,
+            "fechafin": null,
+            "gerencia": null,
+            "departamento": null,
+            "solicitante": null,
+            "firmante": null,
+            "estado": null,
+            "codigosolicitud": null
+        },
+        "respuesta": {
+            "total": 832,
+            "items": [
+                {
+                    "idSolicitud": 824,
+                    "codigoSolicitud": "DOB-SAP_CBR-00000012-2026",
+                    "solicitante": "SANTIAGO CONZA",
+                    "aprobadorActual": "SANTIAGO CONZA",
+                    "estado": "En Curso",
+                    "fechaCreacion": "2026-10-20T14:48:36",
+                    "fechaModificacion": null
+                },
+                {
+                    "idSolicitud": 802,
+                    "codigoSolicitud": "DOB-CCTPT-00000025-2026",
+                    "solicitante": "SANTIAGO CONZA",
+                    "aprobadorActual": null,
+                    "estado": "Aprobado",
+                    "fechaCreacion": "2026-10-16T12:41:57",
+                    "fechaModificacion": "2026-10-16T12:50:35.032713"
+                }
+            ],
+            "pageNumber": 1,
+            "pageSize": 10,
+            "totalCount": 832
+        },
+        "esperado": {
+            "success": true,
+            "message": "Operación exitosa"
+        }
+    },
+    {
+        "caso": "Pagina intermedia con filtros",
+        "pageNumber": 2,
+        "pageSize": 10,
+        "sort": null,
+        "consulta": {
+            "fechainicio": "2026-01-01",
+            "fechafin": "2026-01-31",
+            "gerencia": [ 1 ],
+            "departamento": [ 2 ],
+            "solicitante": [ 10 ],
+            "firmante": [ 20 ],
+            "estado": [ 2 ],
+            "codigosolicitud": "DOB-SAP"
+        },
+        "respuesta": {
+            "total": 12,
+            "items": [
+                {
+                    "idSolicitud": 8,
+                    "codigoSolicitud": "DOB-SAP_CBR-00000008-2026",
+                    "solicitante": "ANA TORRES",
+                    "aprobadorActual": "JUAN ESQUIVEL",
+                    "estado": "En Curso",
+                    "fechaCreacion": "2026-01-10T10:49:52",
+                    "fechaModificacion": null
+                },
+                {
+                    "idSolicitud": 7,
+                    "codigoSolicitud": "DOB-SAP_CBR-00000007-2026",
+                    "solicitante": "ANA TORRES",
+                    "aprobadorActual": "ANA TORRES",
+                    "estado": "En Curso",
+                    "fechaCreacion": "2026-01-09T10:48:55",
+                    "fechaModificacion": null
+                }
+            ],
+            "pageNumber": 2,
+            "pageSize": 10,
+            "totalCount": 12
+        },
+        "esperado": {
+            "success": true,
+            "message": "Operación exitosa"
+        }
+    },
+    {
+        "caso": "Sin resultados",
+        "pageNumber": 1,
+        "pageSize": 10,
+        "sort": null,
+        "consulta": {
+            "fechainicio": null,
+            "fechafin": null,
+            "gerencia": null,
+            "departamento": null,
+            "solicitante": null,
+            "firmante": null,
+            "estado": null,
+            "codigosolicitud": "NO-EXISTE"
+        },
+        "respuesta": {
+            "total": 0,
+            "items": [],
+            "pageNumber": 1,
+            "pageSize": 10,
+            "totalCount": 0
+        },
+        "esperado": {
+            "success": true,
+            "message": "Operación exitosa"
+        }
+    }
+]

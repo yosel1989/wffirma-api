@@ -31,7 +31,6 @@
   <ItemGroup>
     <Folder Include="Resources\Solicitudes\" />
     <Folder Include="Support\" />
-    <Folder Include="Tests\Solicitudes\" />
   </ItemGroup>
 
 	<ItemGroup>
