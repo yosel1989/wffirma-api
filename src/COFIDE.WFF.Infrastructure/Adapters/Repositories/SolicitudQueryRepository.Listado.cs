@@ -47,7 +47,7 @@ public partial class SolicitudQueryRepository
                             .Select(sf => sf.Id)
                             .Distinct()
                             .LongCount(),
-               AprobadorActual = s.IdEstadoSolicitud == VO.EstadoSolicitud.Rechazado.Codigo
+               AprobadorActual = (s.IdEstadoSolicitud == VO.EstadoSolicitud.Rechazado.Codigo || s.IdEstadoSolicitud == VO.EstadoSolicitud.Borrador.Codigo)
                         ? "-"
                         : s.Documentos.Any()
                             ? s.Documentos
