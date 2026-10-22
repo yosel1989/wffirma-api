@@ -1,0 +1,252 @@
+[
+    {
+        "caso": "Pagina intermedia con filtros",
+        "usuario": {
+            "userIdLocal": 10,
+            "userCargoId": 7,
+            "userAreaId": 5,
+            "codigoRolUsuario": "SOLICITANTE"
+        },
+        "pageNumber": 2,
+        "pageSize": 10,
+        "searchTerm": "ana",
+        "filtros": {
+            "fechainicio": "2026-01-01",
+            "fechafin": "2026-01-31",
+            "gerencia": [ 1 ],
+            "departamento": [ 2 ],
+            "solicitante": [ 10 ],
+            "estado": [ 2 ],
+            "firmante": [ 20 ],
+            "codigosolicitud": "DOB-SAP"
+        },
+        "repositorio": {
+            "totalCount": 12,
+            "items": [
+                {
+                    "idSolicitud": 8,
+                    "codigoSolicitud": "DOB-SAP_CBR-00000008-2026",
+                    "solicitante": "ANA TORRES",
+                    "aprobadorActual": "JUAN ESQUIVEL",
+                    "estado": "En Curso",
+                    "fechaCreacion": "2026-01-10T10:49:52",
+                    "fechaModificacion": null
+                },
+                {
+                    "idSolicitud": 7,
+                    "codigoSolicitud": "DOB-SAP_CBR-00000007-2026",
+                    "solicitante": "ANA TORRES",
+                    "aprobadorActual": "ANA TORRES",
+                    "estado": "En Curso",
+                    "fechaCreacion": "2026-01-09T10:48:55",
+                    "fechaModificacion": null
+                }
+            ]
+        },
+        "esperado": {
+            "success": true,
+            "code": "20000",
+            "message": "Operación exitosa",
+            "data": {
+                "total": 12,
+                "listadoSolicitudesCount": 2,
+                "pageNumber": 2,
+                "pageSize": 10,
+                "totalCount": 12,
+                "totalPages": 2,
+                "hasPrevious": true,
+                "hasNext": false
+            }
+        }
+    },
+    {
+        "caso": "Primera pagina con mas paginas",
+        "usuario": {
+            "userIdLocal": 10,
+            "userCargoId": 7,
+            "userAreaId": 5,
+            "codigoRolUsuario": "SOLICITANTE"
+        },
+        "pageNumber": 1,
+        "pageSize": 10,
+        "searchTerm": null,
+        "filtros": {
+            "fechainicio": null,
+            "fechafin": null,
+            "gerencia": null,
+            "departamento": null,
+            "solicitante": null,
+            "estado": null,
+            "firmante": null,
+            "codigosolicitud": null
+        },
+        "repositorio": {
+            "totalCount": 25,
+            "items": [
+                {
+                    "idSolicitud": 824,
+                    "codigoSolicitud": "DOB-SAP_CBR-00000012-2026",
+                    "solicitante": "SANTIAGO CONZA",
+                    "aprobadorActual": "SANTIAGO CONZA",
+                    "estado": "En Curso",
+                    "fechaCreacion": "2026-10-20T14:48:36",
+                    "fechaModificacion": null
+                },
+                {
+                    "idSolicitud": 802,
+                    "codigoSolicitud": "DOB-CCTPT-00000025-2026",
+                    "solicitante": "SANTIAGO CONZA",
+                    "aprobadorActual": null,
+                    "estado": "Aprobado",
+                    "fechaCreacion": "2026-10-16T12:41:57",
+                    "fechaModificacion": "2026-10-16T12:50:35.032713"
+                }
+            ]
+        },
+        "esperado": {
+            "success": true,
+            "code": "20000",
+            "message": "Operación exitosa",
+            "data": {
+                "total": 25,
+                "listadoSolicitudesCount": 2,
+                "pageNumber": 1,
+                "pageSize": 10,
+                "totalCount": 25,
+                "totalPages": 3,
+                "hasPrevious": false,
+                "hasNext": true
+            }
+        }
+    },
+    {
+        "caso": "Pagina intermedia con anterior y siguiente",
+        "usuario": {
+            "userIdLocal": 10,
+            "userCargoId": 7,
+            "userAreaId": 5,
+            "codigoRolUsuario": "SOLICITANTE"
+        },
+        "pageNumber": 2,
+        "pageSize": 10,
+        "searchTerm": null,
+        "filtros": {
+            "fechainicio": null,
+            "fechafin": null,
+            "gerencia": null,
+            "departamento": null,
+            "solicitante": null,
+            "estado": null,
+            "firmante": null,
+            "codigosolicitud": null
+        },
+        "repositorio": {
+            "totalCount": 35,
+            "items": [
+                {
+                    "idSolicitud": 11,
+                    "codigoSolicitud": "DOB-FIR_AUDITORIA-00000011-2026",
+                    "solicitante": "RAUL RISCO",
+                    "aprobadorActual": null,
+                    "estado": "Rechazado",
+                    "fechaCreacion": "2026-10-10T09:15:00",
+                    "fechaModificacion": "2026-10-10T11:02:10"
+                }
+            ]
+        },
+        "esperado": {
+            "success": true,
+            "code": "20000",
+            "message": "Operación exitosa",
+            "data": {
+                "total": 35,
+                "listadoSolicitudesCount": 1,
+                "pageNumber": 2,
+                "pageSize": 10,
+                "totalCount": 35,
+                "totalPages": 4,
+                "hasPrevious": true,
+                "hasNext": true
+            }
+        }
+    },
+    {
+        "caso": "Sin resultados",
+        "usuario": {
+            "userIdLocal": 10,
+            "userCargoId": 7,
+            "userAreaId": 5,
+            "codigoRolUsuario": "SOLICITANTE"
+        },
+        "pageNumber": 1,
+        "pageSize": 10,
+        "searchTerm": null,
+        "filtros": {
+            "fechainicio": null,
+            "fechafin": null,
+            "gerencia": null,
+            "departamento": null,
+            "solicitante": null,
+            "estado": null,
+            "firmante": null,
+            "codigosolicitud": null
+        },
+        "repositorio": {
+            "totalCount": 0,
+            "items": []
+        },
+        "esperado": {
+            "success": true,
+            "code": "20000",
+            "message": "Operación exitosa",
+            "data": {
+                "total": 0,
+                "listadoSolicitudesCount": 0,
+                "pageNumber": 1,
+                "pageSize": 10,
+                "totalCount": 0,
+                "totalPages": 0,
+                "hasPrevious": false,
+                "hasNext": false
+            }
+        }
+    },
+    {
+        "caso": "Sin usuario",
+        "usuario": {
+            "userIdLocal": null,
+            "userCargoId": 7,
+            "userAreaId": 5,
+            "codigoRolUsuario": "SOLICITANTE"
+        },
+        "pageNumber": 1,
+        "pageSize": 10,
+        "searchTerm": null,
+        "filtros": null,
+        "repositorio": null,
+        "esperado": {
+            "success": false,
+            "code": "AUTH_REQUIRED",
+            "data": null
+        }
+    },
+    {
+        "caso": "Sin cargo",
+        "usuario": {
+            "userIdLocal": 10,
+            "userCargoId": null,
+            "userAreaId": 5,
+            "codigoRolUsuario": "SOLICITANTE"
+        },
+        "pageNumber": 1,
+        "pageSize": 10,
+        "searchTerm": null,
+        "filtros": null,
+        "repositorio": null,
+        "esperado": {
+            "success": false,
+            "code": "AUTH_REQUIRED",
+            "data": null
+        }
+    }
+]

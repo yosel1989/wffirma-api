@@ -22,6 +22,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodi
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerGestionSolicitudes;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
@@ -477,6 +478,22 @@ public class SolicitudController : BaseApiController
         var result = await _mediator.Send(request.ToQuery());
 
         var response = ResponseDto<SeguimientoSolicitudesResponseDto>.Ok(
+            result,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+
+    [HttpGet("gestion-solicitudes")]
+    [ProducesResponseType(typeof(ResponseDto<ObtenerGestionSolicitudesResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<ObtenerGestionSolicitudesResponseDto>>> GestionSolicitudesPaginado(
+    [FromQuery] GestionSolicitudesRequest request)
+    {
+        var result = await _mediator.Send(request.ToQuery());
+
+        var response = ResponseDto<ObtenerGestionSolicitudesResponseDto>.Ok(
             result,
             "Operación exitosa",
             HttpContext.TraceIdentifier);
