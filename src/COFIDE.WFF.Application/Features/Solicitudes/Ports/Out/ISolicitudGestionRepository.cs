@@ -21,5 +21,6 @@ public interface ISolicitudGestionRepository
         List<long>? firmante,
         List<long>? estado,
         string? codigosolicitud,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken
+    );
 }
