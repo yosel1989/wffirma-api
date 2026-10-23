@@ -8,7 +8,9 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerGestionSoli
     /// </summary>
     public class ObtenerGestionSolicitudesDto
     {
-        /// <summary>Identificador único de la solicitud.</summary>
+        /// <summary>
+        /// Identificador único de la solicitud.
+        /// </summary>
         public long IdSolicitud { get; set; }
 
         /// <summary>Código visible de la solicitud.</summary>
