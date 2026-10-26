@@ -15,6 +15,7 @@ public class EnviarCorreoPorAprobarHandler(
         IFormatoNotificacionRepository formatoNotificacionRepository,
         IHtmlTemplateRenderer htmlTemplateRenderer,
         IUrlProvider urlProvider,
+        ISolicitudIdProtector solicitudIdProtector,
         ILogger<EnviarCorreoPorAprobarHandler> logger
     ) : INotificationHandler<DomainEventNotification<SolicitudPorAprobarFirmantesDomainEvent>>
 {
@@ -24,6 +25,7 @@ public class EnviarCorreoPorAprobarHandler(
     private readonly IFormatoNotificacionRepository _formatoNotificacionRepository = formatoNotificacionRepository;
     private readonly IHtmlTemplateRenderer _htmlTemplateRenderer = htmlTemplateRenderer;
     private readonly IUrlProvider _urlProvider = urlProvider;
+    private readonly ISolicitudIdProtector _solicitudIdProtector = solicitudIdProtector;
     private readonly ILogger<EnviarCorreoPorAprobarHandler> _logger = logger;
 
     public async Task Handle(DomainEventNotification<SolicitudPorAprobarFirmantesDomainEvent> notification, CancellationToken cancellationToken)
@@ -33,8 +35,11 @@ public class EnviarCorreoPorAprobarHandler(
 
         try
         {
-            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl();
+            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl().TrimEnd('/');
             var domainEvent = notification.DomainEvent;
+            var tokenSolicitud = _solicitudIdProtector.Encriptar(domainEvent.IdSolicitud);
+
+            var tokenUrl = Uri.EscapeDataString(tokenSolicitud);
 
             var templateCorreoNoUrgente = await _formatoNotificacionRepository
                 .ObtenerPorCodigo(CodigosPlantillaCorreo.SolicitudPorAprobar, cancellationToken)
@@ -76,8 +81,10 @@ public class EnviarCorreoPorAprobarHandler(
                             solicitud.AsuntoSolicitud,
                             solicitud.FechaCreacion,
                             Anio = HoraSistema.Ahora.Year.ToString(),
-                            LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/editar?id={domainEvent.IdSolicitud}",
-                            LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?id={domainEvent.IdSolicitud}"
+                            //LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/editar?id={domainEvent.IdSolicitud}",
+                            //LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?id={domainEvent.IdSolicitud}"
+                            LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/editar?token={tokenUrl}",
+                            LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?token={tokenUrl}"
                         };
 
                         cuerpo = _htmlTemplateRenderer.Render(
@@ -105,8 +112,10 @@ public class EnviarCorreoPorAprobarHandler(
                         solicitud.AsuntoSolicitud,
                         solicitud.FechaCreacion,
                         Anio = HoraSistema.Ahora.Year.ToString(),
+                        //LinkSolicitud = $"{baseFrontUrl}/mis-solicitudes",
+                        //LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?id={domainEvent.IdSolicitud}"
                         LinkSolicitud = $"{baseFrontUrl}/mis-solicitudes",
-                        LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?id={domainEvent.IdSolicitud}"
+                        LinkAprobarSolicitud = $"{baseFrontUrl}/bandejas/detalle-solicitud?token={tokenUrl}"
                     };
 
                     cuerpo = _htmlTemplateRenderer.Render(

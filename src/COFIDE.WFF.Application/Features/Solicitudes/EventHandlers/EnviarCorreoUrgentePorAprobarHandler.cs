@@ -35,7 +35,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
     {
         try
         {
-            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl();
+            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl().TrimEnd('/');
             var domainEvent = notification.DomainEvent;
 
             var templateCorreoUrgente = await _formatoNotificacionRepository

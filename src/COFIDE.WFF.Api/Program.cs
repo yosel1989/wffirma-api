@@ -4,6 +4,7 @@ using COFIDE.WFF.Api.Middleware;
 using COFIDE.WFF.Application;
 using COFIDE.WFF.Infrastructure;
 using COFIDE.WFF.Infrastructure.Bootstrap;
+using Microsoft.AspNetCore.DataProtection;
 using Serilog;
 using System.Text.Json;
 
@@ -42,6 +43,8 @@ builder.Services.AddSwaggerConfig();
 
 // CORS
 builder.Services.AddCorsConfig(builder.Configuration);
+
+builder.Services.AddDataProtection().SetApplicationName("COFIDE.WFF");
 
 var app = builder.Build();
 
