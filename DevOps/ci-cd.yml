@@ -52,12 +52,12 @@ extends:
 
     # Api.IntegrationTests requiere Oracle y el SUC, que el agente de
     # compilacion no alcanza. El filtro es el que documenta el README.
-    ejecutarPruebas: false
+    ejecutarPruebas: true
     proyectosPrueba: 'tests/**/*Tests.csproj'
     filtroPruebas: 'Categoria!=Integracion&Categoria!=ApisExternas'
 
     # DESACTIVADO TEMPORALMENTE — alinear con la decision tomada para el
-    # frontend sobre el Quality Gate ( 9.2.2). Reactivar cuando se defina
+    # frontend sobre el Quality Gate (§ 9.2.2). Reactivar cuando se defina
     # el umbral de cobertura aplicable al backend.
     ejecutarSonar: false
     # sonarProjectKey: 'api-wf-firmas'
@@ -77,67 +77,70 @@ extends:
 
     ambientes:
       # ------------------------------ DEV ---------------------------------
-      # Inventario verificado 20/10/2026 contra el IIS de SRVWEBBEDEV.
+      # Inventario verificado 26/10/2026 contra el IIS de SRVWEBBEDEV.
       #
-      # API-WFF NO es un sitio: es una aplicacion virtual dentro del sitio
-      # WEB-BEDEV, que hospeda ademas API-SNT, API-SPB, API-UNICAS y otras.
-      # Por eso el despliegue usa aplicacionVirtual: el sitio y sus bindings
-      # son compartidos y no deben tocarse.
+      # API-WFF NO es un sitio: es una aplicacion virtual dentro de un sitio
+      # que hospeda ~40 APIs de otros equipos. Por eso aplicacionVirtual: el
+      # sitio y sus bindings son compartidos y no deben tocarse.
+      #
+      # Ademas, el app pool corre con una identidad de dominio distinta por
+      # ambiente (USRADMWFFDEV / QAS / PRD). El pipeline no puede recrearla
+      # sin almacenar su contrasena, y esa cuenta es la que tiene acceso a
+      # Oracle, a los documentos y a las rutas de log. De ahi gestionarIIS.
       - clave: 'dev'
         environment: 'api-wf-firmas-dev'
         variableGroup: 'VG-api-wf-firmas-dev'
         ramaAutorizada: 'refs/heads/develop'
         pool: 'Grupo_despliegue_desarrollo'
-        agente: 'SRVWEBBEDEV'            # CONFIRMAR el nombre del agente
-        # El app pool appPoolApiWFF corre como COFIDE\USRADMWFFDEV, una
-        # identidad de dominio que el pipeline no puede recrear (requeriria
-        # almacenar su contrasena). Con gestionarIIS: 'no' el pipeline solo
-        # despliega contenido y no toca sitio, aplicacion ni app pool.
-        gestionarIIS: 'no'
+        agente: 'SRVWEBBEDEV'
+        gestionarIIS: 'no'          # app pool: COFIDE\USRADMWFFDEV
         sitioIIS: 'WEB-BEDEV'
         aplicacionVirtual: 'API-WFF'
         rutaFisica: 'C:\inetpub\wwwroot\WEB-BEDEV\API-WFF'
         appPool: 'appPoolApiWFF'
         urlSmokeTest: 'https://web-bedev.cofide.com.pe/API-WFF/swagger/index.html'
-        # Las carpetas de idioma (cs, de, es, fr, ...) SI las produce el build:
-        # son los satellite assemblies de .NET y deben reemplazarse.
-        # Solo se preservan los respaldos manuales.
+        # Las carpetas de idioma (cs, de, es, fr, ...) y runtimes SI las
+        # produce el build: son satellite assemblies de .NET y deben
+        # reemplazarse. Solo se preservan los respaldos manuales BK_*.
         carpetasPreservadas:
           - '-skip:objectName=dirPath,absolutePath=.*\\BK_.*'
           - '-skip:objectName=filePath,absolutePath=.*\\BK_.*'
 
-      # ------------------------------ QA ----------------------------------
-      # PENDIENTE DE INVENTARIO: confirmar contra el IIS de QA.
+      # ------------------------------ QAS ---------------------------------
+      # Inventario verificado 26/10/2026 contra el IIS de SRVWEBBEQAS.
+      # Ojo: la unidad es E:, no C: como en DEV.
       - clave: 'qa'
         environment: 'api-wf-firmas-qa'
         variableGroup: 'VG-api-wf-firmas-qa'
         ramaAutorizada: 'refs/heads/release/'
         pool: 'Grupo_despliegue_calidad'
-        agente: 'PENDIENTE'
-        gestionarIIS: 'no'
-        sitioIIS: 'PENDIENTE'
+        agente: 'SRVWEBBEQAS'
+        gestionarIIS: 'no'          # app pool: COFIDE\USRADMWFFQAS
+        sitioIIS: 'WEB-BEQAS'
         aplicacionVirtual: 'API-WFF'
-        rutaFisica: 'PENDIENTE'
+        rutaFisica: 'E:\inetpub\wwwroot\WEB-BEQAS\API-WFF'
         appPool: 'appPoolApiWFF'
-        urlSmokeTest: ''
+        urlSmokeTest: 'https://web-beqas.cofide.com.pe/API-WFF/swagger/index.html'
         carpetasPreservadas:
           - '-skip:objectName=dirPath,absolutePath=.*\\BK_.*'
           - '-skip:objectName=filePath,absolutePath=.*\\BK_.*'
 
-      # ----------------------------- PROD ---------------------------------
-      # PENDIENTE DE INVENTARIO: confirmar contra el IIS de PROD.
+      # ------------------------------ PRD ---------------------------------
+      # Inventario verificado 26/10/2026 contra el IIS de SRVWEBBEPRD.
+      # El sitio se llama BE-PRD, no WEB-BEPRD: no sigue el patron de los
+      # otros dos ambientes.
       - clave: 'prod'
         environment: 'api-wf-firmas-prod'
         variableGroup: 'VG-api-wf-firmas-prod'
         ramaAutorizada: 'refs/heads/main'
         pool: 'Grupo_despliegue_produccion'
-        agente: 'PENDIENTE'
-        gestionarIIS: 'no'
-        sitioIIS: 'PENDIENTE'
+        agente: 'SRVWEBBEPRD'
+        gestionarIIS: 'no'          # app pool: COFIDE\USRADMWFFPRD
+        sitioIIS: 'BE-PRD'
         aplicacionVirtual: 'API-WFF'
-        rutaFisica: 'PENDIENTE'
+        rutaFisica: 'E:\inetpub\wwwroot\BE-PRD\API-WFF'
         appPool: 'appPoolApiWFF'
-        urlSmokeTest: ''
+        urlSmokeTest: 'https://web-beprd.cofide.com.pe/API-WFF/swagger/index.html'
         carpetasPreservadas:
           - '-skip:objectName=dirPath,absolutePath=.*\\BK_.*'
           - '-skip:objectName=filePath,absolutePath=.*\\BK_.*'
