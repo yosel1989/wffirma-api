@@ -33,7 +33,7 @@ resources:
     - repository: templates
       type: git
       name: infra-templates/infra-corp-delivery
-      ref: refs/tags/v1.6.0
+      ref: refs/tags/v1.6.2
 
 extends:
   template: azure-devops/api/TMPL-cicd-dotnet-iis.yml@templates
@@ -144,4 +144,3 @@ extends:
         carpetasPreservadas:
           - '-skip:objectName=dirPath,absolutePath=.*\\BK_.*'
           - '-skip:objectName=filePath,absolutePath=.*\\BK_.*'
-          
