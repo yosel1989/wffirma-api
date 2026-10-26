@@ -36,7 +36,7 @@ public class EnviarCorreoAprobadoEventHandler(
     {
         try
         {
-            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl();
+            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl().TrimEnd('/');
             var baseBackUrl = _urlProvider.GetWorkflowBaseBackUrl();
             var domainEvent = notification.DomainEvent;
             string correoUsuario = "";

@@ -30,7 +30,7 @@ public class EnviarCorreoRechazoEventHandler(
     {
         try
         {
-            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl();
+            var baseFrontUrl = _urlProvider.GetWorkflowBaseFrontUrl().TrimEnd('/');
             var domainEvent = notification.DomainEvent;
 
             var templateCorreo = await _formatoNotificacionRepository

@@ -201,6 +201,8 @@ public static class DependencyInjection
         // Token para enlace temporal
         services.AddScoped<ITokenSeguroGenerator, TokenSeguroGenerator>();
 
+        services.AddScoped<ISolicitudIdProtector, SolicitudIdProtector>();
+
         // Repositories
         services.Scan(scan => scan
         .FromAssemblyOf<AreaRepository>()

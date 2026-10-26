@@ -28,10 +28,13 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPagina
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ValidarDocumentoFirmado;
+using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.PermisoSolicitud;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Net.Mime;
+using System.Security.Cryptography;
 namespace COFIDE.WFF.Api.Controllers.v1;
 
 
@@ -500,5 +503,70 @@ public class SolicitudController : BaseApiController
 
         return Ok(response);
     }
+
+    #region Desenscriptar id
+
+    [HttpPost("desencriptar-id")]
+    [ProducesResponseType(
+        typeof(ResponseDto<object>),
+        StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DesencriptarIdSolicitud(
+        [FromBody] DesencriptarIdSolicitudRequest request,
+        [FromServices] ISolicitudIdProtector solicitudIdProtector,
+        CancellationToken cancellationToken)
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.Token))
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "El enlace de la solicitud no es válido."
+            });
+        }
+
+        long idSolicitud;
+
+        try
+        {
+            // Recuperar el ID original desde el token protegido.
+            idSolicitud = solicitudIdProtector.Desencriptar(request.Token);
+        }
+        catch (CryptographicException)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "El enlace es inválido o ha expirado."
+            });
+        }
+        catch (InvalidOperationException)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "El enlace de la solicitud no es válido."
+            });
+        }
+
+        var tienePermiso = await _mediator.Send(
+            new PermisoSolicitudQuery(idSolicitud, request.Revisar),
+            cancellationToken
+        );
+
+        if (!tienePermiso)
+        {
+            return Forbid();
+        }
+
+        var response = ResponseDto<object>.Ok(
+            new { idSolicitud }
+        );
+
+        return Ok(response);
+    }
+
+    #endregion
 }
 
