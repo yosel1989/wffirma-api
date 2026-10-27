@@ -157,6 +157,18 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
             .FirstOrDefault();
     }
 
+    public bool EsMismoOPosteriorA(SolicitudFirmanteFlujo punto)
+    {
+        if (Id == punto.Id)
+            return true;
+
+        var fecha = ObtenerFechaRevisionEfectiva();
+        var fechaPunto = punto.ObtenerFechaRevisionEfectiva();
+
+        return (fecha.HasValue && fechaPunto.HasValue && fecha.Value >= fechaPunto.Value)
+            || OrdenEtapa > punto.OrdenEtapa;
+    }
+
     public void InactivarHistorialRevisionPosterior(DateTime fechaPunto)
     {
         foreach (var historial in _historialRevision.Where(h => h.Estado))

@@ -829,7 +829,20 @@ public class Solicitud : AuditableEntity<long>
     public IReadOnlyCollection<string> RestaurarFlujo(
         long idPuntoRestauracion,
         long idUsuarioAccion,
-        Func<long> generarIdDetalleFirma)
+        Func<long> generarId)
+    {
+        var punto = ResolverPunto(idPuntoRestauracion);
+
+        var archivos = EstadoSolicitud == ValueObject.EstadoSolicitud.Rechazado
+            ? RestaurarRechazada(punto, generarId)
+            : RestaurarEnCursoOAprobada(punto, generarId);
+
+        PasarAEnCurso(idUsuarioAccion);
+        AddDomainEvent(new SolicitudPorAprobarFirmantesDomainEvent(Id));
+        return archivos;
+    }
+
+    private SolicitudFirmanteFlujo ResolverPunto(long idPuntoRestauracion)
     {
         if (EstadoSolicitud != ValueObject.EstadoSolicitud.EnCurso
             && EstadoSolicitud != ValueObject.EstadoSolicitud.Aprobado
@@ -843,201 +856,140 @@ public class Solicitud : AuditableEntity<long>
             .FirstOrDefault(f => f.Estado && f.Id == idPuntoRestauracion)
             ?? throw new DomainException(SolicitudErrors.PuntoRestauracionNoEncontrado);
 
-        var fechaPunto = punto.ObtenerFechaRevisionEfectiva()
-            ?? throw new DomainException(SolicitudErrors.PuntoRestauracionSinFecha);
+        if (!punto.ObtenerFechaRevisionEfectiva().HasValue)
+            throw new DomainException(SolicitudErrors.PuntoRestauracionSinFecha);
 
-        var firmantes = SolicitudPlantilla.FirmantesFlujo.Where(f => f.Estado).ToList();
-        var rechazada = EstadoSolicitud == ValueObject.EstadoSolicitud.Rechazado;
-        var estadoAnterior = IdEstadoSolicitud;
-
-        var rutas = new List<string>();
-
-        if (rechazada)
-        {
-            RestaurarFlujoRechazado(firmantes, punto, fechaPunto, generarIdDetalleFirma);
-        }
-        else
-        {
-            var afectados = OrdenarPorFechaRevisionDescendente(
-                firmantes.Where(f => EsPuntoODescendiente(f, punto, fechaPunto)));
-
-            foreach (var firmante in afectados)
-            {
-                if (FirmoYAprobo(firmante))
-                    RenovarDetalleFirma(firmante, generarIdDetalleFirma, rutas, eliminarArchivoFirmado: true);
-
-                firmante.ResetearPorRechazo();
-                firmante.InactivarHistorialRevisionPosterior(fechaPunto);
-            }
-        }
-
-        if (EstadoSolicitud != ValueObject.EstadoSolicitud.EnCurso)
-        {
-            MotivoRechazo = null;
-            CambiarEstado(ValueObject.EstadoSolicitud.EnCurso);
-            FechaAccion = HoraSistema.Ahora;
-            IdUsuarioAccion = idUsuarioAccion;
-            AddDomainEvent(new SolicitudEstadoCambiadoDomainEvent(
-                Id,
-                estadoAnterior,
-                idUsuarioAccion,
-                "Por restauración del flujo"));
-        }
-
-        AddDomainEvent(new SolicitudPorAprobarFirmantesDomainEvent(Id));
-
-        return rutas;
+        return punto;
     }
 
-    private void RestaurarFlujoRechazado(
-        List<SolicitudFirmanteFlujo> firmantes,
-        SolicitudFirmanteFlujo punto,
-        DateTime fechaPunto,
-        Func<long> generarIdDetalleFirma)
+    private void PasarAEnCurso(long idUsuarioAccion)
     {
-        var ordenados = OrdenarPorFechaRevisionDescendente(firmantes);
+        if (EstadoSolicitud == ValueObject.EstadoSolicitud.EnCurso)
+            return;
 
-        foreach (var firmante in ordenados)
+        var estadoAnterior = IdEstadoSolicitud;
+        MotivoRechazo = null;
+        CambiarEstado(ValueObject.EstadoSolicitud.EnCurso);
+        FechaAccion = HoraSistema.Ahora;
+        IdUsuarioAccion = idUsuarioAccion;
+        AddDomainEvent(new SolicitudEstadoCambiadoDomainEvent(
+            Id,
+            estadoAnterior,
+            idUsuarioAccion,
+            "Por restauración del flujo"));
+    }
+
+    private List<string> RestaurarEnCursoOAprobada(SolicitudFirmanteFlujo punto, Func<long> generarId)
+    {
+        var archivos = new List<string>();
+
+        foreach (var firmante in OrdenarPorFechaDesc(FirmantesActivos().Where(f => ParticipaEnRestauracion(f, punto))))
+        {
+            if (FirmoYAprobo(firmante))
+                archivos.AddRange(RenovarDetalles(firmante, generarId));
+
+            ReiniciarFirmante(firmante, punto);
+        }
+
+        return archivos;
+    }
+
+    private List<string> RestaurarRechazada(SolicitudFirmanteFlujo punto, Func<long> generarId)
+    {
+        foreach (var firmante in OrdenarPorFechaDesc(FirmantesActivos()))
         {
             var ultimo = firmante.ObtenerUltimoHistorialRevision();
-            if (!DebeRestaurarseEnRechazo(firmante, ultimo, punto, fechaPunto))
+            if (!DebeRestaurarse(firmante, ultimo, punto))
                 continue;
 
             if (ultimo?.RevAprobado == true)
             {
-                CopiarDetallesFirmadosInactivos(firmante, generarIdDetalleFirma);
+                RestaurarDetallesAprobados(firmante, generarId);
                 firmante.RestaurarAprobacion(ultimo.FechaRevision);
             }
             else
             {
-                CrearDetalleFirmaPendiente(firmante, generarIdDetalleFirma);
+                CrearDetallesPendientes(firmante, generarId);
                 firmante.ResetearPorRechazo();
             }
 
-            firmante.InactivarHistorialRevisionPosterior(fechaPunto);
+            firmante.InactivarHistorialRevisionPosterior(punto.ObtenerFechaRevisionEfectiva()!.Value);
         }
+
+        return [];
     }
 
-    private static List<SolicitudFirmanteFlujo> OrdenarPorFechaRevisionDescendente(
-        IEnumerable<SolicitudFirmanteFlujo> firmantes)
+    private static bool DebeRestaurarse(
+        SolicitudFirmanteFlujo firmante,
+        HistorialRevision? ultimo,
+        SolicitudFirmanteFlujo punto)
+    {
+        if (firmante.EsMismoOPosteriorA(punto))
+            return true;
+
+        return ultimo?.RevAprobado == true
+            && ultimo.FechaRevision <= punto.ObtenerFechaRevisionEfectiva();
+    }
+
+    private static bool ParticipaEnRestauracion(SolicitudFirmanteFlujo firmante, SolicitudFirmanteFlujo punto)
+    {
+        if (!firmante.EsMismoOPosteriorA(punto))
+            return false;
+
+        return firmante.Id == punto.Id
+            || firmante.RevAprobado
+            || firmante.HistRevision.Any(h => h.Estado && h.FechaRevision.HasValue);
+    }
+
+    private static void ReiniciarFirmante(SolicitudFirmanteFlujo firmante, SolicitudFirmanteFlujo punto)
+    {
+        firmante.ResetearPorRechazo();
+        firmante.InactivarHistorialRevisionPosterior(punto.ObtenerFechaRevisionEfectiva()!.Value);
+    }
+
+    private static List<SolicitudFirmanteFlujo> OrdenarPorFechaDesc(IEnumerable<SolicitudFirmanteFlujo> firmantes)
         => firmantes
             .OrderByDescending(f => f.ObtenerFechaRevisionEfectiva() ?? DateTime.MinValue)
             .ThenByDescending(f => f.OrdenEtapa ?? long.MinValue)
             .ToList();
 
-    private static bool DebeRestaurarseEnRechazo(
-        SolicitudFirmanteFlujo firmante,
-        HistorialRevision? ultimo,
-        SolicitudFirmanteFlujo punto,
-        DateTime fechaPunto)
-    {
-        if (firmante.Id == punto.Id)
-            return true;
-
-        if (ultimo is null)
-            return EsDescendienteDePunto(firmante, punto, fechaPunto);
-
-        var fecha = ultimo.FechaRevision;
-        var aproboHastaElPunto = ultimo.RevAprobado && fecha.HasValue && fecha.Value <= fechaPunto;
-        if (aproboHastaElPunto)
-            return true;
-
-        return EsDescendienteDePunto(firmante, punto, fechaPunto);
-    }
-
-    private static bool EsDescendienteDePunto(
-        SolicitudFirmanteFlujo firmante,
-        SolicitudFirmanteFlujo punto,
-        DateTime fechaPunto)
-    {
-        var fecha = firmante.ObtenerFechaRevisionEfectiva();
-        var posteriorPorFecha = fecha.HasValue && fecha.Value >= fechaPunto;
-        var posteriorPorOrden = firmante.OrdenEtapa.HasValue
-            && punto.OrdenEtapa.HasValue
-            && firmante.OrdenEtapa.Value > punto.OrdenEtapa.Value;
-
-        return posteriorPorFecha || posteriorPorOrden;
-    }
-
-    private static bool EsPuntoODescendiente(
-        SolicitudFirmanteFlujo firmante,
-        SolicitudFirmanteFlujo punto,
-        DateTime fechaPunto)
-    {
-        if (firmante.Id == punto.Id)
-            return true;
-
-        var fecha = firmante.ObtenerFechaRevisionEfectiva();
-        var posteriorPorFecha = fecha.HasValue && fecha.Value >= fechaPunto;
-        var posteriorPorOrden = firmante.OrdenEtapa.HasValue
-            && punto.OrdenEtapa.HasValue
-            && firmante.OrdenEtapa.Value > punto.OrdenEtapa.Value;
-
-        if (!posteriorPorFecha && !posteriorPorOrden)
-            return false;
-
-        return firmante.RevAprobado
-            || firmante.HistRevision.Any(h => h.Estado && h.FechaRevision.HasValue);
-    }
+    private IEnumerable<SolicitudFirmanteFlujo> FirmantesActivos()
+        => SolicitudPlantilla.FirmantesFlujo.Where(f => f.Estado);
 
     private bool FirmoYAprobo(SolicitudFirmanteFlujo firmante)
-    {
-        if (!firmante.RevAprobado)
-            return false;
-
-        return _documentos.Any(documento =>
-            documento.Estado &&
+        => firmante.RevAprobado && DocumentosActivos().Any(documento =>
             documento.DetallesFirma.Any(detalle =>
                 detalle.Estado &&
                 detalle.IdSolicitudFirmanteFlujo == firmante.Id &&
                 detalle.TieneDocumentoFirmado()));
-    }
 
-    private void RenovarDetalleFirma(
-        SolicitudFirmanteFlujo firmante,
-        Func<long> generarIdDetalleFirma,
-        List<string> rutas,
-        bool eliminarArchivoFirmado)
+    private List<string> RenovarDetalles(SolicitudFirmanteFlujo firmante, Func<long> generarId)
     {
-        foreach (var documento in _documentos.Where(d => d.Estado))
-        {
-            var detalles = documento.DetallesFirma
-                .Where(d => d.Estado && d.IdSolicitudFirmanteFlujo == firmante.Id)
-                .ToList();
+        var archivos = new List<string>();
 
-            foreach (var detalle in detalles)
+        foreach (var documento in DocumentosActivos())
+        {
+            foreach (var detalle in documento.DetallesFirma
+                .Where(d => d.Estado && d.IdSolicitudFirmanteFlujo == firmante.Id)
+                .ToList())
             {
-                if (eliminarArchivoFirmado
-                    && detalle.TieneDocumentoFirmado()
-                    && !string.IsNullOrWhiteSpace(detalle.RutaDocumentoFirmado)
-                    && !string.IsNullOrWhiteSpace(detalle.NombreDocumentoFirmado)
-                    && !string.IsNullOrWhiteSpace(detalle.ExtensionDocumentoFirmado))
-                {
-                    rutas.Add(detalle.ObtenerRutasArchivosFirmados());
-                }
+                if (TieneArchivoFirmado(detalle))
+                    archivos.Add(detalle.ObtenerRutasArchivosFirmados());
 
                 detalle.Inactivar();
             }
 
-            documento.AgregarDetalleFirma(DetalleFirma.Crear(
-                generarIdDetalleFirma(),
-                firmante.Id,
-                documento.Id,
-                null,
-                null,
-                null,
-                null,
-                firmante.IdUsuarioAsignado));
+            AsegurarDetallePendiente(documento, firmante, generarId);
         }
+
+        return archivos;
     }
 
-    private void CopiarDetallesFirmadosInactivos(
-        SolicitudFirmanteFlujo firmante,
-        Func<long> generarIdDetalleFirma)
+    private void RestaurarDetallesAprobados(SolicitudFirmanteFlujo firmante, Func<long> generarId)
     {
-        foreach (var documento in _documentos.Where(d => d.Estado))
+        foreach (var documento in DocumentosActivos())
         {
-            if (documento.DetallesFirma.Any(d => d.Estado && d.IdSolicitudFirmanteFlujo == firmante.Id))
+            if (TieneDetalleActivo(documento, firmante))
                 continue;
 
             var firmado = documento.DetallesFirma
@@ -1050,42 +1002,50 @@ public class Solicitud : AuditableEntity<long>
 
             if (firmado is null)
             {
-                documento.AgregarDetalleFirma(DetalleFirma.Crear(
-                    generarIdDetalleFirma(),
-                    firmante.Id,
-                    documento.Id,
-                    null,
-                    null,
-                    null,
-                    null,
-                    firmante.IdUsuarioAsignado));
+                AsegurarDetallePendiente(documento, firmante, generarId);
                 continue;
             }
 
-            documento.AgregarDetalleFirma(DetalleFirma.CopiarActivo(generarIdDetalleFirma(), firmado));
+            documento.AgregarDetalleFirma(DetalleFirma.CopiarActivo(generarId(), firmado));
         }
     }
 
-    private void CrearDetalleFirmaPendiente(
-        SolicitudFirmanteFlujo firmante,
-        Func<long> generarIdDetalleFirma)
+    private void CrearDetallesPendientes(SolicitudFirmanteFlujo firmante, Func<long> generarId)
     {
-        foreach (var documento in _documentos.Where(d => d.Estado))
-        {
-            if (documento.DetallesFirma.Any(d => d.Estado && d.IdSolicitudFirmanteFlujo == firmante.Id))
-                continue;
-
-            documento.AgregarDetalleFirma(DetalleFirma.Crear(
-                generarIdDetalleFirma(),
-                firmante.Id,
-                documento.Id,
-                null,
-                null,
-                null,
-                null,
-                firmante.IdUsuarioAsignado));
-        }
+        foreach (var documento in DocumentosActivos())
+            AsegurarDetallePendiente(documento, firmante, generarId);
     }
+
+    private static void AsegurarDetallePendiente(
+        SolicitudDocumento documento,
+        SolicitudFirmanteFlujo firmante,
+        Func<long> generarId)
+    {
+        if (TieneDetalleActivo(documento, firmante))
+            return;
+
+        documento.AgregarDetalleFirma(DetalleFirma.Crear(
+            generarId(),
+            firmante.Id,
+            documento.Id,
+            null,
+            null,
+            null,
+            null,
+            firmante.IdUsuarioAsignado));
+    }
+
+    private IEnumerable<SolicitudDocumento> DocumentosActivos()
+        => _documentos.Where(d => d.Estado);
+
+    private static bool TieneDetalleActivo(SolicitudDocumento documento, SolicitudFirmanteFlujo firmante)
+        => documento.DetallesFirma.Any(d => d.Estado && d.IdSolicitudFirmanteFlujo == firmante.Id);
+
+    private static bool TieneArchivoFirmado(DetalleFirma detalle)
+        => detalle.TieneDocumentoFirmado()
+            && !string.IsNullOrWhiteSpace(detalle.RutaDocumentoFirmado)
+            && !string.IsNullOrWhiteSpace(detalle.NombreDocumentoFirmado)
+            && !string.IsNullOrWhiteSpace(detalle.ExtensionDocumentoFirmado);
 
     #endregion
 
@@ -1096,28 +1056,10 @@ public class Solicitud : AuditableEntity<long>
     /// </summary>
     public void GenerarDetallesFirmaPendientes(Func<long> generarIdDetalleFirma)
     {
-        foreach (var firmanteFlujo in SolicitudPlantilla.FirmantesFlujo.Where(x => x.Estado))
+        foreach (var firmante in FirmantesActivos())
         {
-            foreach (var documento in _documentos.Where(x => x.Estado))
-            {
-                var yaExiste = documento.DetallesFirma
-                    .Any(x => x.Estado && x.IdSolicitudFirmanteFlujo == firmanteFlujo.Id);
-
-                if (yaExiste)
-                    continue;
-
-                var detalle = DetalleFirma.Crear(
-                    generarIdDetalleFirma(),
-                    firmanteFlujo.Id,
-                    documento.Id,
-                    null,
-                    null,
-                    null,
-                    null,
-                    firmanteFlujo.IdUsuarioAsignado);
-
-                documento.AgregarDetalleFirma(detalle);
-            }
+            foreach (var documento in DocumentosActivos())
+                AsegurarDetallePendiente(documento, firmante, generarIdDetalleFirma);
         }
     }
     #endregion
