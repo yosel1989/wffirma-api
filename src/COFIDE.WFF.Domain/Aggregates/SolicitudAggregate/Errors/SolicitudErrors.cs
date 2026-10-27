@@ -72,4 +72,8 @@ public static class SolicitudErrors
     public static readonly DomainError SolicitudDocumentoInvalid = new("DOM_SOL_039", "Solicitud Documento Tag inválido.");
 
     public static readonly DomainError FirmanteNotFound = new("DOM_SOL_040", "No se encontraron firmantes.");
+
+    public static readonly DomainError RestaurarEstadoNoPermitido = new("DOM_SOL_041", "Solo se puede restaurar una solicitud en curso, aprobada o rechazada.");
+    public static readonly DomainError PuntoRestauracionNoEncontrado = new("DOM_SOL_042", "El punto de restauración no pertenece al flujo de la solicitud.");
+    public static readonly DomainError PuntoRestauracionSinFecha = new("DOM_SOL_043", "El punto de restauración no tiene fecha de revisión.");
 }

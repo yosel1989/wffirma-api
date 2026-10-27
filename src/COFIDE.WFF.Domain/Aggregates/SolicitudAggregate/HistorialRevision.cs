@@ -73,5 +73,10 @@ public class HistorialRevision : AuditableEntity<long>
         EsNuevo = true;
     }
 
+    public void Inactivar()
+    {
+        Estado = false;
+    }
+
 
 }

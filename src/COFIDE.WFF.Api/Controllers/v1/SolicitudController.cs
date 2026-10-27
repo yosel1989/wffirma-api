@@ -11,6 +11,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqu
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.AnularSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.RestaurarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
@@ -21,6 +22,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitud
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerPuntosRestauracion;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerGestionSolicitudes;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
@@ -239,8 +241,55 @@ public class SolicitudController : BaseApiController
 
     #endregion
 
+    #region Restauración de flujo
 
+    [HttpGet("{idSolicitud}/puntos-restauracion")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.ObtenerPuntosRestauracion.Summary,
+        Description = DescriptionSwagger.SolicitudController.ObtenerPuntosRestauracion.Description,
+        OperationId = "ObtenerPuntosRestauracion"
+        )]
+    [ProducesResponseType(typeof(ResponseDto<IReadOnlyList<PuntoRestauracionDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<IReadOnlyList<PuntoRestauracionDto>>>> ObtenerPuntosRestauracion(
+        long idSolicitud,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ObtenerPuntosRestauracionQuery(idSolicitud), cancellationToken);
 
+        var response = ResponseDto<IReadOnlyList<PuntoRestauracionDto>>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    [HttpPost("{idSolicitud}/restauraciones")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.RestaurarSolicitud.Summary,
+        Description = DescriptionSwagger.SolicitudController.RestaurarSolicitud.Description,
+        OperationId = "RestaurarSolicitud"
+        )]
+    [ProducesResponseType(typeof(ResponseDto<string?>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<string>> RestaurarSolicitud(
+        long idSolicitud,
+        [FromBody] RestaurarSolicitudRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new RestaurarSolicitudCommand(idSolicitud, request.IdPuntoRestauracion),
+            cancellationToken);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    #endregion
 
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ResponseDto<SolicitudDto>), StatusCodes.Status200OK)]

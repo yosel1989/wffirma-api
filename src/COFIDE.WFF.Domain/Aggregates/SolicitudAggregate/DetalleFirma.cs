@@ -91,6 +91,27 @@ public class DetalleFirma : AuditableEntity<long>
         return detalleFirma;
     }
 
+    public static DetalleFirma CopiarActivo(long idDetalleFirma, DetalleFirma origen)
+    {
+        var copia = Crear(
+            idDetalleFirma,
+            origen.IdSolicitudFirmanteFlujo,
+            origen.IdSolicitudDocumento,
+            origen.NombreDocumentoFirmado,
+            origen.ExtensionDocumentoFirmado,
+            origen.RutaDocumentoFirmado,
+            origen.HashDocumentoFirmado,
+            origen.IdFirmanteDocumento);
+
+        copia.FechaHoraFirma = origen.FechaHoraFirma;
+        copia.InternoExterno = origen.InternoExterno;
+        copia.EstadoDocumento = origen.EstadoDocumento;
+        copia.FechaInicioProceso = origen.FechaInicioProceso;
+        copia.FechaFinEsperado = origen.FechaFinEsperado;
+        copia.CodigoFirma = origen.CodigoFirma;
+        return copia;
+    }
+
     public void Firmar(
         string nombreDocumentoFirmado,
         string extensionDocumentoFirmado,
