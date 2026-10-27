@@ -19,6 +19,7 @@ public class EnviarCorreoAprobadoEventHandler(
         IUrlProvider urlProvider,
         IEnlaceDescargaTemporalRepository enlaceDescargaTemporalRepository,
         IParametroRepository parametroRepository,
+        ISolicitudIdProtector solicitudIdProtector,
         ILogger<EnviarCorreoAprobadoEventHandler> logger
     ) : INotificationHandler<DomainEventNotification<SolicitudAprobadaDomainEvent>>
 {
@@ -30,6 +31,7 @@ public class EnviarCorreoAprobadoEventHandler(
     private readonly IUrlProvider _urlProvider = urlProvider;
     private readonly IEnlaceDescargaTemporalRepository _enlaceDescargaTemporalRepository = enlaceDescargaTemporalRepository;
     private readonly IParametroRepository _parametroRepository = parametroRepository;
+    private readonly ISolicitudIdProtector _solicitudIdProtector = solicitudIdProtector;
     private readonly ILogger<EnviarCorreoAprobadoEventHandler> _logger = logger;
 
     public async Task Handle(DomainEventNotification<SolicitudAprobadaDomainEvent> notification, CancellationToken cancellationToken)
@@ -78,8 +80,11 @@ public class EnviarCorreoAprobadoEventHandler(
                     "<br/>";
             }
 
+            var tokenSolicitud = _solicitudIdProtector.Encriptar(domainEvent.IdSolicitud);
+            var tokenUrl = Uri.EscapeDataString(tokenSolicitud);
+
             var linkSolicitudHtml =
-                $"<a href='{baseFrontUrl}/mis_solicitudes/detalle/visualizar?id={domainEvent.IdSolicitud}'" +
+                $"<a href='{baseFrontUrl}/mis_solicitudes/detalle/visualizar?token={tokenUrl}'" +
                 " style='color:#004F91; text-decoration:underline;'>Ver solicitud</a>";
 
             var asunto = _htmlTemplateRenderer.Render(
