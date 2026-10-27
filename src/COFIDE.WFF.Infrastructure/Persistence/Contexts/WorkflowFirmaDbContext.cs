@@ -1,4 +1,5 @@
 ﻿using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Common.Entities;
@@ -37,6 +38,7 @@ public class WorkflowFirmaDbContext : DbContext
     public DbSet<EstadoSolicitud> EstadoSolicitud => Set<EstadoSolicitud>();
     public DbSet<EnlaceDescargaTemporal> EnlaceDescargaTemporales => Set<EnlaceDescargaTemporal>();
     public DbSet<HistorialRevision> HistorialRevisiones => Set<HistorialRevision>();
+    public DbSet<AccesoEspecial> AccesosEspeciales => Set<AccesoEspecial>();
 
 
     /// <summary>

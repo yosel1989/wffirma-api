@@ -1,0 +1,15 @@
+﻿using COFIDE.WFF.Application.Features.AccesosEspeciales.Validators;
+using FluentValidation;
+namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands
+{
+    public class RegistrarAccesoEspecialValidator : AbstractValidator<RegistrarAccesoEspecialCommand>
+    {
+        public RegistrarAccesoEspecialValidator()
+        {
+            this.AgregarReglasBasicas(
+                 x => x.IdUsuario,
+                 x => x.IdGerencia,
+                 x => x.IdDepartamento);
+        }
+    }
+}

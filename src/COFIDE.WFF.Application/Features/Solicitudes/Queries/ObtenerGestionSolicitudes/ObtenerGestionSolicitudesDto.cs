@@ -1,6 +1,4 @@
-﻿using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
-
-namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerGestionSolicitudes
+﻿namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerGestionSolicitudes
 {
 
     /// <summary>
