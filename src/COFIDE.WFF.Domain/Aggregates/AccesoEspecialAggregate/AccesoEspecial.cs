@@ -16,14 +16,9 @@ namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate
         public long IdUsuario { get; private set; }
 
         /// <summary>
-        /// Identificador del área (gerencia) asociada al acceso especial.
+        /// Identificador del área (gerencia y/o departamento) asociada al acceso especial.
         /// </summary>
-        public long IdGerencia { get; private set; }
-
-        /// <summary>
-        /// Identificador del área (departamento) asociada al acceso especial (opcional).
-        /// </summary>
-        public long? IdDepartamento { get; private set; }
+        public long IdArea { get; private set; }
 
         #endregion
 
@@ -35,14 +30,10 @@ namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate
         public Usuario Usuario { get; private set; } = null!;
 
         /// <summary>
-        /// Relación con la entidad Area que representa la gerencia.
+        /// Relación con la entidad Area que representa el área (gerencia y/o departamento).
         /// </summary>
-        public Area Gerencia { get; private set; } = null!;
+        public Area Area { get; private set; } = null!;
 
-        /// <summary>
-        /// Relación con la entidad Area que representa el departamento.
-        /// </summary>
-        public Area? Departamento { get; private set; } = null!;
 
         #endregion
 
@@ -62,21 +53,18 @@ namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate
         /// </summary>
         /// <param name="id">Identificador único del acceso especial.</param>
         /// <param name="idUsuario">Identificador del usuario asociado.</param>
-        /// <param name="idGerencia">Identificador de la gerencia asociada.</param>
-        /// <param name="idDepartamento">Identificador del departamento asociado (opcional).</param>
+        /// <param name="idArea">Identificador del área asociada (gerencio y/o departamento).</param>
         /// <returns>Una nueva instancia de <see cref="AccesoEspecial"/>.</returns>
         public static AccesoEspecial Crear(
             long id,
             long idUsuario,
-            long idGerencia,
-            long? idDepartamento)
+            long idArea)
         {
             var accesoEspecial = new AccesoEspecial
             {
                 Id = id,
                 IdUsuario = idUsuario,
-                IdGerencia = idGerencia,
-                IdDepartamento = idDepartamento,
+                IdArea = idArea,
                 Estado = true
             };
 

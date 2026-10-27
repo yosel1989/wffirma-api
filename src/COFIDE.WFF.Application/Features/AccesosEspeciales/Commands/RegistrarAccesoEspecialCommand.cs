@@ -9,13 +9,9 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands
         long IdUsuario,
 
         /// <summary>
-        /// Identificador único del área (gerencia) asociada al acceso especial.
+        /// Identificador único del área (gerencia y/o departamento) asociada al acceso especial.
         /// </summary>
-        long IdGerencia,
+        long IdArea
 
-        /// <summary>
-        /// Identificador único del área (departamento) asociado al acceso especial (opcional).
-        /// </summary>
-        long? IdDepartamento
-    ) : CreateCommand<long?>;
+    ) : CreateCommand<long>;
 }

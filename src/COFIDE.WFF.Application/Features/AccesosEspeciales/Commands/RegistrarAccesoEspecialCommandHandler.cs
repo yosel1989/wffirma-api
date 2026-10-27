@@ -9,12 +9,12 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands
         IMapper mapper,
         IAccesoEspecialRegistrarService usecase,
         IAccesoEspecialRepository repository
-    ) : BaseCommandHandler<RegistrarAccesoEspecialCommand, long?>(mapper)
+    ) : BaseCommandHandler<RegistrarAccesoEspecialCommand, long>(mapper)
     {
         private readonly IAccesoEspecialRegistrarService _usecase = usecase;
         private readonly IAccesoEspecialRepository _repository = repository;
 
-        public override async Task<long?> Handle(RegistrarAccesoEspecialCommand cmd, CancellationToken cancellationToken)
+        public override async Task<long> Handle(RegistrarAccesoEspecialCommand cmd, CancellationToken cancellationToken)
         {
             var request = _mapper.Map<AccesoEspecialRequestDto>(cmd);
             var accesoEspecial = _usecase.AccesoEspecialRegistrar(request, cancellationToken);

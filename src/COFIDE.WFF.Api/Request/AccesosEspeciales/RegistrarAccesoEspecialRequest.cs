@@ -11,13 +11,9 @@
         public long IdUsuario { get; set; }
 
         /// <summary>
-        /// Identificador único del área (gerencia) asociada al acceso especial.
+        /// Identificador único del área (gerencia y/o departamento) asociada al acceso especial.
         /// </summary>
-        public long IdGerencia { get; set; }
+        public long IdArea { get; set; }
 
-        /// <summary>
-        /// Identificador único del área (departamento) asociado al acceso especial (opcional).
-        /// </summary>
-        public long? IdDepartamento { get; set; }
     }
 }

@@ -2,15 +2,9 @@
 using COFIDE.WFF.Application.Features.AccesosEspeciales.DTOs;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAccesoEspecialPaginado;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerGestionSolicitudes;
 using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
-using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Common.Enums;
-using COFIDE.WFF.Domain.Entities;
-using COFIDE.WFF.Domain.ValueObjects;
 using COFIDE.WFF.Infrastructure.Extensions;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
-using DocumentFormat.OpenXml.Bibliography;
 using Microsoft.EntityFrameworkCore;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
@@ -36,10 +30,9 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
                                     : s.Usuario.Nombres)
                                 + " " + (s.Usuario.ApellidoPaterno ?? "")
                             ).Trim(),
-                    s.IdGerencia,
-                    GerenciaNombre = s.Gerencia.NombreArea,
-                    s.IdDepartamento,
-                    DepartamentoNombre = s.Departamento.NombreArea,
+                    s.IdArea,
+                    AreaNombre = s.Area.NombreArea,
+                    s.Estado,
                     s.FechaCreacion,
                     s.FechaModificacion
                 })
@@ -48,33 +41,25 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
                     IdAccesoEspecial = x.Id,
                     IdUsuario = x.IdUsuario,
                     NombreUsuario = x.Usuario,
-                    IdGerencia = x.IdGerencia,
-                    NombreGerencia = x.GerenciaNombre,
-                    IdDepartamento = x.IdDepartamento,
-                    NombreDepartamento = x.DepartamentoNombre,
+                    IdArea = x.IdArea,
+                    NombreArea = x.AreaNombre,
+                    Estado = x.Estado,
                     FechaCreacion = x.FechaCreacion
                 });
         }
 
         private static IQueryable<AccesoEspecial> AplicarFiltrosPrincipales(
             IQueryable<AccesoEspecial> query,
-            long? idGerencia,
-            long? idDepartamento,
+            long? idArea,
             long? idUsuario
         )
         {
           
 
-            if (idDepartamento is not null)
+            if (idArea is not null)
             {
                 query = query.Where(s =>
-                    s.IdDepartamento.HasValue &&
-                    s.IdDepartamento.Value == idDepartamento);
-            }
-            else
-            {
-                query = query.Where(s =>
-                    s.IdGerencia == idGerencia);
+                    s.IdArea == idArea);
             }
 
             if (idUsuario is not null)
@@ -107,8 +92,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
         public async Task<PagedResult<AccesoEspecialPaginadoDto, AccesoEspecialResumenPaginadoDto>> ObtenerPaginado(
             PagedQueryParams paginationParams,
             long? idGerencia,
-            long? idDepartamento,
-            long? idUsuario,
+            long? idArea,
             CancellationToken cancellationToken)
         {
             AccesoEspecialResumenPaginadoDto resumen = new();
@@ -116,8 +100,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
             var queryuniverso = AplicarFiltrosPrincipales(
                 _context.Set<AccesoEspecial>().AsNoTracking(),
                 idGerencia,
-                idDepartamento,
-                idUsuario
+                idArea
             );
 
             resumen = await ObtenerResumenAsync(
@@ -135,7 +118,6 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
             }
 
             var totalCount = await projectedQuery.CountAsync(cancellationToken);
-
 
             var data = await projectedQuery
                     .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)

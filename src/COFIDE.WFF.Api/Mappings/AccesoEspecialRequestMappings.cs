@@ -9,12 +9,12 @@ namespace COFIDE.WFF.Api.Mappings
         public static RegistrarAccesoEspecialCommand ToRegistrarCommand(this RegistrarAccesoEspecialRequest r) =>
             new(
                 r.IdUsuario,
-                r.IdGerencia,
-                r.IdDepartamento);
+                r.IdArea
+            );
 
 
         public static ObtenerAccesoEspecialPaginadoQuery ToQuery(this AccesoEspecialPaginadoRequest r) =>
-            new(r.IdGerencia, r.IdDepartamento, r.IdUsuario)
+            new(r.IdArea, r.IdUsuario)
             {
                 PageNumber = r.PageNumber,
                 PageSize = r.PageSize,

@@ -26,29 +26,19 @@
         public string NombreCuenta { get; set; } = string.Empty;
 
         /// <summary>
-        /// Identificador único del área (gerencia) asociada al acceso especial.
+        /// Identificador único del área (gerencia y/o departamento) asociada al acceso especial.
         /// </summary>
-        public long IdGerencia { get; set; }
+        public long IdArea { get; set; }
 
         /// <summary>
-        /// Nombre del área (gerencia) asociada al acceso especial.
+        /// Nombre del área (gerencia y/o departamento) asociada al acceso especial.
         /// </summary>
-        public string NombreGerencia { get; set; } = string.Empty;
+        public string NombreArea { get; set; } = string.Empty;
 
         /// <summary>
-        /// Identificador único del área (departamento) asociado al acceso especial (opcional).
+        /// Estado actual del acceso especial, activo = true, inactivo = false.
         /// </summary>
-        public long? IdDepartamento { get; set; }
-
-        /// <summary>
-        /// Nombre del área (departamento) asociado al acceso especial (opcional).
-        /// </summary>
-        public string? NombreDepartamento { get; set; }
-
-        /// <summary>
-        /// Estado actual del acceso especial.
-        /// </summary>
-        public string Estado { get; set; } = string.Empty;
+        public bool Estado { get; set; }
 
         /// <summary>
         /// Fecha de creación del acceso especial.

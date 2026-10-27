@@ -8,15 +8,11 @@ namespace COFIDE.WFF.Api.Request.AccesosEspeciales
     /// </summary>
     public sealed class AccesoEspecialPaginadoRequest : PaginadoRequest
     {
-        /// <summary>
-        /// Identificador de la gerencia asociado al acceso especial.
-        /// </summary>
-        public long? IdGerencia { get; set; }
 
         /// <summary>
-        /// Identificador del departamento asociado al acceso especial.
+        /// Identificador del área (departamento y/o gerencia) asociado al acceso especial.
         /// </summary>
-        public long? IdDepartamento { get; set; }
+        public long? IdArea{ get; set; }
 
         /// <summary>
         /// Identificador del usuario asociado al acceso especial.

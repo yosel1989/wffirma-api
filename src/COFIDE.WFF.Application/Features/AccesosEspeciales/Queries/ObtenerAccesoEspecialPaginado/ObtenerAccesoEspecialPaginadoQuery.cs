@@ -4,8 +4,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAcces
 {
     public sealed record ObtenerAccesoEspecialPaginadoQuery
     (
-        long? IdGerencia,
-        long? IdDepartamento,
+        long? IdArea,
         long? IdUsuario
     ) : GetPagedQuery<AccesoEspecialPaginadoResponseDto>;
 }

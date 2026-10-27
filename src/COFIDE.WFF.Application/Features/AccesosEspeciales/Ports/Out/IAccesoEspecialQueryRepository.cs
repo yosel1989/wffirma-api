@@ -11,8 +11,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out
 
         Task<PagedResult<AccesoEspecialPaginadoDto, AccesoEspecialResumenPaginadoDto>> ObtenerPaginado(
             PagedQueryParams paginationParams,
-            long? idGerencia,
-            long? idDepartamento,
+            long? idArea,
             long? idUsuario,
             CancellationToken cancellationToken);
 

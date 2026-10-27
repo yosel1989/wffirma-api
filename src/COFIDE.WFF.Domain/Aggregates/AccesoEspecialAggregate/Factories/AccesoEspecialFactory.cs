@@ -19,8 +19,7 @@ namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Factories
             var accesoEspecial = AccesoEspecial.Crear(
                 0,
                 input.IdUsuario,
-                input.IdGerencia,
-                input.IdDepartamento
+                input.IdArea
             );
 
             return accesoEspecial;

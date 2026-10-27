@@ -31,8 +31,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAcces
 
             var pagedResult = await _queryRepository.ObtenerPaginado(
                 paginationParams,
-                request.IdGerencia,
-                request.IdDepartamento,
+                request.IdArea,
                 request.IdUsuario,
                 cancellationToken);
 

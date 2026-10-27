@@ -8,8 +8,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands
         {
             this.AgregarReglasBasicas(
                  x => x.IdUsuario,
-                 x => x.IdGerencia,
-                 x => x.IdDepartamento);
+                 x => x.IdArea);
         }
     }
 }

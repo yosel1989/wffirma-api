@@ -13,8 +13,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Mappings
             return new AccesoEspecialRegistrarInput
             {
                 IdUsuario = request.IdUsuario,
-                IdGerencia = request.IdGerencia,
-                IdDepartamento = request.IdDepartamento
+                IdArea = request.IdArea
             };
         }
 

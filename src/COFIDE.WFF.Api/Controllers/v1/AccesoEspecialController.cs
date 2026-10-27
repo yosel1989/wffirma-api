@@ -11,11 +11,11 @@ namespace COFIDE.WFF.Api.Controllers.v1;
 [ApiController]
 [Route("api/v{version:apiVersion}/accesos-especiales")]
 [Produces(MediaTypeNames.Application.Json)]
-public class AccesosEspecialesController : ControllerBase
+public class AccesoEspecialController : ControllerBase
 {
     private readonly IMediator _mediator;
 
-    public AccesosEspecialesController(IMediator mediator)
+    public AccesoEspecialController(IMediator mediator)
     {
         _mediator = mediator;
     }
@@ -36,13 +36,20 @@ public class AccesosEspecialesController : ControllerBase
         return Ok(response);
     }
 
-    /*[HttpPost]
-    public async Task<ActionResult<long>> CrearAccesoEspecial(
-        [FromBody] CrearAccesoEspecialRequest request, CancellationToken cancellationToken)
+    [HttpPost]
+    [ProducesResponseType(typeof(long), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<long>> RegistrarAccesoEspecial(
+        [FromBody] RegistrarAccesoEspecialRequest request, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new CrearAccesoEspecialCommand(request), cancellationToken);
-        return Ok(result);
-    }*/
+        var result = await _mediator.Send( request.ToRegistrarCommand(), cancellationToken);
+        var response = ResponseDto<long>.Ok(
+            result,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return StatusCode(StatusCodes.Status201Created, response);
+    }
 
     /*[HttpPut("estado")]
     public async Task<ActionResult<bool>> CambiarEstadoAccesoEspecial(

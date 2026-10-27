@@ -11,13 +11,8 @@
         public long IdUsuario { get; init; }
 
         /// <summary>  
-        /// Identificador único del área (gerencia).  
+        /// Identificador único del área (gerencia y/o departamento).  
         /// </summary>  
-        public long IdGerencia { get; init; }
-
-        /// <summary>  
-        /// Identificador único del área (departamento) (opcional).  
-        /// </summary>  
-        public long? IdDepartamento { get; init; }
+        public long IdArea { get; init; }
     }
 }

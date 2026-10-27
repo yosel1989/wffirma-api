@@ -24,12 +24,21 @@ public class AccesoEspecialConfiguration : AuditableEntityConfiguration<AccesoEs
                .HasColumnName("ID_USUARIO")
                .IsRequired();
 
-        builder.Property(u => u.IdGerencia)
-               .HasColumnName("ID_GERENCIA")
+        builder.Property(u => u.IdArea)
+               .HasColumnName("ID_AREA")
                .IsRequired();
 
-        builder.Property(u => u.IdDepartamento)
-               .HasColumnName("ID_DEPARTAMENTO");
+        // Foreign Keys
+
+        builder.HasOne(x => x.Usuario)
+           .WithMany()
+           .HasForeignKey(x => x.IdUsuario)
+           .HasConstraintName("FK_ACCESO_ESPECIAL_USUARIO");
+
+        builder.HasOne(x => x.Area)
+               .WithMany()
+               .HasForeignKey(x => x.IdArea)
+               .HasConstraintName("FK_ACCESO_ESPECIAL_AREA");
 
     }
 }

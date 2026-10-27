@@ -8,8 +8,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Validators
         public static void AgregarReglasBasicas<T>(
             this AbstractValidator<T> validator,
             Expression<Func<T, long>> IdUsuario,
-            Expression<Func<T, long>> IdGerencia,
-            Expression<Func<T, long?>> IdDepartamento)
+            Expression<Func<T, long>> IdArea)
         {
             validator.RuleFor(IdUsuario)
                 .Cascade(CascadeMode.Stop)
@@ -17,17 +16,34 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Validators
                 .WithMessage("Usuario es obligatorio y debe ser distinto de cero.")
                 .WithErrorCode("USUARIO_INVALID");
 
-            validator.RuleFor(IdGerencia)
+            validator.RuleFor(IdArea)
                 .Cascade(CascadeMode.Stop)
                 .NotEqual(0)
-                .WithMessage("Gerencia es obligatorio y debe ser distinto de cero.")
-                .WithErrorCode("GERENCIA_INVALID");
+                .WithMessage("Area es obligatorio y debe ser distinto de cero.")
+                .WithErrorCode("AREA_INVALID");
+        }
 
-            validator.RuleFor(IdDepartamento)
+
+
+        public static void PaginadoReglasBasicas<T>(
+            this AbstractValidator<T> validator,
+            Expression<Func<T, long?>> IdUsuario,
+            Expression<Func<T, long?>> IdArea)
+        {
+            validator.RuleFor(IdUsuario)
                 .Cascade(CascadeMode.Stop)
-                .NotEmpty()
-                .WithMessage("Departamento es obligatorio y debe ser distinto de cero.")
-                .WithErrorCode("DEPARTAMENTO_REQUIRED");
+                .NotEqual(0)
+                .WithMessage("El usuario debe ser distinto de cero.")
+                .WithErrorCode("USUARIO_INVALID_ZERO")
+                .When(x => IdUsuario.Compile()(x) != null);
+
+
+            validator.RuleFor(IdArea)
+                .Cascade(CascadeMode.Stop)
+                .NotEqual(0)
+                .WithMessage("El área debe ser distinto de cero.")
+                .WithErrorCode("AREA_INVALID_ZERO")
+                .When(x => IdArea.Compile()(x) != null);
         }
     }
 }
