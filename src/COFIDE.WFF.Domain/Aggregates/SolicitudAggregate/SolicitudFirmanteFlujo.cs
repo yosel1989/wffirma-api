@@ -130,12 +130,64 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
         FechaRevision = null;
     }
 
+    public void RestaurarAprobacion(DateTime? fechaRevision)
+    {
+        RevAprobado = true;
+        FechaRevision = fechaRevision;
+    }
+
+    public HistorialRevision? ObtenerUltimoHistorialRevision()
+    {
+        return _historialRevision
+            .Where(h => h.Estado)
+            .OrderByDescending(h => h.FechaRevision)
+            .ThenByDescending(h => h.Id)
+            .FirstOrDefault();
+    }
+
+    public DateTime? ObtenerFechaRevisionEfectiva()
+    {
+        if (FechaRevision.HasValue)
+            return FechaRevision;
+
+        return _historialRevision
+            .Where(h => h.Estado && h.FechaRevision.HasValue)
+            .OrderByDescending(h => h.FechaRevision)
+            .Select(h => h.FechaRevision)
+            .FirstOrDefault();
+    }
+
+    public bool EsMismoOPosteriorA(SolicitudFirmanteFlujo punto)
+    {
+        if (Id == punto.Id)
+            return true;
+
+        var fecha = ObtenerFechaRevisionEfectiva();
+        var fechaPunto = punto.ObtenerFechaRevisionEfectiva();
+
+        return (fecha.HasValue && fechaPunto.HasValue && fecha.Value >= fechaPunto.Value)
+            || OrdenEtapa > punto.OrdenEtapa;
+    }
+
+    public void InactivarHistorialRevisionPosterior(DateTime fechaPunto)
+    {
+        foreach (var historial in _historialRevision.Where(h => h.Estado))
+        {
+            var masReciente = historial.FechaRevision.HasValue && historial.FechaRevision.Value > fechaPunto;
+            var rechazoDesdeElPunto = !historial.RevAprobado
+                && (!historial.FechaRevision.HasValue || historial.FechaRevision.Value >= fechaPunto);
+
+            if (masReciente || rechazoDesdeElPunto)
+                historial.Inactivar();
+        }
+    }
+
     public void MarcarComoNuevo()
     {
         EsNuevo = true;
     }
 
-    public void AgregarHistorialRevision(long idHistorialRevision, bool RevAprobado, DateTime? FechaRevision,int ciclo)
+    public void AgregarHistorialRevision(long idHistorialRevision, bool RevAprobado, DateTime? FechaRevision, int ciclo)
     {
         var historialRevision = HistorialRevision.Crear(
             idHistorialRevision,

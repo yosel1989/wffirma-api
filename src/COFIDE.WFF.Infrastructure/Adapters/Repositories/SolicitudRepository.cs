@@ -108,6 +108,24 @@ public class SolicitudRepository(
         return await query.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
 
+    public async Task<Solicitud?> ObtenerSolicitudParaRestauracion(long id, CancellationToken cancellationToken, bool tracking = false)
+    {
+        IQueryable<Solicitud> query = _context.Set<Solicitud>();
+
+        if (!tracking)
+            query = query.AsNoTracking();
+
+        query = query
+            .AsSplitQuery()
+            .Include(s => s.SolicitudPlantilla)
+                .ThenInclude(s => s.FirmantesFlujo)
+                    .ThenInclude(f => f.HistRevision.Where(h => h.Estado))
+            .Include(s => s.Documentos.Where(sd => sd.Estado))
+                .ThenInclude(s => s.DetallesFirma);
+
+        return await query.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+    }
+
     // Obtener el agregado de la solicitud
     public async Task<Solicitud?> ObtenerAgregadoSolicitudAsync(long id, CancellationToken cancellationToken, bool tracking = false)
     {
@@ -382,7 +400,7 @@ public class SolicitudRepository(
     public async Task<int> ObtenerSiguienteCicloAsync(long idSolicitudPlantilla, CancellationToken cancellationToken)
     {
         var maxCiclo = await _context.Set<HistorialRevision>()
-        .Where(x => x.IdSolicitudPlantilla == idSolicitudPlantilla)
+        .Where(x => x.Estado && x.IdSolicitudPlantilla == idSolicitudPlantilla)
         .MaxAsync(x => (int?)x.Ciclo, cancellationToken) ?? 0;
 
         if (maxCiclo == 0)
@@ -390,7 +408,8 @@ public class SolicitudRepository(
 
         var aprobaciones = await _context.Set<HistorialRevision>()
             .AsNoTracking()
-            .Where(x => x.IdSolicitudPlantilla == idSolicitudPlantilla
+            .Where(x => x.Estado
+                            && x.IdSolicitudPlantilla == idSolicitudPlantilla
                             && x.Ciclo == maxCiclo)
             .Select(x => x.RevAprobado)
             .ToListAsync(cancellationToken);

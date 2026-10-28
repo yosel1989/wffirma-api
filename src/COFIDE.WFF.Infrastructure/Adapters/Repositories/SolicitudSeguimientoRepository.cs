@@ -36,7 +36,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                     Urgente = s.EsUrgente ? "Sí" : "No",
                     IdEstado = s.IdEstadoSolicitud,
                     CicloActual = s.SolicitudPlantilla.FirmantesFlujo
-                        .SelectMany(f => f.HistRevision)
+                        .SelectMany(f => f.HistRevision.Where(h => h.Estado))
                         .Max(h => (int?)h.Ciclo),
                     Firmantes = s.SolicitudPlantilla.FirmantesFlujo
                         .Where(sf => sf.Estado && sf.FirmanteFlujo.Estado)
@@ -55,10 +55,12 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                             sf.RevAprobado,
                             sf.FechaRevision,
                             UltimoCiclo = sf.HistRevision
+                                .Where(h => h.Estado)
                                 .OrderByDescending(h => h.Id)
                                 .Select(h => (int?)h.Ciclo)
                                 .FirstOrDefault(),
                             UltimoAprobado = sf.HistRevision
+                                .Where(h => h.Estado)
                                 .OrderByDescending(h => h.Id)
                                 .Select(h => (bool?)h.RevAprobado)
                                 .FirstOrDefault()

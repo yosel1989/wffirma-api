@@ -14,6 +14,7 @@ public class EnviarCorreoBorradorEventHandler(
         IFormatoNotificacionRepository formatoNotificacionRepository,
         IHtmlTemplateRenderer htmlTemplateRenderer,
         IUrlProvider urlProvider,
+        ISolicitudIdProtector solicitudIdProtector,
         ILogger<EnviarCorreoBorradorEventHandler> logger
     ) : INotificationHandler<DomainEventNotification<SolicitudCreadaBorradorDomainEvent>>
 {
@@ -22,6 +23,7 @@ public class EnviarCorreoBorradorEventHandler(
     private readonly IFormatoNotificacionRepository _formatoNotificacionRepository = formatoNotificacionRepository;
     private readonly IHtmlTemplateRenderer _htmlTemplateRenderer = htmlTemplateRenderer;
     private readonly IUrlProvider _urlProvider = urlProvider;
+    private readonly ISolicitudIdProtector _solicitudIdProtector = solicitudIdProtector;
     private readonly ILogger<EnviarCorreoBorradorEventHandler> _logger = logger;
 
     public async Task Handle(DomainEventNotification<SolicitudCreadaBorradorDomainEvent> notification, CancellationToken cancellationToken)
@@ -39,6 +41,11 @@ public class EnviarCorreoBorradorEventHandler(
                 .ObtenerParaNotificaciones(domainEvent.IdSolicitud, cancellationToken)
                 ?? throw new InvalidOperationException("Solicitud no encontrada para notificaciones.");
 
+            var tokenSolicitud = _solicitudIdProtector.Encriptar(
+                domainEvent.IdSolicitud);
+
+            var tokenUrl = Uri.EscapeDataString(tokenSolicitud);
+
             var modeloCorreoCuerpo = new
             {
                 solicitud.TipoSolicitud,
@@ -49,7 +56,7 @@ public class EnviarCorreoBorradorEventHandler(
                 solicitud.AsuntoSolicitud,
                 solicitud.FechaCreacion,
                 Anio = HoraSistema.Ahora.Year.ToString(),
-                LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/editar?id={domainEvent.IdSolicitud}"
+                LinkSolicitud = $"{baseFrontUrl}/mis_solicitudes/detalle/editar?token={tokenUrl}"
             };
 
             var asunto = _htmlTemplateRenderer.Render(

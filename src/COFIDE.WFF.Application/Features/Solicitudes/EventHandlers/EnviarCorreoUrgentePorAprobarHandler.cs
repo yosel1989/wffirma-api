@@ -18,6 +18,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         IFormatoNotificacionRepository formatoNotificacionRepository,
         IHtmlTemplateRenderer htmlTemplateRenderer,
         IUrlProvider urlProvider,
+        ISolicitudIdProtector solicitudIdProtector,
         ILogger<EnviarCorreoUrgentePorAprobarHandler> logger
     ) : INotificationHandler<DomainEventNotification<SolicitudCreadaDomainEvent>>
 {
@@ -27,6 +28,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
     private readonly IFormatoNotificacionRepository _formatoNotificacionRepository = formatoNotificacionRepository;
     private readonly IHtmlTemplateRenderer _htmlTemplateRenderer = htmlTemplateRenderer;
     private readonly IUrlProvider _urlProvider = urlProvider;
+    private readonly ISolicitudIdProtector _solicitudIdProtector = solicitudIdProtector;
     private readonly ILogger<EnviarCorreoUrgentePorAprobarHandler> _logger = logger;
 
     public async Task Handle(
@@ -64,9 +66,14 @@ public class EnviarCorreoUrgentePorAprobarHandler(
                     ?? throw new InvalidOperationException("AsuntoCorreo no configurado."),
                 solicitud);
 
+            var tokenSolicitud = _solicitudIdProtector.Encriptar(
+                domainEvent.IdSolicitud);
+
+            var tokenUrl = Uri.EscapeDataString(tokenSolicitud);
+
             await EnviarCorreosPorTipoEtapaAsync(
                 tipoEtapa, listaUsuarios, etapaActual, solicitud,
-                templateCorreoUrgente, domainEvent.IdSolicitud,
+                templateCorreoUrgente, domainEvent.IdSolicitud, tokenUrl,
                 baseFrontUrl, asunto, cancellationToken);
         }
         catch (Exception ex)
@@ -82,6 +89,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         FormatoNotificacionSolicitud solicitud,
         FormatoNotificacion template,
         long idSolicitud,
+        string tokenUrl,
         string baseUrl,
         string asunto,
         CancellationToken cancellationToken)
@@ -90,7 +98,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         {
             await EnviarCorreoSecuencialAsync(
                 listaUsuarios, etapaActual, solicitud,
-                template, idSolicitud, baseUrl, asunto, cancellationToken);
+                template, idSolicitud, tokenUrl, baseUrl, asunto, cancellationToken);
             return;
         }
 
@@ -98,7 +106,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         {
             await EnviarCorreoParaleloAsync(
                 listaUsuarios, etapaActual, solicitud,
-                template, idSolicitud, baseUrl, asunto, cancellationToken);
+                template, idSolicitud, tokenUrl, baseUrl, asunto, cancellationToken);
         }
     }
 
@@ -108,6 +116,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         FormatoNotificacionSolicitud solicitud,
         FormatoNotificacion template,
         long idSolicitud,
+        string tokenUrl,
         string baseUrl,
         string asunto,
         CancellationToken cancellationToken)
@@ -116,7 +125,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         {
             var modelo = ConstruirModelo(
                 "Estimado/a " + item.Nombre,
-                etapaActual, solicitud, idSolicitud, baseUrl);
+                etapaActual, solicitud, idSolicitud, tokenUrl, baseUrl);
 
             var cuerpo = _htmlTemplateRenderer.Render(
                 template.CuerpoMensaje
@@ -134,13 +143,14 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         FormatoNotificacionSolicitud solicitud,
         FormatoNotificacion template,
         long idSolicitud,
+        string tokenUrl,
         string baseUrl,
         string asunto,
         CancellationToken cancellationToken)
     {
         var modelo = ConstruirModelo(
             "Estimados aprobadores",
-            etapaActual, solicitud, idSolicitud, baseUrl);
+            etapaActual, solicitud, idSolicitud, tokenUrl, baseUrl);
 
         var cuerpo = _htmlTemplateRenderer.Render(
             template.CuerpoMensaje
@@ -158,6 +168,7 @@ public class EnviarCorreoUrgentePorAprobarHandler(
         PlantillaEtapaDto etapaActual,
         FormatoNotificacionSolicitud solicitud,
         long idSolicitud,
+        string tokenUrl,
         string baseUrl)
     {
         return new
@@ -174,8 +185,10 @@ public class EnviarCorreoUrgentePorAprobarHandler(
             solicitud.AsuntoSolicitud,
             solicitud.FechaCreacion,
             Anio = HoraSistema.Ahora.Year.ToString(),
-            LinkSolicitud = $"{baseUrl}/mis_solicitudes/detalle/visualizar?id={idSolicitud}",
-            LinkAprobarSolicitud = $"{baseUrl}/bandejas/detalle-solicitud?id={idSolicitud}"
+            LinkSolicitud =
+                $"{baseUrl}/mis_solicitudes/detalle/visualizar?token={tokenUrl}",
+            LinkAprobarSolicitud =
+                $"{baseUrl}/bandejas/detalle-solicitud?token={tokenUrl}"
         };
     }
 }
