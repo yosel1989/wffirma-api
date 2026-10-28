@@ -1,6 +1,6 @@
 ﻿using COFIDE.WFF.Application.Features.AccesosEspeciales.Validators;
 using FluentValidation;
-namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands
+namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAccesoEspecial
 {
     public class RegistrarAccesoEspecialValidator : AbstractValidator<RegistrarAccesoEspecialCommand>
     {

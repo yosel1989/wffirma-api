@@ -3,7 +3,7 @@ using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.DTOs;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Services;
-namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands
+namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAccesoEspecial
 {
     public sealed class RegistrarAccesoEspecialCommandHandler(
         IMapper mapper,

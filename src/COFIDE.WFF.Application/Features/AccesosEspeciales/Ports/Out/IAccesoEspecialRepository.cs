@@ -13,5 +13,11 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out
         /// </summary>
         /// <param name="accesoEspecial">Entidad de acceso especial a guardar.</param>
         void RegistrarAccesoEspecialAsync(AccesoEspecial accesoEspecial);
+
+        /// <summary>
+        /// Elimina físicamente un acceso especial.
+        /// </summary>
+        /// <param name="accesoEspecial">Entidad de acceso especial a eliminar.</param>
+        void Delete(AccesoEspecial accesoEspecial);
     }
 }

@@ -26,6 +26,11 @@
         public string NombreCuenta { get; set; } = string.Empty;
 
         /// <summary>
+        /// Código único del área asociada al acceso especial.
+        /// </summary>
+        public string CodigoArea { get; set; } = string.Empty;
+
+        /// <summary>
         /// Identificador único del área (gerencia y/o departamento) asociada al acceso especial.
         /// </summary>
         public long IdArea { get; set; }

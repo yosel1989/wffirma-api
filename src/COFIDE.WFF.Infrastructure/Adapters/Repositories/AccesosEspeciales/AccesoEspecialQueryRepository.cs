@@ -23,15 +23,11 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
                 {
                     s.Id,
                     s.IdUsuario,
-                    Usuario = (
-                                (s.Usuario.Nombres.Contains(" ")
-                                    ? s.Usuario.Nombres.Substring(
-                                        0, s.Usuario.Nombres.IndexOf(" "))
-                                    : s.Usuario.Nombres)
-                                + " " + (s.Usuario.ApellidoPaterno ?? "")
-                            ).Trim(),
+                    Usuario = $"{s.Usuario.Nombres} {s.Usuario.ApellidoPaterno} {s.Usuario.ApellidoMaterno}",
+                    UsuarioCuenta = s.Usuario.CuentaLogueo,
                     s.IdArea,
                     AreaNombre = s.Area.NombreArea,
+                    CodigoArea = s.Area.CodDependencia,
                     s.Estado,
                     s.FechaCreacion,
                     s.FechaModificacion
@@ -41,8 +37,10 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
                     IdAccesoEspecial = x.Id,
                     IdUsuario = x.IdUsuario,
                     NombreUsuario = x.Usuario,
+                    NombreCuenta = x.UsuarioCuenta ?? "",
                     IdArea = x.IdArea,
                     NombreArea = x.AreaNombre,
+                    CodigoArea = x.CodigoArea,
                     Estado = x.Estado,
                     FechaCreacion = x.FechaCreacion
                 });

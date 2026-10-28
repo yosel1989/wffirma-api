@@ -1,5 +1,5 @@
 ﻿using COFIDE.WFF.Application.Common.Commands;
-namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands
+namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAccesoEspecial
 {
     public sealed record RegistrarAccesoEspecialCommand
     (

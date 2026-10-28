@@ -20,5 +20,14 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
         }
 
         #endregion
+
+        #region Eliminar
+
+        public void Delete(AccesoEspecial accesoEspecial)
+        {
+            _context.AccesosEspeciales.Remove(accesoEspecial);
+        }
+
+        #endregion
     }
 }

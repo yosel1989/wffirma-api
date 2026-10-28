@@ -46,7 +46,7 @@ namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate
         // Métodos auxiliares pueden ser agregados aquí en el futuro.
         #endregion
 
-        #region Creación
+        #region Crear
 
         /// <summary>
         /// Crea una nueva instancia de <see cref="AccesoEspecial"/> con los datos proporcionados.

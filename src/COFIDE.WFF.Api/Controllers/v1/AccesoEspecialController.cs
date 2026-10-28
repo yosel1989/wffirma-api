@@ -1,6 +1,7 @@
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Mappings;
 using COFIDE.WFF.Api.Request.AccesosEspeciales;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.EliminarAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAccesoEspecialPaginado;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -51,11 +52,40 @@ public class AccesoEspecialController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, response);
     }
 
-    /*[HttpPut("estado")]
-    public async Task<ActionResult<bool>> CambiarEstadoAccesoEspecial(
-        [FromBody] CambiarEstadoAccesoEspecialRequest request, CancellationToken cancellationToken)
+    [HttpDelete("{id:long}")]
+    [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResponseDto<bool>>> EliminarAccesoEspecial(
+    long id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new CambiarEstadoAccesoEspecialCommand(request), cancellationToken);
-        return Ok(result);
+        var result = await _mediator.Send(new EliminarAccesoEspecialCommand(id), cancellationToken);
+
+        var response = ResponseDto<bool>.Ok(
+            result,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    /*
+    [HttpPatch("{id:long}/estado")]
+    [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResponseDto<bool>>> CambiarEstadoAccesoEspecial(
+    long id, CancellationToken cancellationToken)
+    {
+        // Devuelve el nuevo estado: true = activo, false = inactivo
+        var nuevoEstado = await _mediator.Send(new CambiarEstadoAccesoEspecialCommand(id), cancellationToken);
+
+        var response = ResponseDto<bool>.Ok(
+            nuevoEstado,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
     }*/
+
 }

@@ -1,5 +1,5 @@
 ﻿using COFIDE.WFF.Api.Request.AccesosEspeciales;
-using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAccesoEspecialPaginado;
 
 namespace COFIDE.WFF.Api.Mappings

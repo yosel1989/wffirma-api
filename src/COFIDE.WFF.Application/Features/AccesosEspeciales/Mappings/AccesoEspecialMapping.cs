@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.DTOs;
 using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Inputs;
 

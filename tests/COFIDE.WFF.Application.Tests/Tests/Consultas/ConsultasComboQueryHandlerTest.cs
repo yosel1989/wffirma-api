@@ -44,10 +44,10 @@ public class ConsultasComboQueryHandlerTest
     {
         var repo = new Mock<IAreaRepository>();
         var esperado = new List<AreasComboDto> { new() };
-        repo.Setup(r => r.GetAreaCombo(It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
+        repo.Setup(r => r.GetAreaCombo(null, It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
 
         var resultado = await new ObtenerAreasComboQueryHandler(_mapper.Object, repo.Object)
-            .Handle(new ObtenerAreasComboQuery(), CancellationToken.None);
+            .Handle(new ObtenerAreasComboQuery(null), CancellationToken.None);
 
         resultado.Should().BeSameAs(esperado);
     }
