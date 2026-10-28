@@ -96,12 +96,14 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
             string? codigosolicitud
         )
         {
-            // Solo si se quiere excluir estados en el query
-            /*var EstadosExcluidos = new[] {
-                VO.EstadoSolicitud.Borrador.Codigo,
-                VO.EstadoSolicitud.Anulado.Codigo};
+            // Solo si se quiere incluir estados en el query
+            var EstadosExcluidos = new[] {
+                VO.EstadoSolicitud.EnCurso.Codigo,
+                VO.EstadoSolicitud.Aprobado.Codigo,
+                VO.EstadoSolicitud.Rechazado.Codigo,
+            };
 
-            query = query.Where(s => !EstadosExcluidos.Contains(s.IdEstadoSolicitud));*/
+            query = query.Where(s => EstadosExcluidos.Contains(s.IdEstadoSolicitud));
 
             if (!string.IsNullOrWhiteSpace(roLUsuario))
             {

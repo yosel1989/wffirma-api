@@ -13,7 +13,7 @@ public sealed class ObtenerAreasComboQueryHandler(
     public override async Task<List<AreasComboDto>> Handle(
         ObtenerAreasComboQuery request, CancellationToken cancellationToken)
     {
-        var dtoItems = await _areaRepository.GetAreaCombo(cancellationToken);
+        var dtoItems = await _areaRepository.GetAreaCombo(request.Tipo, cancellationToken);
         return dtoItems;
     }
 }

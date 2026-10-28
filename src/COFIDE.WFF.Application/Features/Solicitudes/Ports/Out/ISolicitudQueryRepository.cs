@@ -6,7 +6,6 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Domain.ValueObjects;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 

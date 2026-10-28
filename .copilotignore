@@ -1,0 +1,40 @@
+# Archivos de configuración sensibles
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json.local
+.env
+.env.*
+*.secret.json
+secrets.json
+
+# Perfiles de publicación y configuraciones de usuario
+*.pubxml.user
+*.publishsettings
+
+# Certificados y claves privadas
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Archivos de integración con credenciales locales
+tests/COFIDE.WFF.Api.IntegrationTests/Resources/Configuracion/conexiones.json
+
+# Docker overrides que pueden contener datos sensibles
+**/docker-compose.override.yml
+
+# Artefactos de compilación por defecto (.NET)
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rtifacts/
+[Pp]ublish/
+*.pdb
+*.dll
+*.exe
+*.cache
+*.tmp
+*.binlog

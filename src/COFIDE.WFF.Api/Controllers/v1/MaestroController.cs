@@ -30,9 +30,9 @@ public class MaestroController : BaseApiController
 
     [HttpGet("areas")]
     [ProducesResponseType(typeof(ResponseDto<List<AreasComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<AreasComboDto>>>> ObtenerCombosAreas(CancellationToken cancellationToken)
+    public async Task<ActionResult<ResponseDto<List<AreasComboDto>>>> ObtenerCombosAreas(CancellationToken cancellationToken, [FromQuery] char? tipo = 'G')
     {
-        var result = await _mediator.Send(new ObtenerAreasComboQuery(), cancellationToken);
+        var result = await _mediator.Send(new ObtenerAreasComboQuery(tipo), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<AreasComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));

@@ -10,20 +10,25 @@ public class AreaRepository(
         WorkflowFirmaDbContext context
     ) : GenericRepository<Area, long>(context), IAreaRepository
 {
-    public async Task<List<AreasComboDto>> GetAreaCombo(CancellationToken cancellationToken)
+    public async Task<List<AreasComboDto>> GetAreaCombo(char? Tipo, CancellationToken cancellationToken)
     {
-        var areas = await _context.Areas
-                .AsNoTracking()
-                .Where(u => u.Tipo == 'G')
-                .OrderBy(u => u.NombreArea)
-                .Select(u => new AreasComboDto
-                {
-                    IdArea = u.Id,
-                    NombreArea = u.NombreArea
-                })
-                .ToListAsync(cancellationToken);
+        var query = _context.Areas
+            .AsQueryable();
 
-        return areas;
+        if (Tipo.HasValue && Tipo.Value == 'G')
+        {
+            query = query.Where(u => u.Tipo == Tipo.Value);
+        }
+
+        return await query
+            .AsNoTracking()
+            .OrderBy(u => u.NombreArea)
+            .Select(u => new AreasComboDto
+            {
+                IdArea = u.Id,
+                NombreArea = u.NombreArea
+            })
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<List<DepartamentosComboDto>> GetDepartamentosCombo(List<long> codigoGerencia, CancellationToken cancellationToken)
