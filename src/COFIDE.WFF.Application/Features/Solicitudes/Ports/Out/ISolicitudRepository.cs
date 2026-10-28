@@ -10,6 +10,7 @@ public interface ISolicitudRepository : IGenericRepository<Solicitud, long>
     Task<Solicitud?> ObtenerSolicitudParaRevision(long id, CancellationToken cancellationToken, bool tracking = false);
     Task<Solicitud?> ObtenerSolicitudParaAprobacion(long id, CancellationToken cancellationToken, bool tracking = false);
     Task<Solicitud?> ObtenerSolicitudParaRechazo(long id, CancellationToken cancellationToken, bool tracking = false);
+    Task<Solicitud?> ObtenerSolicitudParaRestauracion(long id, CancellationToken cancellationToken, bool tracking = false);
     Task<Solicitud?> ObtenerAgregadoSolicitudAsync(long id, CancellationToken cancellationToken, bool tracking = false);
     Task<Solicitud?> ObtenerSolicitudConDocumentosYSustentosPorIdAsync(long id, List<long>? idsDocumentos, List<long>? idsSustentos, CancellationToken cancellationToken, bool tracking = false);
     void GuardarFlujoSolicitudAsync(Solicitud solicitud);

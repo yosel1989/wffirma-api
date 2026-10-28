@@ -106,14 +106,6 @@ public class SolicitudRevisionService(
             solicitud.AgregarComentario(idComentario, IsUsuarioAccion, cmd.Comentario);
         }
 
-        foreach (var doc in solicitud.Documentos)
-        {
-            foreach (var item in doc.ObtenerRutasArchivosFirmados())
-            {
-                await _fileStorageService.DeleteFileAsync(item, cancellationToken);
-            }
-        }
-
         _solicitudRepository.GuardarFlujoSolicitudAsync(solicitud);
         return solicitud.CodigoSolicitud;
     }

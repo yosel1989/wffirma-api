@@ -181,6 +181,22 @@ public static class DescriptionSwagger
             public const string Description = ResumenHtml +
                 "<ul><li>Permite anular una solicitud registrada, siempre que cumpla las condiciones de negocio definidas para su anulación.</li></ul>";
         }
+
+        public struct ObtenerPuntosRestauracion
+        {
+            public const string Summary = "Obtiene los puntos de restauración de una solicitud";
+
+            public const string Description = ResumenHtml +
+                "<ul><li>Devuelve las intervenciones aprobadas (CH_REV_APROBADO = S) y rechazadas (CH_REV_APROBADO = N) del flujo de la solicitud, en el orden de la plantilla.</li></ul>";
+        }
+
+        public struct RestaurarSolicitud
+        {
+            public const string Summary = "Restaura el flujo de una solicitud a un punto";
+
+            public const string Description = ResumenHtml +
+                "<ul><li>Reinicia el punto elegido y las intervenciones posteriores. Si la solicitud está aprobada o en curso y el interviniente firmó y aprobó, elimina el archivo firmado, inactiva el detalle de firma y crea uno nuevo por documento. Si está rechazada, crea un nuevo detalle de firma por documento. En ambos casos deja CH_REV_APROBADO en N, la fecha de revisión en nulo e inactiva el historial. La solicitud queda en curso.</li></ul>";
+        }
     }
     public struct FirmaController
     {
