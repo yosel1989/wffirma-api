@@ -943,8 +943,9 @@ public class Solicitud : AuditableEntity<long>
 
     private static void ReiniciarFirmante(SolicitudFirmanteFlujo firmante, SolicitudFirmanteFlujo punto)
     {
+        var fechaPunto = punto.ObtenerFechaRevisionEfectiva()!.Value;
         firmante.ResetearPorRechazo();
-        firmante.InactivarHistorialRevisionPosterior(punto.ObtenerFechaRevisionEfectiva()!.Value);
+        firmante.InactivarHistorialRevisionPosterior(fechaPunto, incluirPuntoSeleccionado: true);
     }
 
     private static List<SolicitudFirmanteFlujo> OrdenarPorFechaDesc(IEnumerable<SolicitudFirmanteFlujo> firmantes)

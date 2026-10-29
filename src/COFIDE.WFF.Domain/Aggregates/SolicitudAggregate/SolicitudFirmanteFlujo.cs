@@ -169,15 +169,21 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
             || OrdenEtapa > punto.OrdenEtapa;
     }
 
-    public void InactivarHistorialRevisionPosterior(DateTime fechaPunto)
+    public void InactivarHistorialRevisionPosterior(DateTime fechaPunto, bool incluirPuntoSeleccionado = false)
     {
         foreach (var historial in _historialRevision.Where(h => h.Estado))
         {
-            var masReciente = historial.FechaRevision.HasValue && historial.FechaRevision.Value > fechaPunto;
-            var rechazoDesdeElPunto = !historial.RevAprobado
-                && (!historial.FechaRevision.HasValue || historial.FechaRevision.Value >= fechaPunto);
+            if (!historial.FechaRevision.HasValue)
+            {
+                historial.Inactivar();
+                continue;
+            }
 
-            if (masReciente || rechazoDesdeElPunto)
+            var esPosterior = historial.FechaRevision.Value > fechaPunto;
+            var esElPunto = incluirPuntoSeleccionado && historial.FechaRevision.Value >= fechaPunto;
+            var esRechazoDesdeElPunto = !historial.RevAprobado && historial.FechaRevision.Value >= fechaPunto;
+
+            if (esPosterior || esElPunto || esRechazoDesdeElPunto)
                 historial.Inactivar();
         }
     }
