@@ -1,6 +1,7 @@
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Mappings;
 using COFIDE.WFF.Api.Request.AccesosEspeciales;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.CambiarEstadoAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.EliminarAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAccesoEspecialPaginado;
 using MediatR;
@@ -75,10 +76,10 @@ public class AccesoEspecialController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResponseDto<bool>>> CambiarEstadoAccesoEspecial(
-    long id, CancellationToken cancellationToken)
+    long id, [FromBody] bool estado, CancellationToken cancellationToken)
     {
         // Devuelve el nuevo estado: true = activo, false = inactivo
-        var nuevoEstado = await _mediator.Send(new CambiarEstadoAccesoEspecialCommand(id), cancellationToken);
+        var nuevoEstado = await _mediator.Send(new CambiarEstadoAccesoEspecialCommand(id, estado), cancellationToken);
 
         var response = ResponseDto<bool>.Ok(
             nuevoEstado,
