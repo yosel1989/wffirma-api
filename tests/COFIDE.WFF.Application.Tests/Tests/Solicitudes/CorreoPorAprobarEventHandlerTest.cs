@@ -14,6 +14,7 @@ using COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using COFIDE.WFF.Application.Tests.Support;
 
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
@@ -160,7 +161,7 @@ public class CorreoPorAprobarEventHandlerTest
         Mock<IUrlProvider> urls) =>
         new EnviarCorreoPorAprobarHandler(
             solicitudes.Object, plantillas.Object, correos.Object, formatos.Object,
-            renderer.Object, urls.Object, Logger<EnviarCorreoPorAprobarHandler>())
+            renderer.Object, urls.Object, ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoPorAprobarHandler>())
             .Handle(new DomainEventNotification<SolicitudPorAprobarFirmantesDomainEvent>(
                 new SolicitudPorAprobarFirmantesDomainEvent(8)), CancellationToken.None);
 
@@ -173,7 +174,7 @@ public class CorreoPorAprobarEventHandlerTest
         Mock<IUrlProvider> urls) =>
         new EnviarCorreoUrgentePorAprobarHandler(
             solicitudes.Object, plantillas.Object, correos.Object, formatos.Object,
-            renderer.Object, urls.Object, Logger<EnviarCorreoUrgentePorAprobarHandler>())
+            renderer.Object, urls.Object, ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoUrgentePorAprobarHandler>())
             .Handle(new DomainEventNotification<SolicitudCreadaDomainEvent>(
                 new SolicitudCreadaDomainEvent(8, "ana@cofide.com.pe")), CancellationToken.None);
 
@@ -218,7 +219,7 @@ public class CorreoPorAprobarEventHandlerTest
         return new EnviarCorreoAprobadoEventHandler(
             solicitudes.Object, solicitudesquery.Object, correos.Object, formatos.Object, renderer.Object, urls.Object,
             enlaces.Object, parametros.Object,
-            Logger<EnviarCorreoAprobadoEventHandler>())
+            ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoAprobadoEventHandler>())
             .Handle(new DomainEventNotification<SolicitudAprobadaDomainEvent>(
                 new SolicitudAprobadaDomainEvent(8, "Luis")), CancellationToken.None);
     }

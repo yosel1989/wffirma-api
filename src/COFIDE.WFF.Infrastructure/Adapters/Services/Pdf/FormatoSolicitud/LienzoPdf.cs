@@ -132,7 +132,10 @@ internal sealed class LienzoPdf : IDisposable
         return alto;
     }
 
-    /// <summary>Tabla con encabezado; ajusta el texto de cada celda y repite el encabezado al cambiar de página.</summary>
+    /// <summary>
+    /// Tabla que ajusta el texto de cada celda. Si hay encabezado, se repite al cambiar de página;
+    /// con <paramref name="encabezados"/> vacío la tabla se dibuja sin encabezado.
+    /// </summary>
     public void Tabla(IReadOnlyList<string> encabezados, IReadOnlyList<double> proporciones, IEnumerable<IReadOnlyList<string>> filas)
     {
         var fuenteEncabezado = Negrita(9);
@@ -156,14 +159,15 @@ internal sealed class LienzoPdf : IDisposable
             Y += alto;
         }
 
-        DibujarEncabezado();
+        if (encabezados.Count > 0)
+            DibujarEncabezado();
 
         foreach (var fila in filas)
         {
             var lineasPorCelda = fila.Select((celda, i) => Ajustar(celda, fuenteCelda, anchos[i] - (relleno * 2))).ToList();
             var alto = (lineasPorCelda.Max(l => l.Count) * AltoLinea(fuenteCelda)) + (relleno * 2);
 
-            if (AsegurarEspacio(alto))
+            if (AsegurarEspacio(alto) && encabezados.Count > 0)
                 DibujarEncabezado();
 
             var x = X0;
