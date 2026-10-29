@@ -119,7 +119,7 @@ public class SolicitudRepository(
             .AsSplitQuery()
             .Include(s => s.SolicitudPlantilla)
                 .ThenInclude(s => s.FirmantesFlujo)
-                    .ThenInclude(f => f.HistRevision.Where(h => h.Estado))
+                    .ThenInclude(f => f.HistRevision)
             .Include(s => s.Documentos.Where(sd => sd.Estado))
                 .ThenInclude(s => s.DetallesFirma);
 
