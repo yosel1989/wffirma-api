@@ -69,8 +69,8 @@ public class AccesoEspecialController : ControllerBase
         return Ok(response);
     }
 
-    /*
-    [HttpPatch("{id:long}/estado")]
+    
+    [HttpPut("{id:long}/estado")]
     [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -86,6 +86,6 @@ public class AccesoEspecialController : ControllerBase
             HttpContext.TraceIdentifier);
 
         return Ok(response);
-    }*/
+    }
 
 }
