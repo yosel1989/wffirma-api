@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
-namespace COFIDE.WFF.Api.Tests.Solicitudes;
+namespace COFIDE.WFF.Api.Tests.Tests.Solicitudes;
 
 public sealed record SeguimientoApiFiltrosData(
     string? Fechainicio, string? Fechafin,
