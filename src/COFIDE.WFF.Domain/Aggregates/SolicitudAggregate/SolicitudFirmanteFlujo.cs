@@ -145,6 +145,15 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
             .FirstOrDefault();
     }
 
+    public HistorialRevision? ObtenerHistorialHasta(DateTime fechaPunto)
+    {
+        return _historialRevision
+            .Where(h => h.FechaRevision.HasValue && h.FechaRevision.Value <= fechaPunto)
+            .OrderByDescending(h => h.FechaRevision)
+            .ThenByDescending(h => h.Id)
+            .FirstOrDefault();
+    }
+
     public DateTime? ObtenerFechaRevisionEfectiva()
     {
         if (FechaRevision.HasValue)
@@ -158,14 +167,17 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
     }
 
     public bool EsMismoOPosteriorA(SolicitudFirmanteFlujo punto)
+        => Id == punto.Id || EsPosteriorA(punto);
+
+    public bool EsPosteriorA(SolicitudFirmanteFlujo punto)
     {
         if (Id == punto.Id)
-            return true;
+            return false;
 
         var fecha = ObtenerFechaRevisionEfectiva();
         var fechaPunto = punto.ObtenerFechaRevisionEfectiva();
 
-        return (fecha.HasValue && fechaPunto.HasValue && fecha.Value >= fechaPunto.Value)
+        return (fecha.HasValue && fechaPunto.HasValue && fecha.Value > fechaPunto.Value)
             || OrdenEtapa > punto.OrdenEtapa;
     }
 

@@ -896,39 +896,29 @@ public class Solicitud : AuditableEntity<long>
 
     private List<string> RestaurarRechazada(SolicitudFirmanteFlujo punto, Func<long> generarId)
     {
-        foreach (var firmante in OrdenarPorFechaDesc(FirmantesActivos()))
-        {
-            var ultimo = firmante.ObtenerUltimoHistorialRevision();
-            if (!DebeRestaurarse(firmante, ultimo, punto))
-                continue;
+        var fechaPunto = punto.ObtenerFechaRevisionEfectiva()!.Value;
+        var firmantes = OrdenarPorFechaDesc(FirmantesActivos());
 
-            if (ultimo?.RevAprobado == true)
+        foreach (var firmante in firmantes)
+        {
+            var historialHastaElPunto = firmante.ObtenerHistorialHasta(fechaPunto);
+
+            if (historialHastaElPunto?.RevAprobado == true && !firmante.EsPosteriorA(punto))
             {
                 RestaurarDetallesAprobados(firmante, generarId);
-                firmante.RestaurarAprobacion(ultimo.FechaRevision);
+                firmante.RestaurarAprobacion(historialHastaElPunto.FechaRevision);
             }
-            else
+            else if (firmante.EsMismoOPosteriorA(punto))
             {
                 CrearDetallesPendientes(firmante, generarId);
                 firmante.ResetearPorRechazo();
             }
-
-            firmante.InactivarHistorialRevisionPosterior(punto.ObtenerFechaRevisionEfectiva()!.Value);
         }
 
+        foreach (var firmante in firmantes)
+            firmante.InactivarHistorialRevisionPosterior(fechaPunto);
+
         return [];
-    }
-
-    private static bool DebeRestaurarse(
-        SolicitudFirmanteFlujo firmante,
-        HistorialRevision? ultimo,
-        SolicitudFirmanteFlujo punto)
-    {
-        if (firmante.EsMismoOPosteriorA(punto))
-            return true;
-
-        return ultimo?.RevAprobado == true
-            && ultimo.FechaRevision <= punto.ObtenerFechaRevisionEfectiva();
     }
 
     private static bool ParticipaEnRestauracion(SolicitudFirmanteFlujo firmante, SolicitudFirmanteFlujo punto)
@@ -990,12 +980,8 @@ public class Solicitud : AuditableEntity<long>
     {
         foreach (var documento in DocumentosActivos())
         {
-            if (TieneDetalleActivo(documento, firmante))
-                continue;
-
             var firmado = documento.DetallesFirma
                 .Where(d =>
-                    !d.Estado &&
                     d.IdSolicitudFirmanteFlujo == firmante.Id &&
                     d.TieneDocumentoFirmado())
                 .OrderByDescending(d => d.FechaHoraFirma)
@@ -1006,6 +992,14 @@ public class Solicitud : AuditableEntity<long>
                 AsegurarDetallePendiente(documento, firmante, generarId);
                 continue;
             }
+
+            if (firmado.Estado)
+                continue;
+
+            foreach (var activo in documento.DetallesFirma
+                .Where(d => d.Estado && d.IdSolicitudFirmanteFlujo == firmante.Id)
+                .ToList())
+                activo.Inactivar();
 
             documento.AgregarDetalleFirma(DetalleFirma.CopiarActivo(generarId(), firmado));
         }
