@@ -6,6 +6,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.RestaurarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using FluentAssertions;
 using FluentValidation.TestHelper;
@@ -92,6 +93,32 @@ public class SolicitudValidatorTest
     public void Rechazar_Completo_Debe_Ser_Valido()
     {
         var resultado = new RechazarSolicitudValidator().TestValidate(new RechazarSolicitudCommand(8, "motivo", null, null));
+
+        resultado.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Restaurar_Con_Id_Cero_Debe_Fallar()
+    {
+        var resultado = new RestaurarSolicitudValidator().TestValidate(new RestaurarSolicitudCommand(0, 1718));
+
+        resultado.ShouldHaveValidationErrorFor(x => x.Id)
+            .WithErrorCode("SOLICITUD_INVALID");
+    }
+
+    [Fact]
+    public void Restaurar_Con_Punto_Cero_Debe_Fallar()
+    {
+        var resultado = new RestaurarSolicitudValidator().TestValidate(new RestaurarSolicitudCommand(8, 0));
+
+        resultado.ShouldHaveValidationErrorFor(x => x.IdPuntoRestauracion)
+            .WithErrorCode("PUNTO_RESTAURACION_INVALID");
+    }
+
+    [Fact]
+    public void Restaurar_Completo_Debe_Ser_Valido()
+    {
+        var resultado = new RestaurarSolicitudValidator().TestValidate(new RestaurarSolicitudCommand(8, 1718));
 
         resultado.IsValid.Should().BeTrue();
     }

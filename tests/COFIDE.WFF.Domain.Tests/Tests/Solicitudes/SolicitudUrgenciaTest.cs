@@ -5,7 +5,7 @@ using COFIDE.WFF.Domain.Tests.Support.Mothers.Solicitudes;
 using COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 
-namespace COFIDE.WFF.Domain.Tests.Features.Solicitudes;
+namespace COFIDE.WFF.Domain.Tests.Tests.Solicitudes;
 
 public sealed record UrgenciaCase(
     string Caso,
