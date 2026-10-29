@@ -57,5 +57,16 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Validators
                 .WithMessage("El id del acceso especial debe ser distinto de cero.")
                 .WithErrorCode("ACCESP_INVALID_ZERO");
         }
+
+        public static void CambiarEstadoReglasBasicas<T>(
+            this AbstractValidator<T> validator,
+            Expression<Func<T, long>> IdAccesoEspecial)
+        {
+            validator.RuleFor(IdAccesoEspecial)
+                .Cascade(CascadeMode.Stop)
+                .NotEqual(0)
+                .WithMessage("El id del acceso especial debe ser distinto de cero.")
+                .WithErrorCode("ACCESP_INVALID_ZERO");
+        }
     }
 }
