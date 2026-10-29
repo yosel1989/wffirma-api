@@ -11,6 +11,7 @@ using COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using COFIDE.WFF.Application.Tests.Support;
 
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
@@ -43,7 +44,7 @@ public class SolicitudEventHandlerTest
             formatos.Object,
             new Mock<IHtmlTemplateRenderer>().Object,
             new Mock<IUrlProvider>().Object,
-            new Mock<ILogger<EnviarCorreoBorradorEventHandler>>().Object)
+            ProtectorSolicitudPrueba.Crear(), new Mock<ILogger<EnviarCorreoBorradorEventHandler>>().Object)
             .Handle(NotificacionBorrador(), CancellationToken.None);
 
         await act.Should().NotThrowAsync();
@@ -70,12 +71,40 @@ public class SolicitudEventHandlerTest
 
         await new EnviarCorreoBorradorEventHandler(
             solicitudes.Object, correos.Object, formatos.Object, renderer.Object, urls.Object,
-            new Mock<ILogger<EnviarCorreoBorradorEventHandler>>().Object)
+            ProtectorSolicitudPrueba.Crear(), new Mock<ILogger<EnviarCorreoBorradorEventHandler>>().Object)
             .Handle(NotificacionBorrador(), CancellationToken.None);
 
         correos.Verify(c => c.EnviarCorreoAsync(
             "render", "render", "ana@cofide.com.pe", string.Empty, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task CorreoBorrador_Debe_Usar_El_Token_Encriptado_En_El_Enlace()
+    {
+        var solicitudes = new Mock<ISolicitudQueryRepository>();
+        var formatos = new Mock<IFormatoNotificacionRepository>();
+        var renderer = new Mock<IHtmlTemplateRenderer>();
+        var urls = new Mock<IUrlProvider>();
+        var modelos = new List<object>();
+
+        urls.Setup(u => u.GetWorkflowBaseFrontUrl()).Returns("https://firmas.cofide/");
+        formatos.Setup(f => f.ObtenerPorCodigo("SOLICITUD_BORRADOR", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FormatoNotificacionPrueba());
+        solicitudes.Setup(s => s.ObtenerParaNotificaciones(8, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(NotificacionSolicitud());
+        renderer.Setup(r => r.Render(It.IsAny<string>(), It.IsAny<object>()))
+            .Callback<string, object>((_, modelo) => modelos.Add(modelo))
+            .Returns("render");
+
+        await new EnviarCorreoBorradorEventHandler(
+            solicitudes.Object, new Mock<ICorreoSenderPort>().Object, formatos.Object, renderer.Object, urls.Object,
+            ProtectorSolicitudPrueba.Crear(), new Mock<ILogger<EnviarCorreoBorradorEventHandler>>().Object)
+            .Handle(NotificacionBorrador(), CancellationToken.None);
+
+        var textos = modelos.Select(m => m.ToString() ?? string.Empty).ToList();
+        textos.Should().Contain(t => t.Contains("https://firmas.cofide/mis_solicitudes/detalle/editar?token=token-8"));
+        textos.Should().NotContain(t => t.Contains("?id=8"));
     }
 
     [Fact]
@@ -85,7 +114,7 @@ public class SolicitudEventHandlerTest
 
         await new EnviarCorreoCreadoEventHandler(
             solicitudes.Object, correos.Object, formatos.Object, renderer.Object, urls.Object,
-            new Mock<ILogger<EnviarCorreoCreadoEventHandler>>().Object)
+            ProtectorSolicitudPrueba.Crear(), new Mock<ILogger<EnviarCorreoCreadoEventHandler>>().Object)
             .Handle(
                 new DomainEventNotification<SolicitudCreadaDomainEvent>(
                     new SolicitudCreadaDomainEvent(8, "ana@cofide.com.pe")),
@@ -106,7 +135,7 @@ public class SolicitudEventHandlerTest
 
         var act = () => new EnviarCorreoRechazoEventHandler(
             solicitudes.Object, plantillas.Object, correos.Object, formatos.Object,
-            renderer.Object, urls.Object, new Mock<ILogger<EnviarCorreoRechazoEventHandler>>().Object)
+            renderer.Object, urls.Object, ProtectorSolicitudPrueba.Crear(), new Mock<ILogger<EnviarCorreoRechazoEventHandler>>().Object)
             .Handle(
                 new DomainEventNotification<SolicitudRechazadaDomainEvent>(
                     new SolicitudRechazadaDomainEvent(8, "Luis")),
@@ -128,7 +157,7 @@ public class SolicitudEventHandlerTest
 
         await new EnviarCorreoRechazoEventHandler(
             solicitudes.Object, plantillas.Object, correos.Object, formatos.Object,
-            renderer.Object, urls.Object, new Mock<ILogger<EnviarCorreoRechazoEventHandler>>().Object)
+            renderer.Object, urls.Object, ProtectorSolicitudPrueba.Crear(), new Mock<ILogger<EnviarCorreoRechazoEventHandler>>().Object)
             .Handle(
                 new DomainEventNotification<SolicitudRechazadaDomainEvent>(
                     new SolicitudRechazadaDomainEvent(8, "Luis")),

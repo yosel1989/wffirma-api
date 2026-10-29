@@ -14,6 +14,7 @@ using COFIDE.WFF.Domain.ValueObjects;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using COFIDE.WFF.Application.Tests.Support;
 
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
@@ -426,39 +427,39 @@ public class EnviarCorreoEventHandlersTest
 
         public Task Borrador(SolicitudCreadaBorradorDomainEvent evento) =>
             new EnviarCorreoBorradorEventHandler(
-                Solicitudes.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object, Logger<EnviarCorreoBorradorEventHandler>())
+                Solicitudes.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object, ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoBorradorEventHandler>())
                 .Handle(new DomainEventNotification<SolicitudCreadaBorradorDomainEvent>(evento), CancellationToken.None);
 
         public Task Creado(SolicitudCreadaDomainEvent evento) =>
             new EnviarCorreoCreadoEventHandler(
-                Solicitudes.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object, Logger<EnviarCorreoCreadoEventHandler>())
+                Solicitudes.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object, ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoCreadoEventHandler>())
                 .Handle(new DomainEventNotification<SolicitudCreadaDomainEvent>(evento), CancellationToken.None);
 
         public Task PorAprobar() =>
             new EnviarCorreoPorAprobarHandler(
                 Solicitudes.Object, Plantillas.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object,
-                Logger<EnviarCorreoPorAprobarHandler>())
+                ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoPorAprobarHandler>())
                 .Handle(new DomainEventNotification<SolicitudPorAprobarFirmantesDomainEvent>(
                     new SolicitudPorAprobarFirmantesDomainEvent(IdSolicitud)), CancellationToken.None);
 
         public Task Urgente() =>
             new EnviarCorreoUrgentePorAprobarHandler(
                 Solicitudes.Object, Plantillas.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object,
-                Logger<EnviarCorreoUrgentePorAprobarHandler>())
+                ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoUrgentePorAprobarHandler>())
                 .Handle(new DomainEventNotification<SolicitudCreadaDomainEvent>(
                     new SolicitudCreadaDomainEvent(IdSolicitud, "ana@cofide.com.pe")), CancellationToken.None);
 
         public Task Rechazo() =>
             new EnviarCorreoRechazoEventHandler(
                 Solicitudes.Object, Plantillas.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object,
-                Logger<EnviarCorreoRechazoEventHandler>())
+                ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoRechazoEventHandler>())
                 .Handle(new DomainEventNotification<SolicitudRechazadaDomainEvent>(
                     new SolicitudRechazadaDomainEvent(IdSolicitud, "Luis")), CancellationToken.None);
 
         public Task Aprobado() =>
             new EnviarCorreoAprobadoEventHandler(
                 Agregados.Object, Solicitudes.Object, Correos.Object, Formatos.Object, Renderer.Object, Urls.Object,
-                Enlaces.Object, Parametros.Object, Logger<EnviarCorreoAprobadoEventHandler>())
+                Enlaces.Object, Parametros.Object, ProtectorSolicitudPrueba.Crear(), Logger<EnviarCorreoAprobadoEventHandler>())
                 .Handle(new DomainEventNotification<SolicitudAprobadaDomainEvent>(
                     new SolicitudAprobadaDomainEvent(IdSolicitud, "Luis")), CancellationToken.None);
 

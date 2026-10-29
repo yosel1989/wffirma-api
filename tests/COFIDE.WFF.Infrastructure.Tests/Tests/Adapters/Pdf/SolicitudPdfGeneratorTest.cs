@@ -42,6 +42,28 @@ public class SolicitudPdfGeneratorTest
     }
 
     [Fact]
+    public void Mensaje_Con_Tabla_Debe_Dibujar_Las_Celdas_De_Una_Fila_En_La_Misma_Linea()
+    {
+        const string mensaje =
+            "<p>Detalle:</p><table><tbody>" +
+            "<tr><td><p>Anterior</p></td><td><p>Indice</p></td><td><p>Canal</p></td></tr>" +
+            "<tr><td>H2H</td><td>#N/D</td><td>Pendiente</td></tr>" +
+            "</tbody></table>";
+
+        using var pdf = PdfDocument.Open(_sut.Generar(Solicitud() with { Mensaje = mensaje }));
+        var palabras = pdf.GetPages().SelectMany(p => p.GetWords()).ToList();
+
+        var anterior = palabras.First(w => w.Text == "Anterior");
+        var canal = palabras.First(w => w.Text == "Canal");
+        var h2h = palabras.First(w => w.Text == "H2H");
+
+        canal.BoundingBox.Bottom.Should().BeApproximately(anterior.BoundingBox.Bottom, 1);
+        canal.BoundingBox.Left.Should().BeGreaterThan(anterior.BoundingBox.Right);
+        h2h.BoundingBox.Left.Should().BeApproximately(anterior.BoundingBox.Left, 1);
+        h2h.BoundingBox.Bottom.Should().BeLessThan(anterior.BoundingBox.Bottom);
+    }
+
+    [Fact]
     public void Solicitud_No_Urgente_No_Debe_Mostrar_La_Etiqueta()
     {
         Texto(_sut.Generar(Solicitud() with { EsUrgente = false })).Should().NotContain("URGENTE");

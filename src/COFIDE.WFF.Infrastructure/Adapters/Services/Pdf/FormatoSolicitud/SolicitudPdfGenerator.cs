@@ -1,6 +1,4 @@
 ﻿using System.Globalization;
-using System.Net;
-using System.Text.RegularExpressions;
 using COFIDE.WFF.Application.Features.Solicitudes.Models.Pdf;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using PdfSharp.Drawing;
@@ -95,17 +93,43 @@ public sealed class SolicitudPdfGenerator : ISolicitudPdfGenerator
     {
         lienzo.Seccion("Mensaje:");
 
-        var texto = TextoPlano(solicitud.Mensaje);
-        lienzo.Parrafo(string.IsNullOrWhiteSpace(texto) ? "Sin mensaje." : texto, LienzoPdf.Normal(10),
-            string.IsNullOrWhiteSpace(texto) ? LienzoPdf.ColorSecundario : LienzoPdf.ColorTexto);
+        var bloques = MensajeHtml.Convertir(solicitud.Mensaje);
+        if (bloques.Count == 0)
+            lienzo.Parrafo("Sin mensaje.", LienzoPdf.Normal(10), LienzoPdf.ColorSecundario);
+
+        foreach (var bloque in bloques)
+        {
+            switch (bloque)
+            {
+                case TextoMensaje texto:
+                    lienzo.Parrafo(texto.Texto, LienzoPdf.Normal(10), LienzoPdf.ColorTexto);
+                    lienzo.Espacio(4);
+                    break;
+                case TablaMensaje tabla:
+                    lienzo.Espacio(2);
+                    lienzo.Tabla(tabla.Encabezado, Proporciones(tabla), tabla.Filas);
+                    lienzo.Espacio(8);
+                    break;
+            }
+        }
 
         if (solicitud.FechaLimite is { } fechaLimite)
         {
-            lienzo.Espacio(4);
             lienzo.Resaltado($"Aprobar hasta el {fechaLimite.ToString("dddd d 'de' MMMM 'de' yyyy", Cultura)}.");
         }
 
         lienzo.Espacio(6);
+    }
+
+    /// <summary>Ancho de cada columna según el texto más largo que contiene, con un mínimo y un máximo.</summary>
+    private static double[] Proporciones(TablaMensaje tabla)
+    {
+        var filas = tabla.Filas.Prepend(tabla.Encabezado).ToList();
+        return Enumerable.Range(0, tabla.Columnas)
+            .Select(i => (double)Math.Clamp(
+                filas.Where(f => i < f.Count).SelectMany(f => f[i].Split('\n')).Select(l => l.Length).DefaultIfEmpty(0).Max(),
+                4, 30))
+            .ToArray();
     }
 
     private static void TablaFirmantes(LienzoPdf lienzo, IReadOnlyList<FirmantePdf> firmantes)
@@ -262,20 +286,4 @@ public sealed class SolicitudPdfGenerator : ISolicitudPdfGenerator
         < 1024 * 1024 => $"{Math.Ceiling(bytes.Value / 1024d).ToString("N0", Cultura)} KB",
         _ => $"{(bytes.Value / 1024d / 1024d).ToString("N1", Cultura)} MB"
     };
-
-    /// <summary>El mensaje se escribe con un editor enriquecido (HTML): se convierte a texto con saltos de línea.</summary>
-    private static string TextoPlano(string? html)
-    {
-        if (string.IsNullOrWhiteSpace(html))
-            return string.Empty;
-
-        var texto = Regex.Replace(html, @"<\s*br\s*/?\s*>", "\n", RegexOptions.IgnoreCase);
-        texto = Regex.Replace(texto, @"<\s*/\s*(p|div|li|h[1-6])\s*>", "\n", RegexOptions.IgnoreCase);
-        texto = Regex.Replace(texto, @"<\s*li[^>]*>", "• ", RegexOptions.IgnoreCase);
-        texto = Regex.Replace(texto, "<[^>]+>", string.Empty);
-        texto = WebUtility.HtmlDecode(texto);
-        texto = Regex.Replace(texto, @"[ \t]+", " ");
-        texto = Regex.Replace(texto, @"\n\s*\n\s*\n+", "\n\n");
-        return texto.Trim();
-    }
 }
