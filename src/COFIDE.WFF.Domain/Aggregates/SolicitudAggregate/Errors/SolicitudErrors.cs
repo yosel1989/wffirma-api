@@ -76,4 +76,11 @@ public static class SolicitudErrors
     public static readonly DomainError RestaurarEstadoNoPermitido = new("DOM_SOL_041", "Solo se puede restaurar una solicitud en curso, aprobada o rechazada.");
     public static readonly DomainError PuntoRestauracionNoEncontrado = new("DOM_SOL_042", "El punto de restauración no pertenece al flujo de la solicitud.");
     public static readonly DomainError PuntoRestauracionSinFecha = new("DOM_SOL_043", "El punto de restauración no tiene fecha de revisión.");
+
+    public static readonly DomainError CambioEstadoNoPermitido = new("DOM_SOL_044", "El cambio de estado solicitado no está permitido para el estado actual de la solicitud.");
+    public static readonly DomainError CambioEstadoMotivoRequired = new("DOM_SOL_045", "El motivo del cambio de estado es obligatorio.");
+    public static readonly DomainError CambioEstadoMotivoLength = new("DOM_SOL_046", "El motivo del cambio de estado no debe exceder los {0} caracteres.");
+    public static readonly DomainError ReabrirSinEtapaNueva = new("DOM_SOL_047", "Debe agregar al menos una etapa al final del flujo para devolver la solicitud a En curso.");
+    public static readonly DomainError CambioEstadoSinEtapaActual = new("DOM_SOL_048", "La solicitud no tiene una etapa pendiente de aprobación.");
+    public static readonly DomainError RechazoSinFirmante = new("DOM_SOL_049", "No se encontró el usuario que rechazó la solicitud.");
 }

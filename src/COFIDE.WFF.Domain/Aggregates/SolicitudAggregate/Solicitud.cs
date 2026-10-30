@@ -1050,6 +1050,219 @@ public class Solicitud : AuditableEntity<long>
 
     #endregion
 
+    #region Cambio de estado (administrador)
+
+    public const int LongitudMaximaMotivoCambioEstado = MotivoCambio.MaxLongitud;
+
+    /// <summary>
+    /// En curso -> Rechazado | Borrador, Aprobado -> En curso y Rechazado -> En curso
+    /// </summary>
+    public static bool PuedeCambiarEstado(ValueObject.EstadoSolicitud origen, ValueObject.EstadoSolicitud destino)
+    {
+        if (origen == ValueObject.EstadoSolicitud.EnCurso)
+            return destino == ValueObject.EstadoSolicitud.Rechazado
+                || destino == ValueObject.EstadoSolicitud.Borrador;
+
+        if (origen == ValueObject.EstadoSolicitud.Aprobado || origen == ValueObject.EstadoSolicitud.Rechazado)
+            return destino == ValueObject.EstadoSolicitud.EnCurso;
+
+        return false;
+    }
+
+    public void ValidarCambioEstado(ValueObject.EstadoSolicitud destino, string? motivo)
+    {
+        if (!PuedeCambiarEstado(EstadoSolicitud, destino))
+            throw new DomainException(SolicitudErrors.CambioEstadoNoPermitido);
+
+        if (string.IsNullOrWhiteSpace(motivo))
+            throw new DomainException(SolicitudErrors.CambioEstadoMotivoRequired);
+
+        if (motivo.Trim().Length > LongitudMaximaMotivoCambioEstado)
+            throw new DomainException(SolicitudErrors.CambioEstadoMotivoLength.Format(LongitudMaximaMotivoCambioEstado));
+    }
+
+    /// <summary>
+    /// Aprobado -> En curso
+    /// </summary>
+    public void ReabrirDesdeAprobada(long idUsuarioAccion, string motivo)
+    {
+        ValidarCambioEstado(ValueObject.EstadoSolicitud.EnCurso, motivo);
+
+        if (EstadoSolicitud != ValueObject.EstadoSolicitud.Aprobado)
+            throw new DomainException(SolicitudErrors.CambioEstadoNoPermitido);
+
+        if (SolicitudPlantilla is null)
+            throw new DomainException(SolicitudErrors.FlujoRequired);
+
+        if (ObtenerEtapaActual() is null)
+            throw new DomainException(SolicitudErrors.ReabrirSinEtapaNueva);
+
+        ReabrirSolicitud(idUsuarioAccion, motivo.Trim());
+        AddDomainEvent(new SolicitudPorAprobarFirmantesDomainEvent(Id));
+    }
+
+    /// <summary>
+    /// Rechazado -> En curso
+    /// </summary>
+    public void ReabrirDesdeRechazada(long idUsuarioAccion, string motivo, Func<long> generarId)
+    {
+        ValidarCambioEstado(ValueObject.EstadoSolicitud.EnCurso, motivo);
+
+        if (EstadoSolicitud != ValueObject.EstadoSolicitud.Rechazado)
+            throw new DomainException(SolicitudErrors.CambioEstadoNoPermitido);
+
+        if (SolicitudPlantilla is null)
+            throw new DomainException(SolicitudErrors.FlujoRequired);
+
+        var rechazador = ObtenerFirmanteQueRechazo()
+            ?? throw new DomainException(SolicitudErrors.RechazoSinFirmante);
+
+        RestaurarTrasRechazo(rechazador, generarId);
+
+        ReabrirSolicitud(idUsuarioAccion, motivo.Trim());
+        AddDomainEvent(new SolicitudPorAprobarFirmantesDomainEvent(Id));
+    }
+
+    /// <summary>
+    /// En curso -> Rechazado | Borrador
+    /// /// </summary>
+    public void DevolverAlCreador(
+        ValueObject.EstadoSolicitud destino,
+        long idUsuarioAccion,
+        string nombreUsuarioAccion,
+        string motivo,
+        long idHistorialRevision,
+        int ciclo,
+        string? correoSolicitante = null)
+    {
+        ValidarCambioEstado(destino, motivo);
+
+        if (EstadoSolicitud != ValueObject.EstadoSolicitud.EnCurso)
+            throw new DomainException(SolicitudErrors.CambioEstadoNoPermitido);
+
+        if (SolicitudPlantilla is null)
+            throw new DomainException(SolicitudErrors.FlujoRequired);
+
+        var esRechazo = destino == ValueObject.EstadoSolicitud.Rechazado;
+        var motivoLimpio = motivo.Trim();
+        var estadoAnterior = IdEstadoSolicitud;
+
+        SolicitudFirmanteFlujo? aprobadorEnTurno = null;
+        if (esRechazo)
+        {
+            var etapaActual = ObtenerEtapaActual();
+            aprobadorEnTurno = FirmantesActivos()
+                .Where(f => !f.RevAprobado && f.OrdenEtapa == etapaActual)
+                .OrderBy(f => f.Id)
+                .FirstOrDefault()
+                ?? throw new DomainException(SolicitudErrors.CambioEstadoSinEtapaActual);
+        }
+
+        MotivoRechazo = esRechazo ? motivoLimpio : null;
+        CambiarEstado(destino);
+        FechaAccion = HoraSistema.Ahora;
+        IdUsuarioAccion = idUsuarioAccion;
+
+        foreach (var documento in _documentos)
+            documento.RechazarFirmas();
+
+        SolicitudPlantilla.ResetearFirmantes();
+
+        aprobadorEnTurno?.AgregarHistorialRevision(idHistorialRevision, false, FechaAccion, ciclo);
+
+        AddDomainEvent(new SolicitudEstadoCambiadoDomainEvent(Id, estadoAnterior, idUsuarioAccion, motivoLimpio));
+
+        if (esRechazo)
+            AddDomainEvent(new SolicitudRechazadaDomainEvent(Id, nombreUsuarioAccion));
+        else
+            AddDomainEvent(new SolicitudCreadaBorradorDomainEvent(Id, correoSolicitante));
+    }
+
+    /// <summary>
+    /// borrador devuelto desde "En curso"
+    /// </summary>
+    public bool EsBorradorDevueltoPorCambioEstado()
+        => EstadoSolicitud == ValueObject.EstadoSolicitud.Borrador
+           && _documentos.Any(d => d.DetallesFirma.Any());
+
+    /// <summary>
+    /// reenvío de un borrador devuelto desde "En curso"
+    /// </summary>
+    public void EditarBorradorDevueltoYEnviar(
+       SolicitudEditModel solicitudRequest,
+       Func<long> generarIdDocumento,
+       Func<long> generarIdSustento,
+       Func<long> generarIdCodigoReferencia,
+       Func<long> generarIdCorreo,
+       long usuarioActualId,
+       string? correoSolicitante)
+    {
+        EditarSolicitudBorradorYEnviar(solicitudRequest, generarIdDocumento, generarIdSustento,
+            generarIdCodigoReferencia, generarIdCorreo, usuarioActualId, correoSolicitante);
+
+        foreach (var documento in _documentos)
+            documento.RechazarFirmas();
+    }
+
+    /// <summary>
+    /// Rechazado -> En curso
+    /// </summary>
+    private void RestaurarTrasRechazo(SolicitudFirmanteFlujo punto, Func<long> generarId)
+    {
+        var fechaPunto = punto.ObtenerUltimoHistorialRevision()?.FechaRevision
+            ?? throw new DomainException(SolicitudErrors.RechazoSinFirmante);
+
+        foreach (var firmante in OrdenarPorFechaDesc(FirmantesActivos()).ToList())
+        {
+            var ultimo = firmante.ObtenerUltimoHistorialRevision();
+
+            var esPuntoOPosterior = firmante.Id == punto.Id
+                || firmante.OrdenEtapa > punto.OrdenEtapa
+                || (firmante.ObtenerFechaRevisionEfectiva() is { } fechaFirmante && fechaFirmante >= fechaPunto);
+
+            var aprobadoAntesDelPunto = ultimo?.RevAprobado == true && ultimo.FechaRevision <= fechaPunto;
+
+            if (!esPuntoOPosterior && !aprobadoAntesDelPunto)
+                continue;
+
+            if (ultimo?.RevAprobado == true)
+            {
+                RestaurarDetallesAprobados(firmante, generarId);
+                firmante.RestaurarAprobacion(ultimo.FechaRevision);
+            }
+            else
+            {
+                CrearDetallesPendientes(firmante, generarId);
+                firmante.ResetearPorRechazo();
+            }
+
+            firmante.InactivarHistorialRevisionPosterior(fechaPunto);
+        }
+    }
+
+    private void ReabrirSolicitud(long idUsuarioAccion, string motivoCambio)
+    {
+        if (EstadoSolicitud == ValueObject.EstadoSolicitud.EnCurso)
+            return;
+
+        var estadoAnterior = IdEstadoSolicitud;
+        MotivoRechazo = null;
+        CambiarEstado(ValueObject.EstadoSolicitud.EnCurso);
+        FechaAccion = HoraSistema.Ahora;
+        IdUsuarioAccion = idUsuarioAccion;
+        AddDomainEvent(new SolicitudEstadoCambiadoDomainEvent(Id, estadoAnterior, idUsuarioAccion, motivoCambio));
+    }
+    private SolicitudFirmanteFlujo? ObtenerFirmanteQueRechazo()
+        => FirmantesActivos()
+            .Select(f => new { Firmante = f, Ultimo = f.ObtenerUltimoHistorialRevision() })
+            .Where(x => x.Ultimo is not null && !x.Ultimo.RevAprobado && x.Ultimo.FechaRevision.HasValue)
+            .OrderByDescending(x => x.Ultimo!.FechaRevision)
+            .ThenByDescending(x => x.Ultimo!.Id)
+            .Select(x => x.Firmante)
+            .FirstOrDefault();
+
+    #endregion
+
     #region Detalles de firma
     /// <summary>
     /// Crea los detalles de firma que faltan: uno por cada firmante activo del flujo y cada documento activo.

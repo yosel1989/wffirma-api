@@ -190,6 +190,17 @@ public static class DescriptionSwagger
                 "<ul><li>Devuelve las intervenciones aprobadas (CH_REV_APROBADO = S) y rechazadas (CH_REV_APROBADO = N) del flujo de la solicitud, en el orden de la plantilla.</li></ul>";
         }
 
+        public struct CambiarEstadoSolicitud
+        {
+            public const string Summary = "Cambia el estado de una solicitud (Gestión de solicitudes)";
+
+            public const string Description = ResumenHtml +
+                "<ul><li>Cambios permitidos: En curso a Rechazado o Borrador; Aprobado a En curso; Rechazado a En curso. El motivo es obligatorio (máx. 300).</li>" +
+                "<li>Aprobado a En curso: antes se debe agregar una etapa al final con el endpoint existente de editar flujo (PUT {id}/plantilla/{idPlantilla}/etapas); este endpoint valida que exista una etapa pendiente y notifica a su aprobador.</li>" +
+                "<li>Rechazado a En curso: devuelve la solicitud al aprobador que la rechazó, con las firmas previas al rechazo, y lo notifica.</li>" +
+                "<li>En curso a Rechazado o Borrador: devuelve la solicitud al creador con los documentos iniciales, reinicia el flujo y notifica al creador.</li></ul>";
+        }
+
         public struct RestaurarSolicitud
         {
             public const string Summary = "Restaura el flujo de una solicitud a un punto";

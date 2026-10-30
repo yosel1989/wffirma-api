@@ -11,6 +11,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqu
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.AnularSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.CambiarEstadoSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RestaurarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
@@ -289,6 +290,31 @@ public class SolicitudController : BaseApiController
         return Ok(response);
     }
 
+    [HttpPost("{idSolicitud}/cambios-estado")]
+    [SwaggerOperation(
+        Summary = DescriptionSwagger.SolicitudController.CambiarEstadoSolicitud.Summary,
+        Description = DescriptionSwagger.SolicitudController.CambiarEstadoSolicitud.Description,
+        OperationId = "CambiarEstadoSolicitud"
+        )]
+    [ProducesResponseType(typeof(ResponseDto<string?>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<string>> CambiarEstadoSolicitud(
+        long idSolicitud,
+        [FromBody] CambiarEstadoSolicitudRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new CambiarEstadoSolicitudCommand(idSolicitud, request.IdNuevoEstado, request.Motivo),
+            cancellationToken);
+
+        var response = ResponseDto<string?>.Ok(
+            result,
+            ResponseCodes.OperacionExitosa,
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
     #endregion
 
     [HttpGet("{id}")]
@@ -412,9 +438,9 @@ public class SolicitudController : BaseApiController
         return File(result.Archivo, result.ContentType, result.NombreArchivo);
     }
 
-   
 
-   [HttpGet("{id}/pdf")]
+
+    [HttpGet("{id}/pdf")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ResponseDto<string>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DescargarPdf(long id, CancellationToken cancellationToken)
