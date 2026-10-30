@@ -71,6 +71,10 @@ public class SolicitudEdicionService(
             solicitud.EditarSolicitudBorrador(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo, idUSuario);
             solicitud.NotificarCorreoBorrador(_currentUser.UserCorreo);
         }
+        else if (solicitud.EsBorradorDevueltoPorCambioEstado())
+        {
+            solicitud.EditarBorradorDevueltoYEnviar(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo, idUSuario, correoUsuario);
+        }
         else
         {
             solicitud.EditarSolicitudBorradorYEnviar(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo, idUSuario, correoUsuario);
