@@ -4,7 +4,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ValidarExist
 {
     public sealed record ValidarExisteAccesoEspecialQuery
     (
-        long IdArea,
-        long IdUsuario
+        long IdUsuario,
+        long IdArea
     ) : BaseQuery<bool>;
 }
