@@ -7,12 +7,12 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.CambiarEsta
         /// <summary>
         /// Identificador único del acceso especial.
         /// </summary>
-        long Id,
+        long IdAccesoEspecial,
 
         /// <summary>
         /// Nuevo estado que se le asignará el acceso especial, activo = true, inactivo = false.
         /// </summary>
         bool Estado
 
-    ) : UpdateCommand<bool, long>(Id);
+    ) : UpdateCommand<bool, long>(IdAccesoEspecial);
 }

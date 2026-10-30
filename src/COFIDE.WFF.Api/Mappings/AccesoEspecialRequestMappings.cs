@@ -1,6 +1,8 @@
 ﻿using COFIDE.WFF.Api.Request.AccesosEspeciales;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.CambiarEstadoAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAccesoEspecialPaginado;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ValidarExisteAccesoEspecial;
 
 namespace COFIDE.WFF.Api.Mappings
 {
@@ -20,5 +22,13 @@ namespace COFIDE.WFF.Api.Mappings
                 PageSize = r.PageSize,
                 Sorts = r.Sorts
             };
+
+
+        public static ValidarExisteAccesoEspecialQuery ToQuery(this ValidarExisteAccesoEspecialRequest r) =>
+            new(
+                IdArea: r.IdArea,
+                IdUsuario: r.IdUsuario
+            );
+
     }
 }

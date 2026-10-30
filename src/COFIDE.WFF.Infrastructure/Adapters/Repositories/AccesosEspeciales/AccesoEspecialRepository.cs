@@ -2,6 +2,7 @@
 using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
 using COFIDE.WFF.Infrastructure.Adapters.Repositories.Base;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
+using Microsoft.EntityFrameworkCore;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
 {
@@ -21,6 +22,22 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
 
         #endregion
 
+        #region Consultar
+
+        public async Task<AccesoEspecial?> GetByIdAnyStatusAsync(long id, bool tracking)
+        {
+            IQueryable<AccesoEspecial> query = _context.AccesosEspeciales;
+
+            if (!tracking)
+                query = query.AsNoTracking();
+
+            return await query
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        #endregion
+
         #region Eliminar
 
         public void Delete(AccesoEspecial accesoEspecial)
@@ -29,5 +46,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
         }
 
         #endregion
+
+
     }
 }

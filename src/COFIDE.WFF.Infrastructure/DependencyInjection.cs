@@ -33,6 +33,8 @@ using Microsoft.Extensions.Options;
 using COFIDE.WFF.Infrastructure.Eventos;
 using COFIDE.WFF.Infrastructure.Configuracion.Tiempo;
 using COFIDE.WFF.Infrastructure.Adapters.Services.Pdf.FormatoSolicitud;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 namespace COFIDE.WFF.Infrastructure;
 public static class DependencyInjection
 {
@@ -83,6 +85,14 @@ public static class DependencyInjection
            {
                oracle.CommandTimeout(60);
            });
+
+           // Solo para depurar
+           options
+               .LogTo(
+                   Console.WriteLine,
+                   new[] { RelationalEventId.CommandError },
+                   LogLevel.Error)
+               .EnableSensitiveDataLogging();
        });
 
         #endregion

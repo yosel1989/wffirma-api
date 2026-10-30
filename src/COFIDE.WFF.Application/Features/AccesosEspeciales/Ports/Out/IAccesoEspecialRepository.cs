@@ -19,5 +19,14 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out
         /// </summary>
         /// <param name="accesoEspecial">Entidad de acceso especial a eliminar.</param>
         void Delete(AccesoEspecial accesoEspecial);
+
+        /// <summary>
+        /// Obtiene un acceso especial por su identificador, sin filtrar por estado
+        /// (incluye registros activos e inactivos).
+        /// </summary>
+        /// <param name="id">Identificador único del acceso especial.</param>
+        /// <param name="cancellationToken">Token para manejar la cancelación de la operación.</param>
+        /// <returns>El acceso especial encontrado, o <c>null</c> si no existe.</returns>
+        Task<AccesoEspecial?> GetByIdAnyStatusAsync(long id, bool tracking);
     }
 }
