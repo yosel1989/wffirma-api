@@ -1,5 +1,4 @@
-﻿using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
 {
