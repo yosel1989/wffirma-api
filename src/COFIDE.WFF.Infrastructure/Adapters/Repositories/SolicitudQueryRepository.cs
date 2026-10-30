@@ -334,7 +334,7 @@ public partial class SolicitudQueryRepository(
             s.Estado &&
             s.IdUsuarioSolicitante == codigoUsuario.Value &&
             s.IdEstadoSolicitud == estadoRechazado &&
-            s.FechaAccion >= fechaLimiteParaRechazo,
+            s.FechaAccion.Date >= fechaLimiteParaRechazo.Date,
             cancellationToken);
 
         var registradasTop5Base = registradasBase
