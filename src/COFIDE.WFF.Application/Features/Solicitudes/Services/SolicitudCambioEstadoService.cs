@@ -50,7 +50,11 @@ public class SolicitudCambioEstadoService(
 
         await PrepararFlujo(solicitud, cancellationToken);
 
-        if (solicitud.EstadoSolicitud == EstadoSolicitud.Rechazado)
+        if (solicitud.EstadoSolicitud == EstadoSolicitud.Aprobado)
+        {
+            solicitud.ReabrirDesdeAprobada(idUsuario, cmd.Motivo);
+        }
+        else if (solicitud.EstadoSolicitud == EstadoSolicitud.Rechazado)
         {
             var generarId = await CrearGeneradorDetalleFirma(solicitud, cancellationToken);
             solicitud.ReabrirDesdeRechazada(idUsuario, cmd.Motivo, generarId);
