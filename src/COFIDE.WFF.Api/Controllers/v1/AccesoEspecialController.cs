@@ -4,6 +4,7 @@ using COFIDE.WFF.Api.Request.AccesosEspeciales;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.CambiarEstadoAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.EliminarAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAccesoEspecialPaginado;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ValidarExisteAccesoEspecial;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
@@ -75,14 +76,30 @@ public class AccesoEspecialController : ControllerBase
     [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ResponseDto<bool>>> CambiarEstadoAccesoEspecial(
-    long id, [FromBody] bool estado, CancellationToken cancellationToken)
+    public async Task<ActionResult<ResponseDto<bool>>> CambiarEstadoAccesoEspecial(long id,[FromBody] CambiarEstadoAccesoEspecialRequest request, CancellationToken cancellationToken)
     {
         // Devuelve el nuevo estado: true = activo, false = inactivo
-        var nuevoEstado = await _mediator.Send(new CambiarEstadoAccesoEspecialCommand(id, estado), cancellationToken);
+        var nuevoEstado = await _mediator.Send(new CambiarEstadoAccesoEspecialCommand(id, request.Estado), cancellationToken);
 
         var response = ResponseDto<bool>.Ok(
             nuevoEstado,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+
+    [HttpGet("{idUsuario:long}/{idArea:long}")]
+    [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResponseDto<bool>>> ValidarExisteEstadoAccesoEspecial( long idUsuario, long idArea, CancellationToken cancellationToken)
+    {
+        var exists = await _mediator.Send(new ValidarExisteAccesoEspecialQuery(idUsuario, idArea), cancellationToken);
+
+        var response = ResponseDto<bool>.Ok(
+            exists,
             "Operación exitosa",
             HttpContext.TraceIdentifier);
 

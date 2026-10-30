@@ -109,6 +109,8 @@ public class WorkflowFirmaDbContext : DbContext
         modelBuilder.Entity<PlantillaEtapa>().Ignore(e => e.TipoAprobador);
         modelBuilder.Entity<FirmanteFlujo>().Ignore(e => e.EsNuevo);
         modelBuilder.Entity<DocumentoTag>().Ignore(e => e.EsNuevo);
+
+        
     }
 
     /// <summary>

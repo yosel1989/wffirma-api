@@ -16,5 +16,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out
             CancellationToken cancellationToken);
 
         #endregion
+
+        Task<bool> ExistAsync(long idUsuario, long idArea, CancellationToken cancellationToken);
     }
 }

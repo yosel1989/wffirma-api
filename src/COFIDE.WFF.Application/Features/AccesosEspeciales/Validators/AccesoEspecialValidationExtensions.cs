@@ -68,5 +68,26 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Validators
                 .WithMessage("El id del acceso especial debe ser distinto de cero.")
                 .WithErrorCode("ACCESP_INVALID_ZERO");
         }
+
+        public static void ValidarExisteReglasBasicas<T>(
+            this AbstractValidator<T> validator,
+            Expression<Func<T, long?>> IdUsuario,
+            Expression<Func<T, long?>> IdArea)
+        {
+            validator.RuleFor(IdUsuario)
+                .Cascade(CascadeMode.Stop)
+                .NotEqual(0)
+                .WithMessage("El usuario debe ser distinto de cero.")
+                .WithErrorCode("USUARIO_INVALID_ZERO")
+                .When(x => IdUsuario.Compile()(x) != null);
+
+
+            validator.RuleFor(IdArea)
+                .Cascade(CascadeMode.Stop)
+                .NotEqual(0)
+                .WithMessage("El área debe ser distinto de cero.")
+                .WithErrorCode("AREA_INVALID_ZERO")
+                .When(x => IdArea.Compile()(x) != null);
+        }
     }
 }
