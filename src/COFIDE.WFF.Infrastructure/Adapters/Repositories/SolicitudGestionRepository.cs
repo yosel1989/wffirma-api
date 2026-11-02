@@ -165,15 +165,29 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
 
             if (aprobadorActual?.Count > 0)
             {
+                // Lista nullable para poder comparar contra el FirstOrDefault() de long?
+                var idsAprobador = aprobadorActual.Select(x => (long?)x).ToList();
+
                 query = query.Where(s =>
-                    s.Documentos
-                        .SelectMany(d => d.DetallesFirma.Where(df => df.Estado))
-                        .Any(df =>
-                            df.EstadoDocumento == VO.EstadoDocumento.Pendiente &&
-                            df.SolicitudFirmanteFlujo.FirmanteFlujo.Estado &&
-                            df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado != null &&
-                            aprobadorActual.Contains(
-                                df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id)));
+                    (s.Documentos.Any() &&
+                        idsAprobador.Contains(
+                            s.Documentos
+                                .SelectMany(d => d.DetallesFirma.Where(df => df.Estado))
+                                .Where(df => df.SolicitudFirmanteFlujo.FirmanteFlujo.Estado
+                                          && !df.SolicitudFirmanteFlujo.RevAprobado
+                                          && df.SolicitudFirmanteFlujo.FechaRevision == null)
+                                .OrderBy(df => df.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.OrdenEtapa)
+                                .Select(df => (long?)df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id)
+                                .FirstOrDefault()))
+                    ||
+                    (!s.Documentos.Any() &&
+                        idsAprobador.Contains(
+                            s.SolicitudPlantilla.FirmantesFlujo
+                                .Where(sf => sf.Estado && sf.FirmanteFlujo.Estado
+                                          && !sf.RevAprobado && sf.FechaRevision == null)
+                                .OrderBy(sf => sf.FirmanteFlujo.PlantillaEtapa.OrdenEtapa)
+                                .Select(sf => (long?)sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id)
+                                .FirstOrDefault())));
             }
 
             if (!string.IsNullOrWhiteSpace(codigosolicitud))
