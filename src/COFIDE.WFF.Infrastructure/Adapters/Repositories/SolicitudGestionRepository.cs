@@ -243,8 +243,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                 cancellationToken);
 
             var projectedQuery = ProyectarListadoGestion(queryuniverso
-                                                                    .OrderByDescending(s => s.EsUrgente)
-                                                                    .ThenByDescending(s => s.FechaSolicitud));
+                                                                    .OrderByDescending(s => s.FechaCreacion));
 
             if (paginationParams.Sorts?.Count > 0)
             {
