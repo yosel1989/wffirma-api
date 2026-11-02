@@ -33,9 +33,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                     CicloActual = s.SolicitudPlantilla.FirmantesFlujo
                         .SelectMany(f => f.HistRevision.Where(h => h.Estado))
                         .Max(h => (int?)h.Ciclo),
-                    AprobadorActual = s.IdEstadoSolicitud == VO.EstadoSolicitud.Rechazado.Codigo
-                        ? "-"
-                        : s.Documentos.Any()
+                    AprobadorActual = s.Documentos.Any()
                             ? s.Documentos
                                 .SelectMany(d => d.DetallesFirma.Where(dd => dd.Estado))
                                 .Where(df => df.SolicitudFirmanteFlujo.FirmanteFlujo.Estado && !df.SolicitudFirmanteFlujo.RevAprobado && df.SolicitudFirmanteFlujo.FechaRevision == null)
