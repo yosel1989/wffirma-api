@@ -9,21 +9,34 @@ using COFIDE.WFF.Domain.Common.ValueObjects;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using VO = COFIDE.WFF.Domain.ValueObjects;
+using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
+using COFIDE.WFF.Domain.Entities;
+// NOTA: agregar los using de las entidades Usuario y AccesoEspecial si viven en otro namespace.
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories;
 
+// Cambios respecto a la version anterior:
+//  - Acceso especial integrado (region ACCESO ESPECIAL).
+//  - TimeProvider inyectado (registrar: services.AddSingleton(TimeProvider.System)).
+//  - Nombre "primer nombre + apellido" se formatea en memoria (antes: 5 copias de Substring/IndexOf en LINQ).
+//  - Top 5 y firmantes relacionados extraidos a helpers (antes duplicados).
+//  - Rechazadas: comparacion sargable (FechaAccion >= desde) en lugar de FechaAccion.Date.
+//  - Historial: sin Include redundantes y fecha null-safe.
+//  - ExisteFirmadoFlag eliminado (subconsulta por fila que no se usaba).
+//  - ObtenerSolicitudBase con AsSplitQuery.
 public partial class SolicitudQueryRepository(
         WorkflowFirmaDbContext context,
-        IHtmlTemplateRenderer htmlTemplateRenderer
+        IHtmlTemplateRenderer htmlTemplateRenderer,
+        TimeProvider timeProvider
     ) : ISolicitudQueryRepository
 {
 
     private readonly WorkflowFirmaDbContext _context = context;
     private readonly IHtmlTemplateRenderer _htmlTemplateRenderer = htmlTemplateRenderer;
+    private readonly TimeProvider _timeProvider = timeProvider;
 
-
-
-
+    private const char EstadoAccesoActivo = 'A';
 
     private static string ObtenerPrimerNombreYApellido(string? nombres, string? apellidoPaterno)
     {
@@ -37,6 +50,123 @@ public partial class SolicitudQueryRepository(
         return $"{primerNombre} {apellidoPaterno}".Trim();
     }
 
+    private static List<T> TomarTop5Prioritarias<T>(
+        IEnumerable<T> origen,
+        Func<T, bool> esUrgente,
+        Func<T, DateTime?> fechaLimite,
+        Func<T, DateTime> fechaCreacion) =>
+        origen
+            .OrderByDescending(esUrgente)
+            .ThenBy(x => esUrgente(x)
+                ? fechaLimite(x) ?? DateTime.MaxValue
+                : fechaCreacion(x))
+            .Take(5)
+            .ToList();
+
+    private static async Task<List<FirmanteRelacionado>> ObtenerFirmantesRelacionados(
+        IQueryable<SolicitudFirmanteFlujo> solicitudFirmanteFlujoQuery,
+        List<long> idsSolicitud,
+        List<long> idsPlantilla,
+        CancellationToken cancellationToken)
+    {
+        return await solicitudFirmanteFlujoQuery
+            .Where(x =>
+                x.Estado &&
+                idsSolicitud.Contains(x.SolicitudPlantilla.Solicitud.Id) &&
+                idsPlantilla.Contains(x.FirmanteFlujo.PlantillaEtapa.Plantilla.Id))
+            .Select(x => new FirmanteRelacionado(
+                x.SolicitudPlantilla.Solicitud.Id,
+                x.FirmanteFlujo.PlantillaEtapa.Plantilla.Id,
+                x.FirmanteFlujo.PlantillaEtapa.OrdenEtapa,
+                x.RevAprobado,
+                x.FechaRevision,
+                x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres,
+                x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.ApellidoPaterno))
+            .ToListAsync(cancellationToken);
+    }
+
+    #region ACCESO ESPECIAL
+
+    // WFF_ACCESO_ESPECIAL: ID_USUARIO, ID_AREA (gerencia o departamento), CH_ESTADO (A=Activo, S=Suspendido).
+    // WFF_SOLICITUD: ID_AREA_SOLICITUD (departamento) e ID_AREA_PADRE_SOLI (gerencia).
+    // Todas las areas viven en WFF_AREA, por lo que un mismo id no es gerencia y departamento a la vez.
+
+    /// <summary>
+    /// Paso 1: valida si el usuario tiene acceso especial ACTIVO al area filtrada (gerencia o departamento).
+    /// Devuelve el predicado con lo que ese acceso agrega (coordinador = todo lo generado en el area;
+    /// solicitante-aprobador = solo lo suyo), o null si no hay acceso: la consulta actual queda tal cual.
+    /// </summary>
+    private async Task<Expression<Func<Solicitud, bool>>?> ObtenerPredicadoAccesoEspecial(
+        long idUsuario,
+        long? idAreaFiltro,
+        CancellationToken cancellationToken)
+    {
+        if (!idAreaFiltro.HasValue)
+            return null;
+
+        var idArea = idAreaFiltro.Value;
+
+        var tieneAcceso = await _context.Set<AccesoEspecial>()
+            .AsNoTracking()
+            .AnyAsync(a =>
+                a.Estado == true &&
+                a.IdUsuario == idUsuario &&
+                a.IdArea == idArea,
+                cancellationToken);
+
+        if (!tieneAcceso)
+            return null;
+
+        var esCoordinador = await _context.Set<Usuario>()
+            .AsNoTracking()
+            .AnyAsync(u =>
+                u.Id == idUsuario &&
+                u.Rol == Domain.Common.Enums.RolUsuario.Coordinador,
+                cancellationToken);
+
+        var soloPropias = !esCoordinador;
+
+        // Gerencia -> la solicitud la tiene como area padre; departamento -> como area de la solicitud.
+        // El OR cubre ambos casos (y al usuario ubicado directamente en la gerencia).
+        return s =>
+            (s.IdAreaPadreSolicitud == idArea || s.IdAreaSolicitud == idArea)
+            && (!soloPropias || s.IdUsuarioSolicitante == idUsuario);
+    }
+
+    /// <summary>
+    /// Paso 2: suma los registros del acceso especial a la consulta actual de "Mis Solicitudes".
+    /// Se usa IN sobre ids (no UNION de entidades) porque WFF_SOLICITUD tiene un CLOB (CL_MENSAJE)
+    /// y en Oracle UNION/DISTINCT sobre CLOB falla con ORA-00932.
+    /// Aplicar en la etapa de VISIBILIDAD, antes de los demas filtros (estado, urgencia, texto, fechas).
+    /// Pendiente: invocarlo desde el listado paginado de "Mis Solicitudes" (no esta en este archivo):
+    ///   query = await AgregarAccesoEspecial(query, idUsuario, idAreaFiltro, tracking, ct);
+    /// </summary>
+    private async Task<IQueryable<Solicitud>> AgregarAccesoEspecial(
+        IQueryable<Solicitud> consultaActual,
+        long idUsuario,
+        long? idAreaFiltro,
+        bool tracking,
+        CancellationToken cancellationToken)
+    {
+        var predicado = await ObtenerPredicadoAccesoEspecial(idUsuario, idAreaFiltro, cancellationToken);
+
+        if (predicado is null)
+            return consultaActual;
+
+        IQueryable<Solicitud> origen = tracking
+            ? _context.Set<Solicitud>()
+            : _context.Set<Solicitud>().AsNoTracking();
+
+        var idsActuales = consultaActual.Select(s => s.Id);
+        var idsAcceso = origen
+            .Where(s => s.Estado)
+            .Where(predicado)
+            .Select(s => s.Id);
+
+        return origen.Where(s => idsActuales.Contains(s.Id) || idsAcceso.Contains(s.Id));
+    }
+
+    #endregion
 
     [SuppressMessage(
     "Major Code Smell",
@@ -93,7 +223,6 @@ public partial class SolicitudQueryRepository(
         IQueryable<DetalleFirma> queryConDocumentos = detalleFirmasQuery
             .Where(df =>
                 df.Estado &&
-                codigoUsuario.HasValue &&
                 df.SolicitudDocumento.Solicitud.IdEstadoSolicitud == estadoEnCurso &&
                 df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Estado &&
                 df.SolicitudFirmanteFlujo.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id == codigoUsuario.Value &&
@@ -157,6 +286,7 @@ public partial class SolicitudQueryRepository(
                 )
             );
 
+        // Se proyectan Nombres y ApellidoPaterno crudos; el formato "primer nombre + apellido" se aplica en memoria.
         var pendientesConDocumentos = await queryConDocumentos
             .Select(df => new
             {
@@ -164,15 +294,8 @@ public partial class SolicitudQueryRepository(
                 df.SolicitudDocumento.Solicitud.CodigoSolicitud,
                 df.SolicitudDocumento.Solicitud.Asunto,
                 df.SolicitudDocumento.Solicitud.EsUrgente,
-                Solicitante = (
-                    (df.SolicitudDocumento.Solicitud.UsuarioSolicitante.Nombres.Contains(" ")
-                        ? df.SolicitudDocumento.Solicitud.UsuarioSolicitante.Nombres.Substring(
-                            0,
-                            df.SolicitudDocumento.Solicitud.UsuarioSolicitante.Nombres.IndexOf(" "))
-                        : df.SolicitudDocumento.Solicitud.UsuarioSolicitante.Nombres)
-                    + " " +
-                    (df.SolicitudDocumento.Solicitud.UsuarioSolicitante.ApellidoPaterno ?? "")
-                ).Trim(),
+                SolicitanteNombres = df.SolicitudDocumento.Solicitud.UsuarioSolicitante.Nombres,
+                SolicitanteApellido = df.SolicitudDocumento.Solicitud.UsuarioSolicitante.ApellidoPaterno,
                 AreaSolicitante = df.SolicitudDocumento.Solicitud.UsuarioSolicitante.Area != null
                     ? df.SolicitudDocumento.Solicitud.UsuarioSolicitante.Area.NombreArea
                     : string.Empty,
@@ -192,15 +315,8 @@ public partial class SolicitudQueryRepository(
                 sf.SolicitudPlantilla.Solicitud.CodigoSolicitud,
                 sf.SolicitudPlantilla.Solicitud.Asunto,
                 sf.SolicitudPlantilla.Solicitud.EsUrgente,
-                Solicitante = (
-                    (sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.Nombres.Contains(" ")
-                        ? sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.Nombres.Substring(
-                            0,
-                            sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.Nombres.IndexOf(" "))
-                        : sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.Nombres)
-                    + " " +
-                    (sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.ApellidoPaterno ?? "")
-                ).Trim(),
+                SolicitanteNombres = sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.Nombres,
+                SolicitanteApellido = sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.ApellidoPaterno,
                 AreaSolicitante = sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.Area != null
                     ? sf.SolicitudPlantilla.Solicitud.UsuarioSolicitante.Area.NombreArea
                     : string.Empty,
@@ -221,7 +337,8 @@ public partial class SolicitudQueryRepository(
                 x.CodigoSolicitud,
                 x.Asunto,
                 x.EsUrgente,
-                x.Solicitante,
+                x.SolicitanteNombres,
+                x.SolicitanteApellido,
                 x.AreaSolicitante,
                 x.FechaCreacion,
                 x.FechaLimite,
@@ -233,46 +350,17 @@ public partial class SolicitudQueryRepository(
         var totalPendientes = pendientesBase.Count;
         var totalUrgentesPendientes = pendientesBase.Count(x => x.EsUrgente);
 
-        var pendientesTop5Base = pendientesBase
-            .OrderByDescending(x => x.EsUrgente ? 1 : 0)
-            .ThenBy(x => x.EsUrgente ? (x.FechaLimite ?? DateTime.MaxValue) : DateTime.MaxValue)
-            .ThenBy(x => !x.EsUrgente ? x.FechaCreacion : DateTime.MaxValue)
-            .Take(5)
-            .ToList();
+        var pendientesTop5Base = TomarTop5Prioritarias(
+            pendientesBase,
+            x => x.EsUrgente,
+            x => x.FechaLimite,
+            x => x.FechaCreacion);
 
-        var pendientesIds = pendientesTop5Base
-            .Select(x => x.IdSolicitud)
-            .Distinct()
-            .ToList();
-
-        var pendientesPlantillasIds = pendientesTop5Base
-            .Select(x => x.IdPlantilla)
-            .Distinct()
-            .ToList();
-
-        var firmantesPendientesRelacionados = await solicitudFirmanteFlujoQuery
-            .Where(x =>
-                x.Estado &&
-                pendientesIds.Contains(x.SolicitudPlantilla.Solicitud.Id) &&
-                pendientesPlantillasIds.Contains(x.FirmanteFlujo.PlantillaEtapa.Plantilla.Id))
-            .Select(x => new
-            {
-                IdSolicitud = x.SolicitudPlantilla.Solicitud.Id,
-                IdPlantilla = x.FirmanteFlujo.PlantillaEtapa.Plantilla.Id,
-                x.FirmanteFlujo.PlantillaEtapa.OrdenEtapa,
-                x.RevAprobado,
-                x.FechaRevision,
-                Firmante = (
-                    (x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Contains(" ")
-                        ? x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Substring(
-                            0,
-                            x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.IndexOf(" "))
-                        : x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres)
-                    + " " +
-                    (x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.ApellidoPaterno ?? "")
-                ).Trim()
-            })
-            .ToListAsync(cancellationToken);
+        var firmantesPendientesRelacionados = await ObtenerFirmantesRelacionados(
+            solicitudFirmanteFlujoQuery,
+            pendientesTop5Base.Select(x => x.IdSolicitud).Distinct().ToList(),
+            pendientesTop5Base.Select(x => x.IdPlantilla).Distinct().ToList(),
+            cancellationToken);
 
         var solicitudItemPendiente = pendientesTop5Base
             .Select(x =>
@@ -287,7 +375,7 @@ public partial class SolicitudQueryRepository(
 
                 var ultimosFirmantes = firmantesDeSolicitud
                     .Where(f => f.OrdenEtapa == ultimaOrdenEtapa)
-                    .Select(f => f.Firmante)
+                    .Select(f => ObtenerPrimerNombreYApellido(f.Nombres, f.ApellidoPaterno))
                     .Distinct()
                     .ToList();
 
@@ -297,7 +385,7 @@ public partial class SolicitudQueryRepository(
                     CodigoSolicitud = x.CodigoSolicitud,
                     Asunto = x.Asunto,
                     Urgente = x.EsUrgente ? "Si" : "No",
-                    Solicitante = x.Solicitante,
+                    Solicitante = ObtenerPrimerNombreYApellido(x.SolicitanteNombres, x.SolicitanteApellido),
                     AreaSolicitante = x.AreaSolicitante,
                     UltimoFirmante = ultimosFirmantes,
                     FechaVencimiento = x.FechaLimite
@@ -328,55 +416,27 @@ public partial class SolicitudQueryRepository(
 
         var totalRegistradas = registradasBase.Count;
 
-        var fechaLimiteParaRechazo = DateTime.Now.AddDays(-7);
+        // Comparacion sargable: permite usar indices sobre FE_FECHA_ACCION.
+        var desdeRechazo = _timeProvider.GetLocalNow().Date.AddDays(-7);
 
         var totalRechazadas = await solicitudesQuery.CountAsync(s =>
             s.Estado &&
             s.IdUsuarioSolicitante == codigoUsuario.Value &&
             s.IdEstadoSolicitud == estadoRechazado &&
-            s.FechaAccion.Date >= fechaLimiteParaRechazo.Date,
+            s.FechaAccion >= desdeRechazo,
             cancellationToken);
 
-        var registradasTop5Base = registradasBase
-            .OrderByDescending(x => x.EsUrgente ? 1 : 0)
-            .ThenBy(x => x.EsUrgente ? (x.FechaLimite ?? DateTime.MaxValue) : DateTime.MaxValue)
-            .ThenBy(x => !x.EsUrgente ? x.FechaCreacion : DateTime.MaxValue)
-            .Take(5)
-            .ToList();
+        var registradasTop5Base = TomarTop5Prioritarias(
+            registradasBase,
+            x => x.EsUrgente,
+            x => x.FechaLimite,
+            x => x.FechaCreacion);
 
-        var registradasIds = registradasTop5Base
-            .Select(x => x.IdSolicitud)
-            .Distinct()
-            .ToList();
-
-        var registradasPlantillasIds = registradasTop5Base
-            .Select(x => x.IdPlantilla)
-            .Distinct()
-            .ToList();
-
-        var firmantesRegistradosRelacionados = await solicitudFirmanteFlujoQuery
-            .Where(x =>
-                x.Estado &&
-                registradasIds.Contains(x.SolicitudPlantilla.Solicitud.Id) &&
-                registradasPlantillasIds.Contains(x.FirmanteFlujo.PlantillaEtapa.Plantilla.Id))
-            .Select(x => new
-            {
-                IdSolicitud = x.SolicitudPlantilla.Solicitud.Id,
-                IdPlantilla = x.FirmanteFlujo.PlantillaEtapa.Plantilla.Id,
-                x.FirmanteFlujo.PlantillaEtapa.OrdenEtapa,
-                x.RevAprobado,
-                x.FechaRevision,
-                Firmante = (
-                    (x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Contains(" ")
-                        ? x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.Substring(
-                            0,
-                            x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres.IndexOf(" "))
-                        : x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Nombres)
-                    + " " +
-                    (x.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.ApellidoPaterno ?? "")
-                ).Trim()
-            })
-            .ToListAsync(cancellationToken);
+        var firmantesRegistradosRelacionados = await ObtenerFirmantesRelacionados(
+            solicitudFirmanteFlujoQuery,
+            registradasTop5Base.Select(x => x.IdSolicitud).Distinct().ToList(),
+            registradasTop5Base.Select(x => x.IdPlantilla).Distinct().ToList(),
+            cancellationToken);
 
         var solicitudItemRegistrada = registradasTop5Base
             .Select(x =>
@@ -395,8 +455,8 @@ public partial class SolicitudQueryRepository(
                     .Where(f =>
                         !f.RevAprobado &&
                         f.OrdenEtapa == etapaActual)
-                    .OrderBy(f => f.Firmante)
-                    .Select(f => f.Firmante)
+                    .Select(f => ObtenerPrimerNombreYApellido(f.Nombres, f.ApellidoPaterno))
+                    .OrderBy(nombre => nombre)
                     .FirstOrDefault();
 
                 return new SolicitudItemRegistradaDto
@@ -426,8 +486,6 @@ public partial class SolicitudQueryRepository(
             SolicitudItemRegistrada = solicitudItemRegistrada
         };
     }
-
-
 
     #region PAGINADO
 
@@ -487,7 +545,10 @@ public partial class SolicitudQueryRepository(
         if (!tracking)
             query = query.AsNoTracking();
 
+        // AsSplitQuery: la proyeccion trae varias colecciones (documentos, sustentos, comentarios, etc.);
+        // en una sola consulta generan un producto cartesiano.
         return await query
+            .AsSplitQuery()
             .Select(s => new SolicitudDto
             {
                 IdSolicitud = s.Id,
@@ -618,18 +679,15 @@ public partial class SolicitudQueryRepository(
         if (!tracking)
             query = query.AsNoTracking();
 
-
         var documentosInfo = await query
             .Select(df => new DocumentoFirmaInfo
             {
                 Id = df.Id,
                 IdSolicitudDocumento = df.IdSolicitudDocumento,
 
-                // new
                 IdUsuarioAsignado = df.SolicitudFirmanteFlujo.FirmanteFlujo.IdUsuarioAsignado,
                 FechaHoraFirma = df.FechaHoraFirma,
                 EstadoDocumento = df.EstadoDocumento,
-                // new
 
                 NombreOriginal = df.SolicitudDocumento.NombreOriginal,
                 InCodigo = df.SolicitudDocumento.Solicitud.InCodigo,
@@ -647,13 +705,6 @@ public partial class SolicitudQueryRepository(
                 ExtensionConTag = df.SolicitudDocumento.ExtensionConTag,
 
                 IdTipoAprobador = df.SolicitudFirmanteFlujo.FirmanteFlujo.PlantillaEtapa.IdTipoAprobador,
-                ExisteFirmadoFlag = _context.Set<DetalleFirma>()
-                        .Where(dd =>
-                            dd.IdSolicitudDocumento == df.IdSolicitudDocumento &&
-                            dd.FechaHoraFirma != null &&
-                            dd.NombreDocumentoFirmado != null)
-                        .Select(dd => 1)
-                        .FirstOrDefault(),
 
                 NombreDocumentoFirmado = df.NombreDocumentoFirmado,
                 ExtensionDocumentoFirmado = df.ExtensionDocumentoFirmado,
@@ -672,7 +723,6 @@ public partial class SolicitudQueryRepository(
                 InicializarDocumentoSinFirma(documento);
                 continue;
             }
-
 
             ActualizarDocumento(
                 documento,
@@ -798,14 +848,12 @@ public partial class SolicitudQueryRepository(
     bool tracking,
     CancellationToken cancellationToken)
     {
+        // Sin Include: con Select/proyeccion EF ya trae solo lo proyectado.
         IQueryable<SolicitudEvento> queryHistorialEvento = _context.Set<SolicitudEvento>()
-             .Include(m => m.TipoEvento)
-             .Include(m => m.PlantillaEtapa)
-             .Include(m => m.SolicitudSustento)
              .Where(m => m.IdSolicitud == idSolicitud);
+
         if (!tracking)
             queryHistorialEvento = queryHistorialEvento.AsNoTracking();
-
 
         var eventos = await queryHistorialEvento
         .Select(m => new
@@ -830,7 +878,6 @@ public partial class SolicitudQueryRepository(
         }).OrderByDescending(m => m.Fecha)
         .ToListAsync(cancellationToken);
 
-
         var resultadoTipoEvento = eventos.Select(e =>
         {
             var model = new
@@ -851,13 +898,15 @@ public partial class SolicitudQueryRepository(
             {
                 Nombre = ObtenerPrimerNombreYApellido(e.UsuarioNombre, e.UsuarioApellidoPaterno),
                 Comentario = comentario,
-                fecha = e.Fecha.Value.ToString("dd/MM/yyyy HH:mm")
+                fecha = e.Fecha?.ToString("dd/MM/yyyy HH:mm") ?? string.Empty
             };
         });
 
         return resultadoTipoEvento.ToList();
     }
 
+    // PENDIENTE DE DECISION: FirstOrDefault() al final solo devuelve la primera plantilla de la solicitud.
+    // Si una solicitud puede tener mas de una plantilla, EstadoFlujov2Dto debe pasar a ser una lista.
     [SuppressMessage(
        "Major Code Smell",
        "S3776:Cognitive Complexity of methods should not be too high",
@@ -930,7 +979,6 @@ public partial class SolicitudQueryRepository(
             .OrderBy(x => x.OrdenEtapa)
             .Select(x => (long?)x.OrdenEtapa)
             .FirstOrDefault();
-
 
         var estadoFlujo = estadoFlujoRaw
             .GroupBy(x => new
@@ -1006,10 +1054,19 @@ public partial class SolicitudQueryRepository(
         return estadoFlujo ?? new EstadoFlujov2Dto();
     }
 
-
     #endregion
 
     #region DTO
+
+    // Los tipos de OrdenEtapa/ids se asumen long; ajustar si en el modelo son int.
+    private sealed record FirmanteRelacionado(
+        long IdSolicitud,
+        long IdPlantilla,
+        long OrdenEtapa,
+        bool RevAprobado,
+        DateTime? FechaRevision,
+        string? Nombres,
+        string? ApellidoPaterno);
 
     private sealed class DocumentoFirmaInfo
     {
@@ -1030,7 +1087,6 @@ public partial class SolicitudQueryRepository(
         public string? NombreConTag { get; set; }
         public string? ExtensionConTag { get; set; }
         public long IdTipoAprobador { get; set; }
-        public int ExisteFirmadoFlag { get; set; }
         public string? NombreDocumentoFirmado { get; set; }
         public string? ExtensionDocumentoFirmado { get; set; }
         public string? RutaDocumentoFirmado { get; set; }
