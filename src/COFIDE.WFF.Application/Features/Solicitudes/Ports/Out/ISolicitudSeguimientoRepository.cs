@@ -1,6 +1,7 @@
 ﻿
 
 using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSeguimientoExcel;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 
 namespace COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
@@ -31,4 +32,7 @@ public interface ISolicitudSeguimientoRepository
         bool? rechazada,
         bool? incluirresumen,
         CancellationToken cancellationToken);
+
+    List<SeguimientoSolicitudesDto> ObtenerReporteSeguimiento(
+       ReporteSeguimientoExcelRequest request, CancellationToken cancellationToken);
 }
