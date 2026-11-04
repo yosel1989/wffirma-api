@@ -1,4 +1,5 @@
-﻿using COFIDE.WFF.Domain.Common.Entities;
+﻿using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Vo;
+using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Entities;
 
 namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate
@@ -19,6 +20,16 @@ namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate
         /// Identificador del área (gerencia y/o departamento) asociada al acceso especial.
         /// </summary>
         public long IdArea { get; private set; }
+
+        /// <summary>
+        /// Código del estado.
+        /// </summary>
+        public EstadoCodigo CodigoEstado { get; private set; } = EstadoCodigo.Activo;
+
+        /// <summary>
+        /// Estado eliminado del acceso especial, de solo lectura.
+        /// </summary>
+        public bool Eliminado => CodigoEstado.Equals(EstadoCodigo.Eliminado);
 
         #endregion
 
@@ -44,6 +55,11 @@ namespace COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate
 
         #region Helpers
         // Métodos auxiliares pueden ser agregados aquí en el futuro.
+
+        public new void Activar() => CodigoEstado = EstadoCodigo.Activo;
+        public new void Desactivar() => CodigoEstado = EstadoCodigo.Inactivo;
+        public void Eliminar() => CodigoEstado = EstadoCodigo.Eliminado;
+
         #endregion
 
         #region Crear

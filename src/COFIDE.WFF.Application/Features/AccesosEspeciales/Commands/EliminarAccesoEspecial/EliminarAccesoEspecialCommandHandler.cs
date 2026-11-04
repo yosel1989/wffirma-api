@@ -34,7 +34,9 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.EliminarAcc
             if (accesoEspecial is null)
                 throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.AccesoEspecialNotExists);
 
-            _repository.Delete(accesoEspecial);
+            accesoEspecial.Eliminar();
+
+            await _repository.UpdateAsync(accesoEspecial);
             return true;
         }
     }
