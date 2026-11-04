@@ -2,6 +2,7 @@
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Domain.DomainServices;
 using MediatR;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 
@@ -60,6 +61,13 @@ public sealed class SeguimientoSolicitudesQueryHandler(
             cancellationToken);
 
         var resumen = pagedResult.ExtraData!;
+        var solicitudes = pagedResult.Items.ToList();
+
+        foreach (var solicitud in solicitudes)
+        {
+            AsignarEstadoFirmantes(solicitud);
+            solicitud.Firmantes = SeguimientoSolicitudesMapping.AgruparFirmantes(solicitud.Firmantes);
+        }
 
         return new SeguimientoSolicitudesResponseDto
         {
@@ -67,11 +75,29 @@ public sealed class SeguimientoSolicitudesQueryHandler(
             EnCurso = resumen.EnCurso,
             Aprobado = resumen.Aprobado,
             Rechazado = resumen.Rechazado,
-            ListadoSolicitudes = pagedResult.Items,
+            ListadoSolicitudes = solicitudes,
             PageNumber = pagedResult.PageNumber,
             PageSize = pagedResult.PageSize,
             TotalCount = pagedResult.TotalCount
         };
     }
 
+    private static void AsignarEstadoFirmantes(SeguimientoSolicitudesDto solicitud)
+    {
+        if (solicitud.Firmantes is null)
+            return;
+
+        foreach (var firmante in solicitud.Firmantes)
+        {
+            firmante.Estado = ReglaEstadoFirmante.Determinar(
+                    solicitud.IdEstado,
+                    solicitud.CicloActual,
+                    firmante.UltimoCiclo,
+                    firmante.UltimoAprobado,
+                    firmante.RevAprobado,
+                    firmante.FechaRevision)
+                .ToString()
+                .ToUpperInvariant();
+        }
+    }
 }

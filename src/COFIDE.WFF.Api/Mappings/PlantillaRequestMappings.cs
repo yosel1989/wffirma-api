@@ -1,6 +1,7 @@
 ﻿using COFIDE.WFF.Api.Request.Plantillas;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.RegistrarPlantilla;
+using COFIDE.WFF.Application.Features.Plantillas.Queries.GestionPlantillas;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPlantillaPaginado;
 
 namespace COFIDE.WFF.Api.Mappings
@@ -16,6 +17,14 @@ namespace COFIDE.WFF.Api.Mappings
 
         public static ObtenerPlantillaPaginadoQuery ToQuery(this BuscarPlantillasRequest r) =>
             new(r.Busqueda, r.Visibilidad, r.Aprobadores, r.Gerencias)
+            {
+                PageNumber = r.PageNumber,
+                PageSize = r.PageSize,
+                Sorts = r.Sorts
+            };
+
+        public static GestionPlantillasQuery ToQuery(this GestionPlantillasRequest r) =>
+            new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Creador, r.Aprobador, r.NombrePlantilla)
             {
                 PageNumber = r.PageNumber,
                 PageSize = r.PageSize,
