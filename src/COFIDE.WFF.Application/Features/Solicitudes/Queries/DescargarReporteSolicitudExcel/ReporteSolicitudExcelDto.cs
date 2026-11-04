@@ -1,4 +1,6 @@
-﻿namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
+﻿using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
+
+namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
 
 public sealed class ReporteSolicitudExcelDto
 {

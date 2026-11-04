@@ -198,6 +198,7 @@ public static class DependencyInjection
         // Servicio para modificar el PDF
         services.AddScoped<IPdfCodigoInserter, PdfCodeInserter>();
         services.AddScoped<ISolicitudExcelReportService, SolicitudExcelReportService>();
+        services.AddScoped<ISeguimientoSolicitudExcelReportService, SeguimientoSolicitudExcelReportService>();
         services.AddScoped<IPdfContentHashService, PdfContentHashService>();
         services.AddScoped<IOrientacionPaginaPdfService, OrientacionPaginaPdfService>();
         services.AddScoped<ISolicitudPdfGenerator, SolicitudPdfGenerator>();
