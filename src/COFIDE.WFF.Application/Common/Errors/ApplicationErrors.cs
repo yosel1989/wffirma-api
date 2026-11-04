@@ -34,4 +34,11 @@ public static class ApplicationErrors
     public static readonly ApplicationError DocumentoEmpty = new("APP_SOL_017", "El documento firmado está vacío.");
 
     public static readonly ApplicationError UsuarioAreaAsignado = new("APP_SOL_018", "El usuario no tiene área asignada..");
+
+
+    #region AccesoEspecial
+    public static readonly ApplicationError AccesoEspecialNotFound = new("APP_SOL_019", "No se encontró el acceso especial.");
+    public static readonly ApplicationError AccesoEspecialNotExists = new("APP_SOL_020", "El acceso especial ya no existe.");
+    #endregion
+
 }

@@ -3,18 +3,22 @@ using AutoMapper;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.EliminarAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
+using COFIDE.WFF.Application.Common.Ports.Out;
 
 public class EliminarAccesoEspecialCommandHandlerTests
 {
     private readonly Mock<IAccesoEspecialRepository> _repoMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<ICurrentUserService> _currentUserMock;
     private readonly EliminarAccesoEspecialCommandHandler _handler;
 
     public EliminarAccesoEspecialCommandHandlerTests()
     {
         _repoMock = new Mock<IAccesoEspecialRepository>();
         _mapperMock = new Mock<IMapper>();
-        _handler = new EliminarAccesoEspecialCommandHandler(_mapperMock.Object, _repoMock.Object);
+        _currentUserMock = new Mock<ICurrentUserService>();
+
+        _handler = new EliminarAccesoEspecialCommandHandler(_currentUserMock.Object, _mapperMock.Object, _repoMock.Object);
     }
 
     [Fact]
