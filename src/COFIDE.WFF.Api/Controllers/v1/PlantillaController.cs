@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.RegistrarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Models;
+using COFIDE.WFF.Application.Features.Plantillas.Queries.GestionPlantillas;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPlantillaPaginado;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPorId;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ValidarExistencia;
@@ -84,6 +85,25 @@ public class PlantillaController : BaseApiController
         var result = await _mediator.Send(request.ToQuery(), cancellationToken);
 
         var response = ResponseDto<PagedResultDto<PlantillaPaginadoDto>>.Ok(
+            result,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Gestión de plantillas: listado paginado con filtros de gerencia, departamento, creador, aprobador, nombre y fechas.
+    /// </summary>
+    [HttpGet("gestion-plantillas")]
+    [ProducesResponseType(typeof(ResponseDto<GestionPlantillasResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<GestionPlantillasResponseDto>>> GestionPlantillasPaginado(
+        [FromQuery] GestionPlantillasRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
+
+        var response = ResponseDto<GestionPlantillasResponseDto>.Ok(
             result,
             "Operación exitosa",
             HttpContext.TraceIdentifier);
