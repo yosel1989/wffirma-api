@@ -3,18 +3,22 @@ using AutoMapper;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.CambiarEstadoAccesoEspecial;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
+using COFIDE.WFF.Application.Common.Ports.Out;
 
 public class CambiarEstadoAccesoEspecialHandlerTests
 {
     private readonly Mock<IAccesoEspecialRepository> _repoMock;
     private readonly Mock<IMapper> _mapperMock;
+    private readonly Mock<ICurrentUserService> _currentUserMock;
     private readonly CambiarEstadoAccesoEspecialHandler _handler;
 
     public CambiarEstadoAccesoEspecialHandlerTests()
     {
         _repoMock = new Mock<IAccesoEspecialRepository>();
         _mapperMock = new Mock<IMapper>();
-        _handler = new CambiarEstadoAccesoEspecialHandler(_mapperMock.Object, _repoMock.Object);
+        _currentUserMock = new Mock<ICurrentUserService>();
+
+        _handler = new CambiarEstadoAccesoEspecialHandler(_currentUserMock.Object, _mapperMock.Object, _repoMock.Object);
     }
 
     [Fact]
