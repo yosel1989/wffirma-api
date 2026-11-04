@@ -1,5 +1,6 @@
 ﻿using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSeguimientoExcel;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Infrastructure.Extensions;
@@ -376,6 +377,41 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
             };
 
             return pagedItems;
+        }
+
+
+        public List<SeguimientoSolicitudesDto> ObtenerReporteSeguimiento(
+       ReporteSeguimientoExcelRequest request, CancellationToken cancellationToken)
+        {
+            var queryuniverso = AplicarFiltrosPrincipalesSeguimiento(
+               _context.Set<Solicitud>().AsNoTracking(),
+               request.CodigoUsuario,
+               request.AreaUsuario,
+               request.RoLUsuario,
+               request.DepartamentoUsuario,
+               request.Fechainicio,
+               request.Fechafin,
+               request.Gerencia,
+               request.Departamento,
+               request.Solicitante,
+               request.Tiposolicitud,
+               request.Subtiposolicitud,
+               request.TipoOperacion,
+               request.Asunto,
+               request.Referencia,
+               request.Estado,
+               request.Firmante,
+               request.Codigosolicitud);
+
+            var querygrilla = AplicarFiltrosGrillaSeguimiento(
+                queryuniverso,
+                request.Encurso,
+                request.Aprobada,
+                request.Rechazada);
+
+            return ProyectarListadoSeguimiento(querygrilla.OrderByDescending(s => s.EsUrgente)
+                                                          .ThenByDescending(s => s.FechaSolicitud))
+                                                          .ToList();
         }
     }
 }
