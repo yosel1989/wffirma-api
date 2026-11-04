@@ -1,12 +1,13 @@
 ﻿using ClosedXML.Excel;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
+using COFIDE.WFF.Domain.DomainServices;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Services.Reports;
 
 public sealed class SeguimientoSolicitudExcelReportService : ISeguimientoSolicitudExcelReportService
 {
-    public byte[] GenerarReporteSeguimiento(List<ReportSeguimientoSolicitudesDto> solicitudes)
+    public byte[] GenerarReporteSeguimiento(List<SeguimientoSolicitudesDto> solicitudes)
     {
         using var workbook = new XLWorkbook();
 
@@ -37,7 +38,7 @@ public sealed class SeguimientoSolicitudExcelReportService : ISeguimientoSolicit
 
     private static void LlenarDatos(
         IXLWorksheet worksheet,
-        List<ReportSeguimientoSolicitudesDto> solicitudes)
+        List<SeguimientoSolicitudesDto> solicitudes)
     {
         var row = 1;
 
@@ -63,8 +64,33 @@ public sealed class SeguimientoSolicitudExcelReportService : ISeguimientoSolicit
             }
 
             worksheet.Cell(row, 8).Value = item.Urgente ?? string.Empty;
-            worksheet.Cell(row, 9).Value = item.Aprobadores;
+            worksheet.Cell(row, 9).Value = FormatearAprobadores(item.Firmantes);
         }
+    }
+
+    private static string FormatearAprobadores(List<FirmantesDto>? firmantes)
+    {
+        var aprobadores = (firmantes ?? [])
+            .SelectMany(f => f.Paralelo is { Count: > 0 }
+                ? f.Paralelo.Select(p => (p.Nombre, p.Estado))
+                : [(f.Nombre, f.Estado)])
+            .Select(a => $"{a.Nombre} ({Sigla(a.Estado)})");
+
+        return string.Join(", ", aprobadores);
+    }
+
+    private static string Sigla(string? estado)
+    {
+        if (!Enum.TryParse<EstadoRevisionFirmante>(estado, ignoreCase: true, out var estadoRevision))
+            return string.Empty;
+
+        return estadoRevision switch
+        {
+            EstadoRevisionFirmante.Aprobado => "F",
+            EstadoRevisionFirmante.Rechazado => "R",
+            EstadoRevisionFirmante.Pendiente => "P",
+            _ => string.Empty
+        };
     }
 
     private static void AplicarFormato(

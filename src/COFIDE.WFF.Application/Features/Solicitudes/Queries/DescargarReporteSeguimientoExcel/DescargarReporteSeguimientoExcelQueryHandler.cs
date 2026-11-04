@@ -3,8 +3,9 @@ using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Domain.Common.Tiempo;
+using COFIDE.WFF.Domain.DomainServices;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSeguimientoExcel;
@@ -60,21 +61,14 @@ public sealed class DescargarReporteSeguimientoExcelQueryHandler(
         var solicitudes = _solicitudQueryRepository.ObtenerReporteSeguimiento(
             request,
             cancellationToken: cancellationToken)
-            .Select(x => new ReportSeguimientoSolicitudesDto
-            {
-                IdSolicitud = x.IdSolicitud,
-                CodigoSolicitud = x.CodigoSolicitud,
-                Solicitante = x.Solicitante,
-                TipoSolicitud = x.TipoSolicitud,
-                SubTipoSolicitud = x.SubTipoSolicitud,
-                TipoOperacion = x.TipoOperacion,
-                Estado = x.Estado,
-                FechaCreacion = x.FechaCreacion,
-                Urgente = x.Urgente,
-                Firmantes = x.Firmantes
-            })
             .ToList();
         ;
+
+        foreach (var solicitud in solicitudes)
+        {
+            AsignarEstadoFirmantes(solicitud);
+            solicitud.Firmantes = SeguimientoSolicitudesMapping.AgruparFirmantes(solicitud.Firmantes);
+        }
 
         var contenidoExcel = _excelReportService.GenerarReporteSeguimiento(solicitudes);
 
@@ -84,5 +78,26 @@ public sealed class DescargarReporteSeguimientoExcelQueryHandler(
             ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             NombreArchivo = $"Reporte_Seguimiento_Solicitudes_{HoraSistema.Ahora:yyyyMMdd_HHmmss}.xlsx"
         };
+
+
+    }
+
+    private static void AsignarEstadoFirmantes(SeguimientoSolicitudesDto solicitud)
+    {
+        if (solicitud.Firmantes is null)
+            return;
+
+        foreach (var firmante in solicitud.Firmantes)
+        {
+            firmante.Estado = ReglaEstadoFirmante.Determinar(
+                    solicitud.IdEstado,
+                    solicitud.CicloActual,
+                    firmante.UltimoCiclo,
+                    firmante.UltimoAprobado,
+                    firmante.RevAprobado,
+                    firmante.FechaRevision)
+                .ToString()
+                .ToUpperInvariant();
+        }
     }
 }
