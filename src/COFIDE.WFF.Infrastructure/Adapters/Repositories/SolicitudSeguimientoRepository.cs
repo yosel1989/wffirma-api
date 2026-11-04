@@ -1,7 +1,6 @@
 ﻿using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
-using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Vo;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Infrastructure.Extensions;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
@@ -78,80 +77,21 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                     Estado = x.Estado,
                     FechaCreacion = x.FechaCreacion,
                     Urgente = x.Urgente,
+                    IdEstado = x.IdEstado,
+                    CicloActual = x.CicloActual,
                     Firmantes = x.Firmantes
                         .Select(f => new FirmantesDto
                         {
                             OrdenEtapa = f.OrdenEtapa,
                             CodigoTipoEtapa = f.CodigoTipoEtapa,
                             Nombre = f.Nombre,
-                            Estado =
-                                f.UltimoCiclo != null
-                                && f.UltimoCiclo == x.CicloActual
-                                && f.UltimoAprobado == true
-                                && ((f.RevAprobado && f.FechaRevision != null
-                                        && (x.IdEstado == VO.EstadoSolicitud.Aprobado.Codigo
-                                            || x.IdEstado == VO.EstadoSolicitud.EnCurso.Codigo))
-                                    || ((f.RevAprobado == false || f.FechaRevision == null)
-                                        && x.IdEstado == VO.EstadoSolicitud.Rechazado.Codigo))
-                                    ? "APROBADO"
-                                    : f.UltimoCiclo != null
-                                      && f.UltimoCiclo == x.CicloActual
-                                      && f.UltimoAprobado == false
-                                      && (f.RevAprobado == false || f.FechaRevision == null)
-                                      && x.IdEstado == VO.EstadoSolicitud.Rechazado.Codigo
-                                        ? "RECHAZADO"
-                                        : "PENDIENTE"
+                            RevAprobado = f.RevAprobado,
+                            FechaRevision = f.FechaRevision,
+                            UltimoCiclo = f.UltimoCiclo,
+                            UltimoAprobado = f.UltimoAprobado
                         })
                         .ToList()
                 });
-        }
-
-        private static List<FirmantesDto> AgruparFirmantesSeguimiento(List<FirmantesDto>? firmantes)
-        {
-            if (firmantes is null || firmantes.Count == 0)
-                return [];
-
-            var resultado = new List<FirmantesDto>();
-            var indice = 0;
-
-            while (indice < firmantes.Count)
-            {
-                var actual = firmantes[indice];
-                var esParalelo = actual.CodigoTipoEtapa == TipoEtapa.Paralelo.Codigo;
-
-                if (!esParalelo)
-                {
-                    resultado.Add(new FirmantesDto
-                    {
-                        Nombre = actual.Nombre,
-                        Estado = actual.Estado
-                    });
-                    indice++;
-                    continue;
-                }
-
-                var paralelos = new List<FirmantesParaleloDto>();
-                var orden = actual.OrdenEtapa;
-
-                while (indice < firmantes.Count
-                       && firmantes[indice].CodigoTipoEtapa == TipoEtapa.Paralelo.Codigo
-                       && firmantes[indice].OrdenEtapa == orden)
-                {
-                    paralelos.Add(new FirmantesParaleloDto
-                    {
-                        Nombre = firmantes[indice].Nombre,
-                        Estado = firmantes[indice].Estado
-                    });
-                    indice++;
-                }
-
-                resultado.Add(new FirmantesDto
-                {
-                    Paralelo = paralelos
-                });
-            }
-
-            return resultado;
         }
 
         private static IQueryable<Solicitud> AplicarFiltrosPrincipalesSeguimiento(
@@ -425,9 +365,6 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                     .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
                     .Take(paginationParams.PageSize)
                     .ToListAsync(cancellationToken);
-
-            foreach (var solicitud in data)
-                solicitud.Firmantes = AgruparFirmantesSeguimiento(solicitud.Firmantes);
 
             var pagedItems = new PagedResult<SeguimientoSolicitudesDto, SeguimientoSolicitudesResumenDto>(
               data,
