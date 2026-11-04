@@ -4,6 +4,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.EnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RechazarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSeguimientoExcel;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
@@ -137,5 +138,9 @@ namespace COFIDE.WFF.Api.Mappings
 
         public static DetectarCodigoQuery ToQuery(this DetectarCodigosReferenciaRequest r) =>
             new(r.IdSolicitud, r.CodigosReferencia);
+
+        public static DescargarReporteSeguimientoExcelQuery ToQuery(this ReporteSeguimientoSolicitudesRequest r) =>
+            new(r.Fechainicio, r.Fechafin, r.Gerencia, r.Departamento, r.Solicitante, r.Tiposolicitud, r.Subtiposolicitud,
+                r.TipoOperacion, r.Asunto, r.Referencia, r.Estado, r.Firmante, r.Codigosolicitud, r.Encurso, r.Aprobada, r.Rechazada);
     }
 }

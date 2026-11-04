@@ -545,6 +545,21 @@ public class SolicitudController : BaseApiController
         );
     }
 
+    [HttpGet("reporte-seguimiento")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReporteSeguimientoSolicitudes(
+        [FromQuery] ReporteSeguimientoSolicitudesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
+
+        return File(
+            result.Contenido,
+            result.ContentType,
+            result.NombreArchivo
+        );
+    }
+
     #endregion
 
 
