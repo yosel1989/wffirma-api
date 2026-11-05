@@ -101,8 +101,13 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
                                 (p.IdAreaPlantilla == departamentoUsuario &&
                                  p.IdAreaPadrePlantilla == gerenciaUsuario)
                                 ||
+                                (
                                 (p.IdAreaPlantilla.HasValue &&
-                                 areasAccesoEspecial.Contains(p.IdAreaPlantilla.Value)));
+                                 areasAccesoEspecial.Contains(p.IdAreaPlantilla.Value))
+                                 ||
+                                 (p.IdAreaPadrePlantilla.HasValue &&
+                                 areasAccesoEspecial.Contains(p.IdAreaPadrePlantilla.Value))
+                                 ));
         }
 
         return query.Where(p => p.IdAreaPlantilla == departamentoUsuario && p.IdAreaPadrePlantilla == gerenciaUsuario);
