@@ -31,7 +31,7 @@ public class MaestroController : BaseApiController
     [ProducesResponseType(typeof(ResponseDto<List<AreasComboDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ResponseDto<List<AreasComboDto>>>> ObtenerCombosAreas(
       CancellationToken cancellationToken,
-      [FromQuery] bool? excluirAreaUsuario,
+      [FromQuery] long? excluirAreaUsuario,
       [FromQuery] char? tipo = 'G')
     {
         var result = await _mediator.Send(new ObtenerAreasComboQuery(tipo, excluirAreaUsuario), cancellationToken);
