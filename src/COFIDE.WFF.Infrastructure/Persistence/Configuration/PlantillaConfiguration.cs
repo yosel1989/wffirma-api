@@ -66,10 +66,18 @@ public class PlantillaConfiguration : AuditableEntityConfiguration<Plantilla, lo
              )
              .IsRequired(false);
 
-      /*  builder.HasOne(e => e.UsuarioPropietario)
-                .WithMany()
-                .HasForeignKey(e => e.IdUsuarioPropietario)
-                .HasConstraintName("FK_PLANTILLA_USUARIO")
-                .OnDelete(DeleteBehavior.Restrict);*/
+        builder.Property(u => u.IdAreaPlantilla)
+               .HasColumnName("ID_AREA_PLANTILLA")
+               .IsRequired(false);
+
+        builder.Property(u => u.IdAreaPadrePlantilla)
+               .HasColumnName("ID_AREA_PADRE_PLANTILLA")
+               .IsRequired(false);
+
+        /*  builder.HasOne(e => e.UsuarioPropietario)
+                  .WithMany()
+                  .HasForeignKey(e => e.IdUsuarioPropietario)
+                  .HasConstraintName("FK_PLANTILLA_USUARIO")
+                  .OnDelete(DeleteBehavior.Restrict);*/
     }
 }

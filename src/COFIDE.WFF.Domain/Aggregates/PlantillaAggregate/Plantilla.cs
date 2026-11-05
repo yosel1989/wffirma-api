@@ -1,6 +1,5 @@
 ﻿using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Errors;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Models;
-using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors;
 using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
@@ -15,6 +14,8 @@ public class Plantilla : AuditableEntity<long>
     public long? IdUsuarioPropietario { get; private set; }
     public string? GerenciaUsuario { get; private set; }
     public bool? EsReutilizable { get; private set; }
+    public long? IdAreaPlantilla { get; private set; }
+    public long? IdAreaPadrePlantilla { get; private set; }
     #endregion
 
     #region Referencias

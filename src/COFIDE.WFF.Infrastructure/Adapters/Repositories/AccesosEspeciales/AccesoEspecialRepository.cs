@@ -36,6 +36,15 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<List<long>?> GetAreasByUserIdAsync(long id)
+        {
+            return await _context.AccesosEspeciales
+                .AsNoTracking()
+                .Where(p => p.IdUsuario == id)
+                .Select(p => p.IdArea)
+                .ToListAsync();
+        }
+
         #endregion
 
         #region Eliminar
