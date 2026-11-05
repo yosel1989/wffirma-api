@@ -127,19 +127,6 @@ public partial class SolicitudQueryRepository
             }
         }
 
-        /* if (usuario == true && codigoUsuario.HasValue)
-         {
-             query = query.Where(s =>
-                 s.UsuarioSolicitante.Id == codigoUsuario.Value);
-         }*/
-
-        /* if (usuariodepartamento == true && departamentoUsuario.HasValue)
-         {
-             query = query.Where(s =>
-                 s.UsuarioSolicitante.IdArea.HasValue &&
-                 s.UsuarioSolicitante.IdArea.Value == departamentoUsuario.Value);
-         }*/
-
         if (gerencia?.Count > 0)
         {
             query = query.Where(s =>

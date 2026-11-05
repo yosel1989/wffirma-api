@@ -8,7 +8,8 @@ public interface IPlantillaGestionRepository
     Task<PagedResult<GestionPlantillasDto>> ObtenerPaginadoGestion(
         PagedQueryParams paginationParams,
         long? codigoUsuario,
-        long? areaUsuario,
+        long? departamentoUsuario,
+        long? gerenciaUsuario,
         string? rolUsuario,
         string? fechainicio,
         string? fechafin,
@@ -17,5 +18,6 @@ public interface IPlantillaGestionRepository
         List<long>? creador,
         List<long>? aprobador,
         string? nombrePlantilla,
+        List<long>? areasAccesoEspecial,
         CancellationToken cancellationToken);
 }

@@ -17,7 +17,8 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
     public async Task<PagedResult<GestionPlantillasDto>> ObtenerPaginadoGestion(
         PagedQueryParams paginationParams,
         long? codigoUsuario,
-        long? areaUsuario,
+        long? departamentoUsuario,
+        long? gerenciaUsuario,
         string? rolUsuario,
         string? fechainicio,
         string? fechafin,
@@ -26,12 +27,13 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
         List<long>? creador,
         List<long>? aprobador,
         string? nombrePlantilla,
+        List<long>? areasAccesoEspecial,
         CancellationToken cancellationToken)
     {
         var query = _context.Plantillas.AsNoTracking()
-            .Where(p => p.Estado && p.EsReutilizable == true);
+            .Where(p => p.Estado);
 
-        query = AplicarAlcancePorRol(query, codigoUsuario, areaUsuario, rolUsuario);
+        query = AplicarAlcancePorRol(query, codigoUsuario, departamentoUsuario, gerenciaUsuario, rolUsuario, areasAccesoEspecial);
         query = AplicarFiltros(
             query,
             fechainicio,
@@ -68,29 +70,42 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
     private IQueryable<Plantilla> AplicarAlcancePorRol(
         IQueryable<Plantilla> query,
         long? codigoUsuario,
-        long? areaUsuario,
-        string? rolUsuario)
+        long? departamentoUsuario,
+        long? gerenciaUsuario,
+        string? rolUsuario,
+        List<long>? areasAccesoEspecial)
     {
-        if (string.IsNullOrWhiteSpace(rolUsuario))
+        var rol = RolUsuarioCodigo.Desde(rolUsuario);
+
+        if (rol is null || rol == RolUsuario.Administrador)
             return query;
 
-        var rol = rolUsuario.Trim().ToUpperInvariant();
+        if (rol == RolUsuario.Coordinador && departamentoUsuario.HasValue && gerenciaUsuario.HasValue)
+            return AplicarAlcanceCoordinador(query, departamentoUsuario.Value, gerenciaUsuario.Value, areasAccesoEspecial);
 
-        if (rol == RolUsuarioCodigo.Coordinador && areaUsuario.HasValue)
-        {
-            return query.Where(p =>
-                _context.Usuarios.Any(u =>
-                    u.Id == p.IdUsuarioPropietario &&
-                    u.IdArea.HasValue &&
-                    u.IdArea.Value == areaUsuario.Value));
-        }
-
-        if (rol == RolUsuarioCodigo.SolicitanteAprobador && codigoUsuario.HasValue)
-        {
+        if (rol == RolUsuario.SolicitanteAprobador && codigoUsuario.HasValue)
             return query.Where(p => p.IdUsuarioPropietario == codigoUsuario.Value);
-        }
 
         return query;
+    }
+
+    private IQueryable<Plantilla> AplicarAlcanceCoordinador(
+        IQueryable<Plantilla> query,
+        long? departamentoUsuario,
+        long? gerenciaUsuario,
+        List<long>? areasAccesoEspecial)
+    {
+        if (areasAccesoEspecial?.Count > 0)
+        {
+            return query.Where(p =>
+                                (p.IdAreaPlantilla == departamentoUsuario &&
+                                 p.IdAreaPadrePlantilla == gerenciaUsuario)
+                                ||
+                                (p.IdAreaPlantilla.HasValue &&
+                                 areasAccesoEspecial.Contains(p.IdAreaPlantilla.Value)));
+        }
+
+        return query.Where(p => p.IdAreaPlantilla == departamentoUsuario && p.IdAreaPadrePlantilla == gerenciaUsuario);
     }
 
     private IQueryable<Plantilla> AplicarFiltros(
@@ -145,20 +160,14 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
     {
         if (gerencia?.Count > 0)
         {
-            query = query.Where(p =>
-                _context.Usuarios.Any(u =>
-                    u.Id == p.IdUsuarioPropietario &&
-                    u.Area.IdAreaPadre.HasValue &&
-                    gerencia.Contains(u.Area.IdAreaPadre.Value)));
+            query = query.Where(p => p.IdAreaPadrePlantilla.HasValue &&
+            gerencia.Contains(p.IdAreaPadrePlantilla.Value));
         }
 
         if (departamento?.Count > 0)
         {
-            query = query.Where(p =>
-                _context.Usuarios.Any(u =>
-                    u.Id == p.IdUsuarioPropietario &&
-                    u.IdArea.HasValue &&
-                    departamento.Contains(u.IdArea.Value)));
+            query = query.Where(p => p.IdAreaPlantilla.HasValue &&
+            departamento.Contains(p.IdAreaPlantilla.Value));
         }
 
         return query;
