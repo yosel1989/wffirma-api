@@ -30,8 +30,12 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAc
                 throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.UserNotAuthenticated);
 
             var rolUsuario = _currentUser.CodigoRolUsuario;
+            var idAreaUsuario = _currentUser.UserAreaId;
             if (RolUsuarioCodigo.Desde(rolUsuario) != RolUsuario.Administrador)
                 throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.Forbidden);
+
+            if(idAreaUsuario == cmd.IdArea)
+                throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.AccesoEspecialUserAlreadyInArea);
 
             var request = _mapper.Map<AccesoEspecialRequestDto>(cmd);
             var accesoEspecial = _usecase.AccesoEspecialRegistrar(request, cancellationToken);

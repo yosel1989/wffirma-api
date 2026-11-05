@@ -3,7 +3,6 @@ using COFIDE.WFF.Api.ApiVersions;
 using COFIDE.WFF.Api.Constants;
 using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
-using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Features.Areas.Queries.ObtenerAreasCombo;
 using COFIDE.WFF.Application.Features.Areas.Queries.ObtenerDepartamentosCombo;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerListadoParametro;
@@ -30,9 +29,12 @@ public class MaestroController : BaseApiController
 
     [HttpGet("areas")]
     [ProducesResponseType(typeof(ResponseDto<List<AreasComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<AreasComboDto>>>> ObtenerCombosAreas(CancellationToken cancellationToken, [FromQuery] char? tipo = 'G')
+    public async Task<ActionResult<ResponseDto<List<AreasComboDto>>>> ObtenerCombosAreas(
+      CancellationToken cancellationToken,
+      [FromQuery] bool? excluirAreaUsuario,
+      [FromQuery] char? tipo = 'G')
     {
-        var result = await _mediator.Send(new ObtenerAreasComboQuery(tipo), cancellationToken);
+        var result = await _mediator.Send(new ObtenerAreasComboQuery(tipo, excluirAreaUsuario), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<AreasComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));

@@ -5,10 +5,6 @@ using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Areas.Ports.Out;
 using COFIDE.WFF.Application.Features.Areas.Queries.ObtenerAreasCombo;
 using COFIDE.WFF.Application.Features.Areas.Queries.ObtenerDepartamentosCombo;
-using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaPdf;
-using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaZip;
-using COFIDE.WFF.Application.Features.Firmas.Commands.RestablecerDocumentoFirmado;
-using COFIDE.WFF.Application.Features.Firmas.DTOs;
 using COFIDE.WFF.Application.Features.Jobs.ActualizarEstadoProgramado;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerListadoParametro;
@@ -44,10 +40,11 @@ public class ConsultasComboQueryHandlerTest
     {
         var repo = new Mock<IAreaRepository>();
         var esperado = new List<AreasComboDto> { new() };
-        repo.Setup(r => r.GetAreaCombo(null, It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
+        var service = new Mock<ICurrentUserService>();
+        repo.Setup(r => r.GetAreaCombo(null, null, It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
 
-        var resultado = await new ObtenerAreasComboQueryHandler(_mapper.Object, repo.Object)
-            .Handle(new ObtenerAreasComboQuery(null), CancellationToken.None);
+        var resultado = await new ObtenerAreasComboQueryHandler(_mapper.Object, repo.Object, service.Object)
+            .Handle(new ObtenerAreasComboQuery(null, null), CancellationToken.None);
 
         resultado.Should().BeSameAs(esperado);
     }
