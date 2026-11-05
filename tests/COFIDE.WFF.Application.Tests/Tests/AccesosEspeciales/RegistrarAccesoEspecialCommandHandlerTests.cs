@@ -6,6 +6,7 @@ using COFIDE.WFF.Application.Features.AccesosEspeciales.Services;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.DTOs;
 using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
 
 public class RegistrarAccesoEspecialCommandHandlerTests
 {
@@ -13,6 +14,7 @@ public class RegistrarAccesoEspecialCommandHandlerTests
     private readonly Mock<IAccesoEspecialRegistrarService> _serviceMock;
     private readonly Mock<IAccesoEspecialRepository> _repoMock;
     private readonly Mock<ICurrentUserService> _currentUserMock;
+    private readonly Mock<IUsuarioRepository> _usuarioRepoMock;
     private readonly RegistrarAccesoEspecialCommandHandler _handler;
 
     public RegistrarAccesoEspecialCommandHandlerTests()
@@ -21,8 +23,9 @@ public class RegistrarAccesoEspecialCommandHandlerTests
         _serviceMock = new Mock<IAccesoEspecialRegistrarService>();
         _repoMock = new Mock<IAccesoEspecialRepository>();
         _currentUserMock = new Mock<ICurrentUserService>();
+        _usuarioRepoMock = new Mock<IUsuarioRepository>();
 
-        _handler = new RegistrarAccesoEspecialCommandHandler(_currentUserMock.Object, _mapperMock.Object, _serviceMock.Object, _repoMock.Object);
+        _handler = new RegistrarAccesoEspecialCommandHandler(_currentUserMock.Object, _mapperMock.Object, _serviceMock.Object, _repoMock.Object, _usuarioRepoMock.Object);
     }
 
     [Fact]
