@@ -31,7 +31,7 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
         CancellationToken cancellationToken)
     {
         var query = _context.Plantillas.AsNoTracking()
-            .Where(p => p.Estado);
+            .Where(p => p.Estado && p.EsReutilizable == true);
 
         query = AplicarAlcancePorRol(query, codigoUsuario, departamentoUsuario, gerenciaUsuario, rolUsuario, areasAccesoEspecial);
         query = AplicarFiltros(
