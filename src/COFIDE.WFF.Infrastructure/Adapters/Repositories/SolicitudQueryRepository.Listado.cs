@@ -1,13 +1,8 @@
-using COFIDE.WFF.Application.Features.Publico.DescargaDocumento;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Common.Abstractions;
 using COFIDE.WFF.Application.Common.Pageds;
-using COFIDE.WFF.Domain.Entities;
-using COFIDE.WFF.Domain.ValueObjects;
 using COFIDE.WFF.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
