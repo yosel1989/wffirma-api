@@ -130,6 +130,7 @@ public class CorreoApiClient(
             Asunto = asunto,
             Cuerpo = cuerpo,
             Remitente = remitente,
+            AliasRemitente = _options.SenderAlias,
             Para = destinatarios,
             Resultado = "??"
         };
