@@ -17,6 +17,7 @@ public class CorreoApiClient(
     private readonly HttpClient _httpClient = httpClient;
     private readonly CorreoApiOptions _options = options.Value;
     private readonly ILogger<CorreoApiClient> _logger = logger;
+    private readonly string senderAlias = "COFIDE Workflow de Firmas";
 
     public async Task EnviarCorreoAsync(
         string asunto,
@@ -130,7 +131,7 @@ public class CorreoApiClient(
             Asunto = asunto,
             Cuerpo = cuerpo,
             Remitente = remitente,
-            AliasRemitente = _options.SenderAlias,
+            AliasRemitente = senderAlias,
             Para = destinatarios,
             Resultado = "??"
         };
