@@ -1,4 +1,7 @@
-﻿namespace COFIDE.WFF.Application.Features.AccesosEspeciales.DTOs
+﻿using System.Text.Json.Serialization;
+using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Vo;
+
+namespace COFIDE.WFF.Application.Features.AccesosEspeciales.DTOs
 {
     /// <summary>
     /// Representa un acceso especial asignado a un usuario en el sistema.
@@ -41,9 +44,13 @@
         public string NombreArea { get; set; } = string.Empty;
 
         /// <summary>
-        /// Estado actual del acceso especial, activo = true, inactivo = false.
+        /// Código del estado.
         /// </summary>
-        public bool Estado { get; set; }
+        [JsonIgnore]
+        public EstadoCodigo CodigoEstado { get; set; }
+
+        /// <summary>true = Activo, false = Inactivo (se calcula, solo get).</summary>
+        public bool Estado => CodigoEstado.Equals(EstadoCodigo.Activo);
 
         /// <summary>
         /// Fecha de creación del acceso especial.

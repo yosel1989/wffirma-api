@@ -23,6 +23,12 @@ public class SeguimientoSolicitudesDto
     public string? Estado { get; set; }
     public DateTime? FechaCreacion { get; set; }
     public List<FirmantesDto>? Firmantes { get; set; }
+
+    [JsonIgnore]
+    public long IdEstado { get; set; }
+
+    [JsonIgnore]
+    public int? CicloActual { get; set; }
 }
 
 public class FirmantesDto
@@ -41,6 +47,18 @@ public class FirmantesDto
 
     [JsonIgnore]
     public string? CodigoTipoEtapa { get; set; }
+
+    [JsonIgnore]
+    public bool RevAprobado { get; set; }
+
+    [JsonIgnore]
+    public DateTime? FechaRevision { get; set; }
+
+    [JsonIgnore]
+    public int? UltimoCiclo { get; set; }
+
+    [JsonIgnore]
+    public bool? UltimoAprobado { get; set; }
 }
 
 public class FirmantesParaleloDto

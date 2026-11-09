@@ -5,10 +5,6 @@ using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Areas.Ports.Out;
 using COFIDE.WFF.Application.Features.Areas.Queries.ObtenerAreasCombo;
 using COFIDE.WFF.Application.Features.Areas.Queries.ObtenerDepartamentosCombo;
-using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaPdf;
-using COFIDE.WFF.Application.Features.Firmas.Commands.FirmaInternaZip;
-using COFIDE.WFF.Application.Features.Firmas.Commands.RestablecerDocumentoFirmado;
-using COFIDE.WFF.Application.Features.Firmas.DTOs;
 using COFIDE.WFF.Application.Features.Jobs.ActualizarEstadoProgramado;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerListadoParametro;
@@ -27,7 +23,6 @@ using COFIDE.WFF.Application.Features.Usuarios.Commands.CerrarSesion;
 using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerUsuariosCombo;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.UsuarioBuscador;
-using COFIDE.WFF.Domain.Common.Enums;
 using COFIDE.WFF.Domain.Entities;
 using FluentAssertions;
 using Moq;
@@ -43,11 +38,12 @@ public class ConsultasComboQueryHandlerTest
     public async Task Areas_Debe_Devolver_Lo_Que_Entrega_El_Repositorio()
     {
         var repo = new Mock<IAreaRepository>();
+        var repoUsuario = new Mock<IUsuarioRepository>();
         var esperado = new List<AreasComboDto> { new() };
-        repo.Setup(r => r.GetAreaCombo(null, It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
+        repo.Setup(r => r.GetAreaCombo(null, null, It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
 
-        var resultado = await new ObtenerAreasComboQueryHandler(_mapper.Object, repo.Object)
-            .Handle(new ObtenerAreasComboQuery(null), CancellationToken.None);
+        var resultado = await new ObtenerAreasComboQueryHandler(_mapper.Object, repo.Object, repoUsuario.Object)
+            .Handle(new ObtenerAreasComboQuery(null, null), CancellationToken.None);
 
         resultado.Should().BeSameAs(esperado);
     }

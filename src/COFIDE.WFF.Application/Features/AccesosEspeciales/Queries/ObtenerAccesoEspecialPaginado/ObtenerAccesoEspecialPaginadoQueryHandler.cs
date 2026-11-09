@@ -4,6 +4,7 @@ using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 using MediatR;
 using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Domain.Common.Enums;
 
 namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAccesoEspecialPaginado
 {
@@ -21,6 +22,10 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Queries.ObtenerAcces
 
             if (_currentUser.UserCargoId is null)
                 throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.UserNotAuthenticated);
+
+            var rolUsuario = _currentUser.CodigoRolUsuario;
+            if (RolUsuarioCodigo.Desde(rolUsuario) != RolUsuario.Administrador)
+                throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.Forbidden);
 
             var paginationParams = new PagedQueryParams
             {
