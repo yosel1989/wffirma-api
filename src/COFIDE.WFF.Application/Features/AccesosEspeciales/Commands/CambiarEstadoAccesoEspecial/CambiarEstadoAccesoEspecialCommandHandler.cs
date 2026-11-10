@@ -8,7 +8,7 @@ using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 
 namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.CambiarEstadoAccesoEspecial
 {
-    public sealed class CambiarEstadoAccesoEspecialHandler(
+    public sealed class CambiarEstadoAccesoEspecialCommandHandler(
         ICurrentUserService currentUser,
         IMapper mapper,
         IAccesoEspecialRepository repository

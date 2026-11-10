@@ -104,7 +104,8 @@ public partial class SolicitudQueryRepository
     string? referencia,
     bool? urgente,
     bool? usuario,
-    bool? usuariodepartamento)
+    bool? usuariodepartamento,
+    List<long>? idsAreasAccesoEspecial)
     {
         var rol = RolUsuarioCodigo.Desde(roLUsuario);
         if (rol is not null)
@@ -318,6 +319,7 @@ public partial class SolicitudQueryRepository
         bool? usuario,
         bool? usuariodepartamento,
         bool? incluirresumen,
+        List<long>? idsAreasAccesoEspecial,
         CancellationToken cancellationToken)
     {
         SolicitudResumenPaginadoDto resumen = new();
@@ -343,7 +345,8 @@ public partial class SolicitudQueryRepository
             referencia,
             urgente,
             usuario,
-            usuariodepartamento);
+            usuariodepartamento,
+            idsAreasAccesoEspecial);
 
         if (incluirresumen == true)
         {
@@ -431,7 +434,8 @@ public partial class SolicitudQueryRepository
             request.Referencia,
             request.Urgente,
             request.Usuario,
-            request.Usuariodepartamento);
+            request.Usuariodepartamento,
+            null);
 
         query = AplicarFiltrosGrilla(
             query,
