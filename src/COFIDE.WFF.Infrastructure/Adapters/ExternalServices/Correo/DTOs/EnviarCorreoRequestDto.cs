@@ -10,6 +10,7 @@ public sealed class EnviarCorreoRequestDto
     public string Asunto { get; set; } = default!;
     public string Cuerpo { get; set; } = default!;
     public string Remitente { get; set; } = default!;
+    public string AliasRemitente { get; set; } = default!;
     public string Para { get; set; } = default!;
     public string Resultado { get; set; } = default!;
 }

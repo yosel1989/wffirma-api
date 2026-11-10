@@ -1,11 +1,8 @@
-﻿using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
-using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
+﻿using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Common.ValueObjects;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;

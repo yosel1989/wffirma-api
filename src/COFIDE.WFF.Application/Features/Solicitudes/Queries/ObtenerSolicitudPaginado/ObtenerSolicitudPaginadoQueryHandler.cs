@@ -4,15 +4,18 @@ using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Common.Pageds;
 using MediatR;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 
 public sealed class ObtenerSolicitudPaginadoQueryHandler(
         ICurrentUserService currentUser,
-        ISolicitudQueryRepository solicitudQueryRepository
+        ISolicitudQueryRepository solicitudQueryRepository,
+        IAccesoEspecialRepository accesoEspecialQueryRepository
     ) : IRequestHandler<ObtenerSolicitudPaginadoQuery, SolicitudPaginadoResponseDto>
 {
     private readonly ICurrentUserService _currentUser = currentUser;
     private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
+    private readonly IAccesoEspecialRepository _accesoEspecialQueryRepository = accesoEspecialQueryRepository;
     public async Task<SolicitudPaginadoResponseDto> Handle(ObtenerSolicitudPaginadoQuery request, CancellationToken cancellationToken)
     {
         if (_currentUser.UserIdLocal is null)
@@ -25,6 +28,8 @@ public sealed class ObtenerSolicitudPaginadoQueryHandler(
         var areaUsuario = _currentUser.UserAreaId;
         var rolUsuario = _currentUser.CodigoRolUsuario;
         var idDepartamento = _currentUser.UserAreaId;
+
+        var idsAreasAccesosEspeciales = await _accesoEspecialQueryRepository.GetAreasByUserIdAsync(idUsuario ?? 0);
 
         var paginationParams = new PagedQueryParams
         {
@@ -56,6 +61,7 @@ public sealed class ObtenerSolicitudPaginadoQueryHandler(
             request.Usuario,
             request.Usuariodepartamento,
             request.IncluirResumen,
+            idsAreasAccesosEspeciales,
             cancellationToken);
 
         var resumen = pagedResult.ExtraData!;

@@ -28,5 +28,7 @@ namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out
         /// <param name="cancellationToken">Token para manejar la cancelación de la operación.</param>
         /// <returns>El acceso especial encontrado, o <c>null</c> si no existe.</returns>
         Task<AccesoEspecial?> GetByIdAnyStatusAsync(long id, bool tracking);
+
+        Task<List<long>?> GetAreasByUserIdAsync(long id);
     }
 }

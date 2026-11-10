@@ -10,7 +10,7 @@ public class CambiarEstadoAccesoEspecialHandlerTests
     private readonly Mock<IAccesoEspecialRepository> _repoMock;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<ICurrentUserService> _currentUserMock;
-    private readonly CambiarEstadoAccesoEspecialHandler _handler;
+    private readonly CambiarEstadoAccesoEspecialCommandHandler _handler;
 
     public CambiarEstadoAccesoEspecialHandlerTests()
     {
@@ -18,7 +18,7 @@ public class CambiarEstadoAccesoEspecialHandlerTests
         _mapperMock = new Mock<IMapper>();
         _currentUserMock = new Mock<ICurrentUserService>();
 
-        _handler = new CambiarEstadoAccesoEspecialHandler(_currentUserMock.Object, _mapperMock.Object, _repoMock.Object);
+        _handler = new CambiarEstadoAccesoEspecialCommandHandler(_currentUserMock.Object, _mapperMock.Object, _repoMock.Object);
     }
 
     [Fact]

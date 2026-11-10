@@ -10,7 +10,7 @@ public class AreaRepository(
         WorkflowFirmaDbContext context
     ) : GenericRepository<Area, long>(context), IAreaRepository
 {
-    public async Task<List<AreasComboDto>> GetAreaCombo(char? Tipo, CancellationToken cancellationToken)
+    public async Task<List<AreasComboDto>> GetAreaCombo(List<long>? excluirIds, char? Tipo, CancellationToken cancellationToken)
     {
         var query = _context.Areas
             .AsQueryable();
@@ -18,6 +18,11 @@ public class AreaRepository(
         if (Tipo.HasValue && Tipo.Value == 'G')
         {
             query = query.Where(u => u.Tipo == Tipo.Value);
+        }
+
+        if (excluirIds?.Count > 0)
+        {
+            query = query.Where(u => !excluirIds.Contains(u.Id));
         }
 
         return await query

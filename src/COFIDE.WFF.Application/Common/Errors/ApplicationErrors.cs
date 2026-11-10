@@ -39,6 +39,8 @@ public static class ApplicationErrors
     #region AccesoEspecial
     public static readonly ApplicationError AccesoEspecialNotFound = new("APP_SOL_019", "No se encontró el acceso especial.");
     public static readonly ApplicationError AccesoEspecialNotExists = new("APP_SOL_020", "El acceso especial ya no existe.");
+    public static readonly ApplicationError AccesoEspecialUserAlreadyInArea = new("APP_SOL_021", "No se puede registrar un acceso especial a un área a la que el usuario ya pertenece.");
     #endregion
 
+    public static readonly ApplicationError UsuarioNotFound = new("APP_SOL_022", "No se encontró el usuario o está inactivo.");
 }

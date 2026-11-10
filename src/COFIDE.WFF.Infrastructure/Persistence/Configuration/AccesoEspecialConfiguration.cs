@@ -1,4 +1,5 @@
 ﻿using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
+using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Vo;
 using COFIDE.WFF.Infrastructure.Persistence.Configuration.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,6 +28,18 @@ public class AccesoEspecialConfiguration : AuditableEntityConfiguration<AccesoEs
         builder.Property(u => u.IdArea)
                .HasColumnName("ID_AREA")
                .IsRequired();
+
+        // Conversion
+
+        builder.Ignore(e => e.Estado);
+
+        builder.Property(e => e.CodigoEstado)
+            .HasColumnName("CH_ESTADO")
+            .HasColumnType("CHAR(1)")
+            .HasConversion(
+                v => v.Codigo.ToString(),
+                v => EstadoCodigo.FromCodigo(v.Trim()[0]))
+            .IsRequired();
 
         // Foreign Keys
 

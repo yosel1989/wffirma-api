@@ -56,6 +56,7 @@ public interface ISolicitudQueryRepository
         bool? usuario,
         bool? usuariodepartamento,
         bool? incluirresumen,
+        List<long>? idsAreasAccesoEspecial,
         CancellationToken cancellationToken);
 
 

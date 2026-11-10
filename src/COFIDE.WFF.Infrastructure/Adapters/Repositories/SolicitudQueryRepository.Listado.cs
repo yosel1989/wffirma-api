@@ -1,13 +1,8 @@
-using COFIDE.WFF.Application.Features.Publico.DescargaDocumento;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolicitudExcel;
-using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
-using COFIDE.WFF.Domain.Common.Abstractions;
 using COFIDE.WFF.Application.Common.Pageds;
-using COFIDE.WFF.Domain.Entities;
-using COFIDE.WFF.Domain.ValueObjects;
 using COFIDE.WFF.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -109,7 +104,8 @@ public partial class SolicitudQueryRepository
     string? referencia,
     bool? urgente,
     bool? usuario,
-    bool? usuariodepartamento)
+    bool? usuariodepartamento,
+    List<long>? idsAreasAccesoEspecial)
     {
         var rol = RolUsuarioCodigo.Desde(roLUsuario);
         if (rol is not null)
@@ -126,19 +122,6 @@ public partial class SolicitudQueryRepository
                     s.UsuarioSolicitante.Id == codigoUsuario.Value);
             }
         }
-
-        /* if (usuario == true && codigoUsuario.HasValue)
-         {
-             query = query.Where(s =>
-                 s.UsuarioSolicitante.Id == codigoUsuario.Value);
-         }*/
-
-        /* if (usuariodepartamento == true && departamentoUsuario.HasValue)
-         {
-             query = query.Where(s =>
-                 s.UsuarioSolicitante.IdArea.HasValue &&
-                 s.UsuarioSolicitante.IdArea.Value == departamentoUsuario.Value);
-         }*/
 
         if (gerencia?.Count > 0)
         {
@@ -336,6 +319,7 @@ public partial class SolicitudQueryRepository
         bool? usuario,
         bool? usuariodepartamento,
         bool? incluirresumen,
+        List<long>? idsAreasAccesoEspecial,
         CancellationToken cancellationToken)
     {
         SolicitudResumenPaginadoDto resumen = new();
@@ -361,7 +345,8 @@ public partial class SolicitudQueryRepository
             referencia,
             urgente,
             usuario,
-            usuariodepartamento);
+            usuariodepartamento,
+            idsAreasAccesoEspecial);
 
         if (incluirresumen == true)
         {
@@ -449,7 +434,8 @@ public partial class SolicitudQueryRepository
             request.Referencia,
             request.Urgente,
             request.Usuario,
-            request.Usuariodepartamento);
+            request.Usuariodepartamento,
+            null);
 
         query = AplicarFiltrosGrilla(
             query,

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Vo;
+using Microsoft.EntityFrameworkCore;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
 {
@@ -19,7 +20,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
         {
             var total = await _context.AccesosEspeciales
                 .IgnoreQueryFilters()
-                .CountAsync(d => d.IdUsuario == idUsuario && d.IdArea == idArea, cancellationToken);
+                .CountAsync(d => d.IdUsuario == idUsuario && d.IdArea == idArea && d.CodigoEstado != EstadoCodigo.Eliminado, cancellationToken);
 
             return total > 0;
         }
