@@ -456,6 +456,8 @@ public class Solicitud : AuditableEntity<long>
         if (firmante.OrdenEtapa != etapaActualAntesDeAprobar)
             throw new DomainException(SolicitudErrors.NoPuedeAprobarEstaEtapaSolicitud);
 
+        ValidarEtapasAnterioresAprobadas(firmante);
+
         firmante.Aprobar();
 
         firmante.AgregarHistorialRevision(idHistorialRevision, firmante.RevAprobado, firmante.FechaRevision, ciclo);
@@ -474,6 +476,33 @@ public class Solicitud : AuditableEntity<long>
                 new SolicitudPorAprobarFirmantesDomainEvent(this.Id)
             );
         }
+    }
+
+    private void ValidarEtapasAnterioresAprobadas(SolicitudFirmanteFlujo firmante)
+    {
+        if (firmante.OrdenEtapa is not long orden)
+            throw new DomainException(SolicitudErrors.NoPuedeAprobarEstaEtapaSolicitud);
+
+        var anteriores = SolicitudPlantilla.FirmantesFlujo
+            .Where(f => f.Estado && f.OrdenEtapa < orden)
+            .ToList();
+
+        if (anteriores.Any(f => !f.RevAprobado))
+            throw new DomainException(SolicitudErrors.NoPuedeAprobarEstaEtapaSolicitud);
+
+        var documentos = DocumentosActivos().ToList();
+        if (documentos.Count == 0)
+            return;
+
+        var hayDocumentoSinFirmar = anteriores.Any(anterior =>
+            documentos.Any(documento =>
+                !documento.DetallesFirma.Any(detalle =>
+                    detalle.Estado &&
+                    detalle.IdSolicitudFirmanteFlujo == anterior.Id &&
+                    detalle.EstadoDocumento == ValueObject.EstadoDocumento.Firmado)));
+
+        if (hayDocumentoSinFirmar)
+            throw new DomainException(SolicitudErrors.AprobDocumentosNoFirmados);
     }
 
     private long? ObtenerEtapaActual()
