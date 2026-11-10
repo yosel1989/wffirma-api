@@ -2,6 +2,7 @@
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Models.Pdf;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
@@ -19,7 +20,8 @@ public sealed class GenerarPdfSolicitudQueryHandler(
         ICurrentUserService currentUser,
         ISolicitudQueryRepository solicitudQueryRepository,
         IMaestroRepository maestroRepository,
-        ISolicitudPdfGenerator pdfGenerator
+        ISolicitudPdfGenerator pdfGenerator,
+        IAccesoEspecialRepository accesoEspecialRepository
     ) : BaseQueryHandler<GenerarPdfSolicitudQuery, GenerarPdfSolicitudDto?>(mapper)
 {
     private const string EstadoTuTurno = "Tu Turno";
@@ -29,12 +31,33 @@ public sealed class GenerarPdfSolicitudQueryHandler(
     private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly IMaestroRepository _maestroRepository = maestroRepository;
     private readonly ISolicitudPdfGenerator _pdfGenerator = pdfGenerator;
+    private readonly IAccesoEspecialRepository _accesoEspecialRepository = accesoEspecialRepository;
 
     public override async Task<GenerarPdfSolicitudDto?> Handle(GenerarPdfSolicitudQuery request, CancellationToken cancellationToken)
     {
+        if (_currentUser.UserIdLocal is null)
+            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.UserNotAuthenticated);
 
-           var solicitud = await _solicitudQueryRepository.ObtenerSolicitudPorId(
-            request.IdSolicitud, _currentUser.UserIdLocal, esReuso: false, cancellationToken);
+        var idUsuario = _currentUser.UserIdLocal.Value;
+
+        // Solo accesos especiales activos.
+        var idsAreasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario);
+
+        // Imprimir el PDF de la solicitud: solo si puede verla por su rol
+        // OR por un acceso especial activo (misma regla que el listado).
+        var puedeVer = await _solicitudQueryRepository.PuedeVerSolicitudAsync(
+            request.IdSolicitud,
+            idUsuario,
+            _currentUser.UserAreaId,
+            _currentUser.CodigoRolUsuario,
+            idsAreasAccesoEspecial,
+            cancellationToken);
+
+        if (!puedeVer)
+            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudSinAcceso);
+
+        var solicitud = await _solicitudQueryRepository.ObtenerSolicitudPorId(
+            request.IdSolicitud, idUsuario, esReuso: false, cancellationToken);
 
         if (solicitud is null)
             return null;

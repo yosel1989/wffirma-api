@@ -27,7 +27,7 @@ public class SolicitudQueryRepositoryTest(WorkflowApiFactory api)
             new PagedQueryParams(), UsuarioInexistente, 1, "SOLAPR", 1,
             "2020-01-01", "2030-12-31",
             [1], [1], [1], [1], [1], [1], [1], [1],
-            "SOL", "asunto", "REF", urgente: true, usuario: true, usuariodepartamento: false, incluirresumen: true,
+            "SOL", "asunto", "REF", urgente: true, usuario: true, usuariodepartamento: false, incluirresumen: true, null,
             CancellationToken.None);
 
         resultado.Should().NotBeNull();
@@ -45,7 +45,7 @@ public class SolicitudQueryRepositoryTest(WorkflowApiFactory api)
         var resultado = await consultas.ObtenerPaginado(
             new PagedQueryParams(), UsuarioInexistente, 1, rol, 1, null, null,
             null, null, null, null, null, null, null, null,
-            null, null, null, null, null, null, incluirresumen: true,
+            null, null, null, null, null, null, incluirresumen: true, null,
             CancellationToken.None);
 
         resultado.Should().NotBeNull();

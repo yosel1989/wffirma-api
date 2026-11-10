@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Common.Pageds;
 using FluentAssertions;
 using Moq;
 using applicationException = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
@@ -51,6 +52,8 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
 {
     private readonly Mock<ICurrentUserService> _currentUser = new(MockBehavior.Loose);
     private readonly Mock<ISolicitudQueryRepository> _solicitudRepository = new(MockBehavior.Strict);
+    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepository = new(MockBehavior.Strict);
+
 
     /// <summary>Capturado desde el Setup para poder afirmar con mensajes legibles.</summary>
     private PagedQueryParams? _paramsRecibidos;
@@ -148,6 +151,7 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
             query.Usuario,
             query.Usuariodepartamento,
             query.IncluirResumen,
+            null,
             cts.Token),
             Times.Once);
 
@@ -225,7 +229,7 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
             It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
             It.IsAny<List<long>>(), It.IsAny<List<long>>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+            It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), null,
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -281,7 +285,7 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), null,
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
@@ -295,7 +299,7 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
     #region Helpers
 
     private ObtenerSolicitudPaginadoQueryHandler CrearHandler() =>
-        new(_currentUser.Object, _solicitudRepository.Object);
+        new(_currentUser.Object, _solicitudRepository.Object, _accesoEspecialRepository.Object);
 
     private void ConfigurarUsuario(UsuarioActualDataObtener usuario)
     {
@@ -353,7 +357,7 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), null,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(resultado);
 

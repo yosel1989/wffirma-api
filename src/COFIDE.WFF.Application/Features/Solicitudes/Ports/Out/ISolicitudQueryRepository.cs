@@ -78,8 +78,17 @@ public interface ISolicitudQueryRepository
       bool? incluirresumen,
       CancellationToken cancellationToken);
 
-    
+
 
     #endregion
+
+
+    Task<bool> PuedeVerSolicitudAsync(
+        long idSolicitud,
+        long? codigoUsuario,
+        long? areaUsuario,
+        string? roLUsuario,
+        List<long>? idsAreasAccesoEspecial,
+        CancellationToken cancellationToken);
 }
 

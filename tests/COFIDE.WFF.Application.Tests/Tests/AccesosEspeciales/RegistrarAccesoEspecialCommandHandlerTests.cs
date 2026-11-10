@@ -15,7 +15,7 @@ public class RegistrarAccesoEspecialCommandHandlerTests
     private readonly Mock<IAccesoEspecialRepository> _repoMock;
     private readonly Mock<ICurrentUserService> _currentUserMock;
     private readonly Mock<IUsuarioRepository> _usuarioRepoMock;
-    private readonly RegistrarAccesoEspecialCommandHandler _handler;
+    private readonly RegistrarAccesoEspecialHandler _handler;
 
     public RegistrarAccesoEspecialCommandHandlerTests()
     {
@@ -25,7 +25,7 @@ public class RegistrarAccesoEspecialCommandHandlerTests
         _currentUserMock = new Mock<ICurrentUserService>();
         _usuarioRepoMock = new Mock<IUsuarioRepository>();
 
-        _handler = new RegistrarAccesoEspecialCommandHandler(_currentUserMock.Object, _mapperMock.Object, _serviceMock.Object, _repoMock.Object, _usuarioRepoMock.Object);
+        _handler = new RegistrarAccesoEspecialHandler(_currentUserMock.Object, _mapperMock.Object, _serviceMock.Object, _repoMock.Object, _usuarioRepoMock.Object);
     }
 
     [Fact]

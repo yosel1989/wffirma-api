@@ -20,6 +20,7 @@ using COFIDE.WFF.Application.Common.Pageds;
 using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
@@ -27,6 +28,7 @@ public class SolicitudConsultaHandlerTest
 {
     private readonly Mock<IMapper> _mapper = new();
     private readonly Mock<ICurrentUserService> _usuario = new();
+    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepo = new();
 
     [Fact]
     public async Task ObtenerSolicitud_Sin_Usuario_Debe_Lanzar_AUTH_REQUIRED()
@@ -38,7 +40,8 @@ public class SolicitudConsultaHandlerTest
             _usuario.Object,
             new Mock<IDocumentoFirmadoValidator>().Object,
             new Mock<IFileStorageService>().Object,
-            new Mock<ISolicitudQueryRepository>().Object)
+            new Mock<ISolicitudQueryRepository>().Object,
+            _accesoEspecialRepo.Object)
             .Handle(new ObtenerSolicitudQuery(1, false), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
@@ -60,7 +63,7 @@ public class SolicitudConsultaHandlerTest
 
         var resultado = await new ObtenerSolicitudQueryHandler(
             _mapper.Object, _usuario.Object, new Mock<IDocumentoFirmadoValidator>().Object,
-            archivos.Object, consulta.Object)
+            archivos.Object, consulta.Object, _accesoEspecialRepo.Object)
             .Handle(new ObtenerSolicitudQuery(1, true), CancellationToken.None);
 
         resultado.Should().BeSameAs(dto);
@@ -92,7 +95,7 @@ public class SolicitudConsultaHandlerTest
             .ReturnsAsync((Stream _) => true);
 
         var resultado = await new ObtenerSolicitudQueryHandler(
-            _mapper.Object, _usuario.Object, validador.Object, archivos.Object, consulta.Object)
+            _mapper.Object, _usuario.Object, validador.Object, archivos.Object, consulta.Object, _accesoEspecialRepo.Object)
             .Handle(new ObtenerSolicitudQuery(1, false), CancellationToken.None);
 
         resultado!.Documentos.Should().OnlyContain(d => d.Firmado);

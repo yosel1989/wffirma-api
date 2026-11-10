@@ -1,5 +1,6 @@
 ﻿using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
+using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Vo;
 using COFIDE.WFF.Infrastructure.Adapters.Repositories.Base;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -40,7 +41,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
         {
             return await _context.AccesosEspeciales
                 .AsNoTracking()
-                .Where(p => p.IdUsuario == id)
+                .Where(p => p.IdUsuario == id && p.CodigoEstado == EstadoCodigo.Activo)
                 .Select(p => p.IdArea)
                 .ToListAsync();
         }

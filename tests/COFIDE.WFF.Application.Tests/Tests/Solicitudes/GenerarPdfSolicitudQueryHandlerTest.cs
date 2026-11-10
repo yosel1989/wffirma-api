@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Exceptions;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerSubTipoSolicitudPorArea;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerTipoOperacionPorArea;
@@ -21,6 +22,7 @@ public class GenerarPdfSolicitudQueryHandlerTest
     private readonly Mock<ISolicitudQueryRepository> _consultas = new();
     private readonly Mock<IMaestroRepository> _maestros = new();
     private readonly Mock<ISolicitudPdfGenerator> _generador = new();
+    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepo = new();
     private SolicitudPdf? _modelo;
 
     public GenerarPdfSolicitudQueryHandlerTest()
@@ -106,7 +108,7 @@ public class GenerarPdfSolicitudQueryHandlerTest
     }
 
     private GenerarPdfSolicitudQueryHandler Handler() =>
-        new(new Mock<IMapper>().Object, _usuario.Object, _consultas.Object, _maestros.Object, _generador.Object);
+        new(new Mock<IMapper>().Object, _usuario.Object, _consultas.Object, _maestros.Object, _generador.Object, _accesoEspecialRepo.Object);
 
     private static SolicitudDto Solicitud() => new()
     {

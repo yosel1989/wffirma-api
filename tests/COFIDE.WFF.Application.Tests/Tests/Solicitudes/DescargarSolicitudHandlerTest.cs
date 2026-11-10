@@ -13,6 +13,7 @@ using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
 
 using COFIDE.WFF.Application.Tests.Support;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
 public class DescargarSolicitudHandlerTest
@@ -20,6 +21,9 @@ public class DescargarSolicitudHandlerTest
     private readonly Mock<IMapper> _mapper = new();
     private readonly Mock<IFileStorageService> _archivos = new();
     private readonly Mock<ISolicitudRepository> _solicitudes = new();
+    private readonly Mock<ISolicitudQueryRepository> _solicitudQueryRepo = new();
+    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepo = new();
+    private readonly Mock<ICurrentUserService> _currentUserService = new();
     private readonly byte[] _contenido = [1, 2, 3];
 
     public DescargarSolicitudHandlerTest()
@@ -151,7 +155,7 @@ public class DescargarSolicitudHandlerTest
         zip.Setup(z => z.DescargarDocumentosZipAsync(8, It.IsAny<List<long>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new byte[] { 9 }, "documentos.zip"));
 
-        var dto = await new DescargarSolicitudDocumentoZipQueryHandler(_mapper.Object, zip.Object)
+        var dto = await new DescargarSolicitudDocumentoZipQueryHandler(_mapper.Object, zip.Object, _solicitudQueryRepo.Object, _accesoEspecialRepo.Object, _currentUserService.Object)
             .Handle(new DescargarSolicitudDocumentoZipQuery(8, [4]), CancellationToken.None);
 
         dto.NombreArchivo.Should().Be("documentos.zip");
@@ -191,7 +195,7 @@ public class DescargarSolicitudHandlerTest
         new(_mapper.Object, _archivos.Object, _solicitudes.Object);
 
     private DescargarSolicitudSustentoHandler Sustento() =>
-        new(_mapper.Object, _archivos.Object, _solicitudes.Object);
+        new(_mapper.Object, _archivos.Object, _solicitudes.Object, _solicitudQueryRepo.Object, _accesoEspecialRepo.Object, _currentUserService.Object);
 
     private static SolicitudDocumento PrepararDocumento(
         bool inCodigo = false,

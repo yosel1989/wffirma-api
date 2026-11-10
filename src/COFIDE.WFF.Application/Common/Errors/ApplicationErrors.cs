@@ -43,4 +43,5 @@ public static class ApplicationErrors
     #endregion
 
     public static readonly ApplicationError UsuarioNotFound = new("APP_SOL_022", "No se encontró el usuario o está inactivo.");
+    public static readonly ApplicationError SolicitudSinAcceso = new("APP_SOL_023", "No tiene permiso para acceder a esta solicitud.");
 }
