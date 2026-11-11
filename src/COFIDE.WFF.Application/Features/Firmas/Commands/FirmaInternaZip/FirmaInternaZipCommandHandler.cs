@@ -29,7 +29,11 @@ public class FirmaInternaZipCommandHandler(
     private readonly IFirmaPort _firmaPort = firmaPort;
     private readonly IOrientacionPaginaPdfService _orientacionPaginaPdfService =
         orientacionPaginaPdfService;
-
+    /// <summary>
+    /// En la firma masiva, BigSigner suma el logo al ancho enviado (en la individual el logo va dentro del ancho).
+    /// Se descuenta para que la firma masiva del firmante tenga el mismo tamaño que la individual y que el TAG.
+    /// </summary>
+    private const decimal AjusteAnchoFirmaLote = 35m;
     public override async Task<FirmaInternaResponseDto?> Handle(
         FirmaInternaZipCommand request,
         CancellationToken cancellationToken)
@@ -217,6 +221,14 @@ public class FirmaInternaZipCommandHandler(
 
             zipArchivo.Position = 0;
             firmaRequest.ArchivoStream = zipArchivo;
+
+            // Firma masiva del firmante: se descuenta el ancho que BigSigner agrega por el logo
+            if (firmaRequest.EsFirmante && firmaRequest.VisSigWidth.HasValue)
+            {
+                firmaRequest.VisSigWidth = Math.Max(
+                    1m,
+                    firmaRequest.VisSigWidth.Value - AjusteAnchoFirmaLote);
+            }
 
             var resultado =
                 await _firmaPort.FirmarBatchAsync(
