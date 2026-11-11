@@ -5,15 +5,19 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolic
 
 public class DescargarTodoSolicitudZipQueryHandler(
         IMapper mapper,
-        ISolicitudDescargaZipService solicitudDescargaZipService
+        ISolicitudDescargaZipService solicitudDescargaZipService,
+        ISolicitudConsultaAuthorizationService solicitudConsultaAuthorizationService
     ) : BaseQueryHandler<DescargarTodoSolicitudZipQuery, DescargarTodoSolicitudZipDto>(mapper)
 {
     private readonly ISolicitudDescargaZipService _solicitudDescargaZipService = solicitudDescargaZipService;
+    private readonly ISolicitudConsultaAuthorizationService _solicitudConsultaAuthorizationService = solicitudConsultaAuthorizationService;
 
     public override async Task<DescargarTodoSolicitudZipDto> Handle(
         DescargarTodoSolicitudZipQuery request,
         CancellationToken cancellationToken)
     {
+        await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(request.Id, cancellationToken);
+
         var result = await _solicitudDescargaZipService.DescargarTodoZipAsync(
             request.Id,
             cancellationToken);

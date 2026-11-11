@@ -21,6 +21,7 @@ public static class ReglaConsultaSolicitud
     }
 
     // La expresion permite aplicar la misma regla en memoria y antes de paginar en BD.
+    // La pertenencia se evalua con el area guardada en la solicitud, no con el area actual del usuario.
     public static Expression<Func<Solicitud, bool>> CrearPredicado(
         long? idUsuario,
         long? idArea,
@@ -28,31 +29,33 @@ public static class ReglaConsultaSolicitud
         IReadOnlyCollection<long>? areasAccesoEspecial)
     {
         var rol = RolUsuarioCodigo.Desde(codigoRol);
-        var areas = areasAccesoEspecial?.Select(id => (long?)id).ToArray() ?? [];
+        var areas = areasAccesoEspecial?.ToArray() ?? [];
 
-        if (rol == RolUsuario.Coordinador && idArea.HasValue)
+        if (rol == RolUsuario.Administrador)
+            return s => true;
+
+        if (rol == RolUsuario.Coordinador)
         {
+            if (!idArea.HasValue)
+                return s => false;
+
             var area = idArea.Value;
-            if (areas.Length == 0)
-                return s => s.UsuarioSolicitante.IdArea == area;
-
-            return s => s.UsuarioSolicitante.IdArea == area ||
-                areas.Contains(s.UsuarioSolicitante.IdArea) ||
-                (s.UsuarioSolicitante.Area != null && areas.Contains(s.UsuarioSolicitante.Area.IdAreaPadre));
+            return s => s.IdAreaSolicitud == area ||
+                areas.Contains(s.IdAreaSolicitud) ||
+                areas.Contains(s.IdAreaPadreSolicitud);
         }
 
-        if (rol == RolUsuario.SolicitanteAprobador && idUsuario.HasValue)
+        if (rol == RolUsuario.SolicitanteAprobador)
         {
-            var usuario = idUsuario.Value;
-            if (areas.Length == 0)
-                return s => s.IdUsuarioSolicitante == usuario;
+            if (!idUsuario.HasValue)
+                return s => false;
 
+            var usuario = idUsuario.Value;
             return s => s.IdUsuarioSolicitante == usuario ||
-                areas.Contains(s.UsuarioSolicitante.IdArea) ||
-                (s.UsuarioSolicitante.Area != null && areas.Contains(s.UsuarioSolicitante.Area.IdAreaPadre));
+                areas.Contains(s.IdAreaSolicitud) ||
+                areas.Contains(s.IdAreaPadreSolicitud);
         }
 
-        // Conserva la visibilidad previa para administradores y contextos sin restriccion por rol.
-        return s => true;
+        return s => false;
     }
 }

@@ -1,5 +1,6 @@
 using COFIDE.WFF.Application.Common.Files;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
@@ -39,6 +40,21 @@ public class SolicitudServicioRestanteTest
         var act = () => Editar(solicitudes, usuarioId: 99).Editar(new SolicitudRequestDto(Asunto: "Editado"), 8, true, CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>();
+    }
+
+    [Fact]
+    public async Task Editar_Desde_Acceso_Especial_Debe_Denegar_Antes_De_Editar()
+    {
+        var solicitudes = new Mock<ISolicitudRepository>();
+        solicitudes.Setup(s => s.ObtenerAgregadoSolicitudAsync(8, It.IsAny<CancellationToken>(), true))
+            .ReturnsAsync(Borrador());
+        var accesos = AccesosEspeciales([2]);
+
+        var act = () => Editar(solicitudes, usuarioId: 99, accesos: accesos)
+            .Editar(new SolicitudRequestDto(Asunto: "No autorizado"), 8, true, CancellationToken.None);
+
+        var exception = await act.Should().ThrowAsync<DomainException>();
+        exception.Which.Error.Code.Should().Be("DOM_SOL_050");
     }
 
     [Fact]
@@ -116,13 +132,29 @@ public class SolicitudServicioRestanteTest
         ex.Which.Error.Code.Should().Be("APP_SOL_013");
     }
 
+    [Fact]
+    public async Task Reusar_Desde_Acceso_Especial_Debe_Denegar_Antes_De_Crear()
+    {
+        var solicitudes = new Mock<ISolicitudRepository>();
+        solicitudes.Setup(s => s.ObtenerAgregadoSolicitudAsync(4, It.IsAny<CancellationToken>(), false))
+            .ReturnsAsync(Borrador());
+        var accesos = AccesosEspeciales([2]);
+
+        var act = () => Reusar(solicitudes, usuarioId: 99, accesos: accesos)
+            .Reusar(new SolicitudRequestDto(Asunto: "No autorizado"), 4, true, CancellationToken.None);
+
+        var exception = await act.Should().ThrowAsync<DomainException>();
+        exception.Which.Error.Code.Should().Be("DOM_SOL_050");
+    }
+
     private static SolicitudEdicionService Editar(
         Mock<ISolicitudRepository> solicitudes,
         Mock<ISolicitudPlantillaService>? plantillas = null,
         Mock<ISolicitudDocumentoService>? documentos = null,
         Mock<ISolicitudSustentoService>? sustentos = null,
         Mock<ISolicitudDocumentoTagService>? tags = null,
-        long usuarioId = 10) =>
+        long usuarioId = 10,
+        Mock<IAccesoEspecialRepository>? accesos = null) =>
         new(
             Usuario(usuarioId).Object,
             solicitudes.Object,
@@ -130,18 +162,30 @@ public class SolicitudServicioRestanteTest
             (documentos ?? new Mock<ISolicitudDocumentoService>()).Object,
             (sustentos ?? new Mock<ISolicitudSustentoService>()).Object,
             (tags ?? new Mock<ISolicitudDocumentoTagService>()).Object,
-            Correlativos());
+            Correlativos(),
+            (accesos ?? AccesosEspeciales()).Object);
 
-    private static SolicitudReusoService Reusar(Mock<ISolicitudRepository> solicitudes) =>
+    private static SolicitudReusoService Reusar(
+        Mock<ISolicitudRepository> solicitudes,
+        long usuarioId = 10,
+        Mock<IAccesoEspecialRepository>? accesos = null) =>
         new(
-            Usuario(10).Object,
+            Usuario(usuarioId).Object,
             solicitudes.Object,
             new Mock<ISolicitudCreacionService>().Object,
             new Mock<ISolicitudDocumentoService>().Object,
             new Mock<ISolicitudSustentoService>().Object,
             new Mock<ISolicitudPlantillaService>().Object,
             new Mock<ISolicitudDocumentoTagService>().Object,
-            Correlativos());
+            Correlativos(),
+            (accesos ?? AccesosEspeciales()).Object);
+
+    private static Mock<IAccesoEspecialRepository> AccesosEspeciales(List<long>? areas = null)
+    {
+        var accesos = new Mock<IAccesoEspecialRepository>();
+        accesos.Setup(r => r.GetAreasByUserIdAsync(It.IsAny<long>())).ReturnsAsync(areas ?? []);
+        return accesos;
+    }
 
     private static IGeneradorCorrelativoIdRepository Correlativos()
     {

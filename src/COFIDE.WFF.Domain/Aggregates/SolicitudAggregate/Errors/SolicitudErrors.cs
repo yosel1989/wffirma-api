@@ -83,4 +83,6 @@ public static class SolicitudErrors
     public static readonly DomainError ReabrirSinEtapaNueva = new("DOM_SOL_047", "Debe agregar al menos una etapa al final del flujo para devolver la solicitud a En curso.");
     public static readonly DomainError CambioEstadoSinEtapaActual = new("DOM_SOL_048", "La solicitud no tiene una etapa pendiente de aprobación.");
     public static readonly DomainError RechazoSinFirmante = new("DOM_SOL_049", "No se encontró el usuario que rechazó la solicitud.");
+    public static readonly DomainError PermisoEscrituraAccesoEspecial = new("DOM_SOL_050", "El acceso especial permite consultar la solicitud, pero no modificarla.");
+    public static readonly DomainError PermisoAnularSolicitud = new("DOM_SOL_051", "Solo el solicitante puede anular esta solicitud.");
 }

@@ -15,8 +15,10 @@ using COFIDE.WFF.Application.Features.Solicitudes.Commands.ReusarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
+using COFIDE.WFF.Domain.Exceptions;
 using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
@@ -34,10 +36,13 @@ public class SolicitudCommandHandlerTest
     private readonly Mock<IPlantillaRepository> _plantillas = new();
     private readonly Mock<ISolicitudRepository> _solicitudes = new();
     private readonly Mock<ICurrentUserService> _usuario = new();
+    private readonly Mock<IAccesoEspecialRepository> _accesosEspeciales = new();
     private readonly Mock<IDetalleFirmaRepository> _detalles = new();
 
     public SolicitudCommandHandlerTest()
     {
+        _usuario.Setup(u => u.RolUsuario).Returns(Domain.Common.Enums.RolUsuario.SolicitanteAprobador);
+        _accesosEspeciales.Setup(r => r.GetAreasByUserIdAsync(It.IsAny<long>())).ReturnsAsync([]);
         _plantillas.Setup(r => r.AddAsync(It.IsAny<Plantilla>())).Returns(Task.CompletedTask);
         _solicitudes.Setup(r => r.AddAsync(It.IsAny<Solicitud>())).Returns(Task.CompletedTask);
         _mapper.Setup(m => m.Map<SolicitudRequestDto>(It.IsAny<object>()))
@@ -202,7 +207,7 @@ public class SolicitudCommandHandlerTest
             .ReturnsAsync((Solicitud?)null);
 
         var act = () => new AnularSolicitudCommandHandler(
-            _mapper.Object, _usuario.Object, _solicitudes.Object)
+            _mapper.Object, _usuario.Object, _solicitudes.Object, _accesosEspeciales.Object)
             .Handle(new AnularSolicitudCommand(9), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
@@ -218,10 +223,30 @@ public class SolicitudCommandHandlerTest
             .ReturnsAsync(Borrador(solicitante: 10));
 
         var act = () => new AnularSolicitudCommandHandler(
-            _mapper.Object, _usuario.Object, _solicitudes.Object)
+            _mapper.Object, _usuario.Object, _solicitudes.Object, _accesosEspeciales.Object)
             .Handle(new AnularSolicitudCommand(1), CancellationToken.None);
 
-        await act.Should().ThrowAsync<AppEx.ApplicationException>();
+        var exception = await act.Should().ThrowAsync<DomainException>();
+        exception.Which.Error.Code.Should().Be("DOM_SOL_051");
+    }
+
+    [Fact]
+    public async Task Anular_Desde_Acceso_Especial_Debe_Denegar_Sin_Cambiar_El_Estado()
+    {
+        _usuario.Setup(u => u.UserIdLocal).Returns(99);
+        _accesosEspeciales.Setup(r => r.GetAreasByUserIdAsync(99)).ReturnsAsync([2]);
+        var solicitud = Borrador(solicitante: 10);
+        _solicitudes
+            .Setup(r => r.ObtenerAgregadoSolicitudAsync(1, It.IsAny<CancellationToken>(), true))
+            .ReturnsAsync(solicitud);
+
+        var act = () => new AnularSolicitudCommandHandler(
+            _mapper.Object, _usuario.Object, _solicitudes.Object, _accesosEspeciales.Object)
+            .Handle(new AnularSolicitudCommand(1), CancellationToken.None);
+
+        var exception = await act.Should().ThrowAsync<DomainException>();
+        exception.Which.Error.Code.Should().Be("DOM_SOL_050");
+        solicitud.EstadoSolicitud.Should().Be(Domain.ValueObjects.EstadoSolicitud.Borrador);
     }
 
     [Fact]
@@ -234,7 +259,7 @@ public class SolicitudCommandHandlerTest
             .ReturnsAsync(solicitud);
 
         var codigo = await new AnularSolicitudCommandHandler(
-            _mapper.Object, _usuario.Object, _solicitudes.Object)
+            _mapper.Object, _usuario.Object, _solicitudes.Object, _accesosEspeciales.Object)
             .Handle(new AnularSolicitudCommand(1), CancellationToken.None);
 
         codigo.Should().Be(solicitud.CodigoSolicitud);

@@ -48,9 +48,16 @@ public class ReglaConsultaSolicitudSqlTest
             resumen.Should().Contain("WHERE");
             if (accesoEspecial)
             {
-                pagina.Should().Contain(" IN ").And.Contain(" OR ");
-                resumen.Should().Contain(" IN ").And.Contain(" OR ");
+                pagina.Should().Contain(" IN ").And.Contain(" OR ")
+                    .And.Contain("ID_AREA_SOLICITUD").And.Contain("ID_AREA_PADRE_SOLI");
+                resumen.Should().Contain(" IN ").And.Contain(" OR ")
+                    .And.Contain("ID_AREA_SOLICITUD").And.Contain("ID_AREA_PADRE_SOLI");
             }
+        }
+        else if (rol is null)
+        {
+            pagina.Should().Contain("WHERE");
+            resumen.Should().Contain("WHERE");
         }
     }
 }

@@ -12,6 +12,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Inputs;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
@@ -20,7 +21,6 @@ using COFIDE.WFF.Application.Common.Pageds;
 using FluentAssertions;
 using Moq;
 using AppEx = COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 
 namespace COFIDE.WFF.Application.Tests.Solicitudes;
 
@@ -28,7 +28,7 @@ public class SolicitudConsultaHandlerTest
 {
     private readonly Mock<IMapper> _mapper = new();
     private readonly Mock<ICurrentUserService> _usuario = new();
-    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepo = new();
+    private readonly Mock<ISolicitudConsultaAuthorizationService> _autorizacionConsulta = new();
 
     [Fact]
     public async Task ObtenerSolicitud_Sin_Usuario_Debe_Lanzar_AUTH_REQUIRED()
@@ -41,7 +41,7 @@ public class SolicitudConsultaHandlerTest
             new Mock<IDocumentoFirmadoValidator>().Object,
             new Mock<IFileStorageService>().Object,
             new Mock<ISolicitudQueryRepository>().Object,
-            _accesoEspecialRepo.Object)
+            _autorizacionConsulta.Object)
             .Handle(new ObtenerSolicitudQuery(1, false), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
@@ -58,16 +58,19 @@ public class SolicitudConsultaHandlerTest
         {
             Documentos = [new ArchivoDto { RutaArchivo = "/doc/contrato.pdf" }]
         };
+        _autorizacionConsulta.Setup(s => s.AutorizarReusoPorIdAsync(1, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         consulta.Setup(r => r.ObtenerSolicitudPorId(1, 10, true, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
             .ReturnsAsync(dto);
 
         var resultado = await new ObtenerSolicitudQueryHandler(
             _mapper.Object, _usuario.Object, new Mock<IDocumentoFirmadoValidator>().Object,
-            archivos.Object, consulta.Object, _accesoEspecialRepo.Object)
+            archivos.Object, consulta.Object, _autorizacionConsulta.Object)
             .Handle(new ObtenerSolicitudQuery(1, true), CancellationToken.None);
 
         resultado.Should().BeSameAs(dto);
         resultado!.Documentos.Single().Firmado.Should().BeFalse();
+        _autorizacionConsulta.Verify(s => s.AutorizarReusoPorIdAsync(1, It.IsAny<CancellationToken>()), Times.Once);
         archivos.Verify(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -88,9 +91,8 @@ public class SolicitudConsultaHandlerTest
         };
 
         _usuario.Setup(u => u.CodigoRolUsuario).Returns("SOLAPR");
-        consulta.Setup(r => r.ObtenerParaAutorizacionAsync(1, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Solicitud.CrearBorrador(1, "SOL-1", 1, 2, 10, 3, 10, 5, 2,
-                "Contrato", null, false, false, null, 0));
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(1, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         consulta.Setup(r => r.ObtenerSolicitudPorId(1, 10, false, It.IsAny<CancellationToken>(), It.IsAny<bool>()))
             .ReturnsAsync(dto);
         archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -99,7 +101,7 @@ public class SolicitudConsultaHandlerTest
             .ReturnsAsync((Stream _) => true);
 
         var resultado = await new ObtenerSolicitudQueryHandler(
-            _mapper.Object, _usuario.Object, validador.Object, archivos.Object, consulta.Object, _accesoEspecialRepo.Object)
+            _mapper.Object, _usuario.Object, validador.Object, archivos.Object, consulta.Object, _autorizacionConsulta.Object)
             .Handle(new ObtenerSolicitudQuery(1, false), CancellationToken.None);
 
         resultado!.Documentos.Should().OnlyContain(d => d.Firmado);
@@ -114,19 +116,18 @@ public class SolicitudConsultaHandlerTest
         var archivos = new Mock<IFileStorageService>();
         var consulta = new Mock<ISolicitudQueryRepository>();
         using var cancelacion = new CancellationTokenSource();
-        consulta.Setup(r => r.ObtenerParaAutorizacionAsync(1, cancelacion.Token))
-            .ReturnsAsync(Solicitud.CrearBorrador(1, "SOL-1", 1, 2, 10, 3, 10, 5, 2,
-                "Contrato", null, false, false, null, 0));
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(1, cancelacion.Token))
+            .ThrowsAsync(new COFIDE.WFF.Domain.Exceptions.DomainException(
+                COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors.SolicitudErrors.PermisoVisualizarSolicitud));
 
         var act = () => new ObtenerSolicitudQueryHandler(
             _mapper.Object, _usuario.Object, new Mock<IDocumentoFirmadoValidator>().Object,
-            archivos.Object, consulta.Object, _accesoEspecialRepo.Object)
+            archivos.Object, consulta.Object, _autorizacionConsulta.Object)
             .Handle(new ObtenerSolicitudQuery(1, false), cancelacion.Token);
 
         var ex = await act.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>();
         ex.Which.Error.Code.Should().Be("DOM_SOL_034");
-        consulta.Verify(r => r.ObtenerParaAutorizacionAsync(1, cancelacion.Token), Times.Once);
-        _accesoEspecialRepo.Verify(r => r.GetAreasByUserIdAsync(20), Times.Once);
+        _autorizacionConsulta.Verify(s => s.AutorizarPorIdAsync(1, cancelacion.Token), Times.Once);
         consulta.Verify(r => r.ObtenerSolicitudPorId(It.IsAny<long>(), It.IsAny<long?>(),
             It.IsAny<bool>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Never);
         archivos.Verify(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);

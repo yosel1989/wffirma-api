@@ -5,7 +5,6 @@ using COFIDE.WFF.Domain.Common.Enums;
 using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Exceptions;
-using COFIDE.WFF.Domain.Tests.Support.Mothers.Solicitudes;
 using FluentAssertions;
 
 namespace COFIDE.WFF.Domain.Tests.Tests.Solicitudes;
@@ -63,10 +62,14 @@ public class ReglaConsultaSolicitudTest
     [Fact]
     public void Acceso_Especial_No_Debe_Reemplazar_Visibilidad_Propia()
     {
-        var solicitudes = new[] { CrearSolicitud(1, 50, 5), CrearSolicitud(2, 70, 7) }.AsQueryable();
+        var solicitudes = new[]
+        {
+            CrearSolicitud(1, 50, 5, idSolicitante: 10),
+            CrearSolicitud(2, 60, 5, idSolicitante: 11)
+        }.AsQueryable();
 
         solicitudes.Where(ReglaConsultaSolicitud.CrearPredicado(10, 99, "SOLAPR", null))
-            .Select(s => s.Id).Should().Equal(1, 2);
+            .Select(s => s.Id).Should().Equal(1);
         solicitudes.Where(ReglaConsultaSolicitud.CrearPredicado(10, 99, "SOLAPR", [5]))
             .Select(s => s.Id).Should().Equal(1, 2);
     }
@@ -77,12 +80,22 @@ public class ReglaConsultaSolicitudTest
         var solicitudes = new[] { CrearSolicitud(1, 50, 5), CrearSolicitud(2, 70, 7) }.AsQueryable();
         var visibles = solicitudes.Where(ReglaConsultaSolicitud.CrearPredicado(20, 99, "SOLAPR", [5]));
 
-        solicitudes.Where(s => s.UsuarioSolicitante.IdArea == 70)
+        solicitudes.Where(s => s.IdAreaSolicitud == 70)
             .Select(s => s.Id).Should().Equal(2);
         visibles.Select(s => s.Id).Should().Equal(1);
-        visibles.Where(s => s.UsuarioSolicitante.IdArea == 70).Should().BeEmpty();
-        visibles.Where(s => s.UsuarioSolicitante.IdArea == 50)
+        visibles.Where(s => s.IdAreaSolicitud == 70).Should().BeEmpty();
+        visibles.Where(s => s.IdAreaSolicitud == 50)
             .Select(s => s.Id).Should().Equal(1);
+    }
+
+    [Fact]
+    public void Area_Historica_De_Solicitud_Debe_Definir_Visibilidad_No_El_Area_Actual_Del_Solicitante()
+    {
+        var solicitud = CrearSolicitud(1, 50, 5);
+
+        ReglaConsultaSolicitud.Validar(solicitud, 20, 99, "SOLAPR", [5]);
+        Action validarAreaActual = () => ReglaConsultaSolicitud.Validar(solicitud, 20, 99, "SOLAPR", [7]);
+        validarAreaActual.Should().Throw<DomainException>();
     }
 
     [Fact]
@@ -95,42 +108,52 @@ public class ReglaConsultaSolicitudTest
     }
 
     [Theory]
-    [InlineData("COORD")]
-    [InlineData("SOLAPR")]
-    public void Area_O_Padre_Nulos_No_Deben_Provocar_Error_Ni_Otorgar_Acceso(string rol)
-    {
-        var sinPadre = CrearSolicitud(1, 50, null);
-        var sinArea = CrearSolicitud(2, null, null);
-        var predicado = ReglaConsultaSolicitud.CrearPredicado(20, 99, rol, [5]);
-
-        new[] { sinPadre, sinArea }.AsQueryable().Where(predicado).Should().BeEmpty();
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("DESCONOCIDO")]
-    public void Refactor_Debe_Conservar_Visibilidad_Previa_Para_Rol_No_Reconocido(string? rol)
+    [InlineData(null, 99L, 20L)]
+    [InlineData("DESCONOCIDO", 99L, 20L)]
+    [InlineData("COORD", null, 20L)]
+    [InlineData("SOLAPR", 99L, null)]
+    public void Rol_Desconocido_O_Contexto_Requerido_Ausente_Debe_Denegar(
+        string? rol, long? areaUsuario, long? idUsuario)
     {
         var solicitud = CrearSolicitud(1, 50, 5);
+        var predicado = ReglaConsultaSolicitud.CrearPredicado(idUsuario, areaUsuario, rol, [5]);
 
-        Action validar = () => ReglaConsultaSolicitud.Validar(solicitud, 20, 99, rol, []);
-
-        validar.Should().NotThrow();
+        new[] { solicitud }.AsQueryable().Where(predicado).Should().BeEmpty();
+        Action validar = () => ReglaConsultaSolicitud.Validar(solicitud, idUsuario, areaUsuario, rol, [5]);
+        validar.Should().Throw<DomainException>()
+            .Which.Error.Should().Be(SolicitudErrors.PermisoVisualizarSolicitud);
     }
 
-    private static Solicitud CrearSolicitud(long id, long? idArea, long? idPadre)
+    [Fact]
+    public void Solicitud_Debe_Usar_Area_Y_Gerencia_Persistidas_Aunque_Cambie_El_Area_Actual()
     {
-        var solicitud = SolicitudMother.Borrador(id);
+        var solicitud = CrearSolicitud(1, 50, 5);
         var usuario = new Usuario(10, RolUsuario.SolicitanteAprobador);
         typeof(Usuario).GetField("<IdArea>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(usuario, idArea);
-        if (idArea.HasValue)
-        {
-            var area = new Area();
-            typeof(Area).GetField("<IdAreaPadre>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-                .SetValue(area, idPadre);
-            typeof(Usuario).GetProperty(nameof(Usuario.Area))!.SetValue(usuario, area);
-        }
+            .SetValue(usuario, 70L);
+        var areaActual = new Area();
+        typeof(Area).GetField("<IdAreaPadre>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(areaActual, 7L);
+        typeof(Usuario).GetProperty(nameof(Usuario.Area))!.SetValue(usuario, areaActual);
+        typeof(Solicitud).GetProperty(nameof(Solicitud.UsuarioSolicitante))!.SetValue(solicitud, usuario);
+
+        ReglaConsultaSolicitud.Validar(solicitud, 20, 99, "SOLAPR", [5]);
+        Action validarAreaActual = () => ReglaConsultaSolicitud.Validar(solicitud, 20, 99, "SOLAPR", [7]);
+        validarAreaActual.Should().Throw<DomainException>();
+    }
+
+    private static Solicitud CrearSolicitud(long id, long idArea, long idPadre, long idSolicitante = 10)
+    {
+        var solicitud = Solicitud.CrearBorrador(
+            id, $"SOL-{id}", 1, 2, idSolicitante, 3, idSolicitante,
+            idArea, idPadre, "Solicitud de prueba", null, false, false, null, 0);
+        var usuario = new Usuario(idSolicitante, RolUsuario.SolicitanteAprobador);
+        typeof(Usuario).GetField("<IdArea>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(usuario, idArea + 1000);
+        var area = new Area();
+        typeof(Area).GetField("<IdAreaPadre>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(area, idPadre + 1000);
+        typeof(Usuario).GetProperty(nameof(Usuario.Area))!.SetValue(usuario, area);
         typeof(Solicitud).GetProperty(nameof(Solicitud.UsuarioSolicitante))!.SetValue(solicitud, usuario);
         return solicitud;
     }

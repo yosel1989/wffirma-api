@@ -52,7 +52,7 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
 {
     private readonly Mock<ICurrentUserService> _currentUser = new(MockBehavior.Loose);
     private readonly Mock<ISolicitudQueryRepository> _solicitudRepository = new(MockBehavior.Strict);
-    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepository = new(MockBehavior.Strict);
+    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepository = CrearRepositorioAccesoEspecial();
 
 
     /// <summary>Capturado desde el Setup para poder afirmar con mensajes legibles.</summary>
@@ -151,11 +151,33 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
             query.Usuario,
             query.Usuariodepartamento,
             query.IncluirResumen,
-            null,
+            It.Is<List<long>?>(areas => areas != null && areas.Count == 0),
             cts.Token),
             Times.Once);
 
         _solicitudRepository.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Handle_Debe_Enviar_Al_Repositorio_Solo_Las_Areas_Especiales_Activas_Obtenidas()
+    {
+        ConfigurarUsuario(new UsuarioActualDataObtener(99, 4, 7, "COORD"));
+        ConfigurarRepositorioVacio();
+        _accesoEspecialRepository.Setup(r => r.GetAreasByUserIdAsync(99)).ReturnsAsync([5, 50]);
+
+        await CrearHandler().Handle(QueryMinimo(), CancellationToken.None);
+
+        _accesoEspecialRepository.Verify(r => r.GetAreasByUserIdAsync(99), Times.Once);
+        _solicitudRepository.Verify(r => r.ObtenerPaginado(
+            It.IsAny<PagedQueryParams>(), 99, 7, "COORD", 7,
+            It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
+            It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
+            It.IsAny<List<long>>(), It.IsAny<List<long>>(),
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+            It.Is<List<long>?>(areas => areas != null && areas.Count == 2 && areas[0] == 5 && areas[1] == 50),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -229,7 +251,8 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
             It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
             It.IsAny<List<long>>(), It.IsAny<List<long>>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-            It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), null,
+            It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+            It.Is<List<long>?>(areas => areas != null && areas.Count == 0),
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -285,8 +308,8 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), null,
-                It.IsAny<CancellationToken>()))
+                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<List<long>?>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
         var act = () => CrearHandler().Handle(QueryMinimo(), CancellationToken.None);
@@ -297,6 +320,13 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
     #endregion
 
     #region Helpers
+
+    private static Mock<IAccesoEspecialRepository> CrearRepositorioAccesoEspecial()
+    {
+        var repository = new Mock<IAccesoEspecialRepository>(MockBehavior.Strict);
+        repository.Setup(r => r.GetAreasByUserIdAsync(It.IsAny<long>())).ReturnsAsync([]);
+        return repository;
+    }
 
     private ObtenerSolicitudPaginadoQueryHandler CrearHandler() =>
         new(_currentUser.Object, _solicitudRepository.Object, _accesoEspecialRepository.Object);
@@ -357,8 +387,8 @@ public class ObtenerSolicitudPaginadoQueryHandlerTest
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<List<long>>(), It.IsAny<List<long>>(),
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
-                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), null,
-                It.IsAny<CancellationToken>()))
+                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<List<long>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(resultado);
 
     /// <summary>

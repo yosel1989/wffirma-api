@@ -1,5 +1,7 @@
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
+using COFIDE.WFF.Domain.Common.Enums;
+using Usuario = COFIDE.WFF.Domain.Entities.Usuario;
 using COFIDE.WFF.Domain.Exceptions;
 using COFIDE.WFF.Domain.Tests.Support.Mothers.Solicitudes;
 using COFIDE.WFF.Domain.ValueObjects;
@@ -122,7 +124,7 @@ public class SolicitudRestauracionFlujoTest
     public void Restaurar_Anulada_Debe_Lanzar_DOM_SOL_041()
     {
         var flujo = RestauracionFlujoMother.EnCursoSinRevisiones();
-        flujo.Solicitud.Anular(10);
+        flujo.Solicitud.Anular(new Usuario(10, RolUsuario.SolicitanteAprobador), 5, []);
 
         var act = () => flujo.Solicitud.RestaurarFlujo(flujo.Primero.Id, 10, RestauracionFlujoMother.IdsDetalle());
 

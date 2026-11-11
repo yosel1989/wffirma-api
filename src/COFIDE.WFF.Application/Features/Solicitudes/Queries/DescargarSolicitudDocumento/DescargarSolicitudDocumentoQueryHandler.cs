@@ -2,6 +2,7 @@
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
@@ -9,12 +10,14 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitud
 public sealed class DescargarSolicitudDocumentoHandler(
         IMapper mapper,
         IFileStorageService fileStorageService,
-        ISolicitudRepository solicitudRepository
+        ISolicitudRepository solicitudRepository,
+        ISolicitudConsultaAuthorizationService solicitudConsultaAuthorizationService
     )
     : BaseQueryHandler<DescargarSolicitudDocumentoQuery, DescargarSolicitudDocumentoDto>(mapper)
 {
     private readonly IFileStorageService _fileStorageService = fileStorageService;
     private readonly ISolicitudRepository _solicitudRepository = solicitudRepository;
+    private readonly ISolicitudConsultaAuthorizationService _solicitudConsultaAuthorizationService = solicitudConsultaAuthorizationService;
 
     public override async Task<DescargarSolicitudDocumentoDto> Handle(
         DescargarSolicitudDocumentoQuery request,
@@ -28,6 +31,9 @@ public sealed class DescargarSolicitudDocumentoHandler(
 
         if (solicitudDocumento is null)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.DocumentoVacio);
+
+        await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(
+            solicitudDocumento.Solicitud.Id, cancellationToken);
 
         string ruta;
         string nombre;

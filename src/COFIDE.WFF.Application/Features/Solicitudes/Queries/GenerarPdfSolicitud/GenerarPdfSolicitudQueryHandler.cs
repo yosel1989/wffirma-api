@@ -2,13 +2,12 @@
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
-using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Models.Pdf;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Domain.Common.Tiempo;
-using COFIDE.WFF.Domain.DomainServices;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 
@@ -22,7 +21,7 @@ public sealed class GenerarPdfSolicitudQueryHandler(
         ISolicitudQueryRepository solicitudQueryRepository,
         IMaestroRepository maestroRepository,
         ISolicitudPdfGenerator pdfGenerator,
-        IAccesoEspecialRepository accesoEspecialRepository
+        ISolicitudConsultaAuthorizationService solicitudConsultaAuthorizationService
     ) : BaseQueryHandler<GenerarPdfSolicitudQuery, GenerarPdfSolicitudDto?>(mapper)
 {
     private const string EstadoTuTurno = "Tu Turno";
@@ -32,7 +31,7 @@ public sealed class GenerarPdfSolicitudQueryHandler(
     private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly IMaestroRepository _maestroRepository = maestroRepository;
     private readonly ISolicitudPdfGenerator _pdfGenerator = pdfGenerator;
-    private readonly IAccesoEspecialRepository _accesoEspecialRepository = accesoEspecialRepository;
+    private readonly ISolicitudConsultaAuthorizationService _solicitudConsultaAuthorizationService = solicitudConsultaAuthorizationService;
 
     public override async Task<GenerarPdfSolicitudDto?> Handle(GenerarPdfSolicitudQuery request, CancellationToken cancellationToken)
     {
@@ -41,13 +40,8 @@ public sealed class GenerarPdfSolicitudQueryHandler(
 
         var idUsuario = _currentUser.UserIdLocal.Value;
 
-        var idsAreasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario);
-        var datos = await _solicitudQueryRepository.ObtenerParaAutorizacionAsync(
+        await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(
             request.IdSolicitud, cancellationToken);
-
-        ReglaConsultaSolicitud.Validar(
-            datos, idUsuario, _currentUser.UserAreaId,
-            _currentUser.CodigoRolUsuario, idsAreasAccesoEspecial);
 
         var solicitud = await _solicitudQueryRepository.ObtenerSolicitudPorId(
             request.IdSolicitud, idUsuario, esReuso: false, cancellationToken);

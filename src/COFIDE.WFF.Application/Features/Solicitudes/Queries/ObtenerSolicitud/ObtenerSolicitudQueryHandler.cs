@@ -2,10 +2,9 @@
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
-using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Firmas.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
-using COFIDE.WFF.Domain.DomainServices;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 
@@ -15,14 +14,14 @@ public sealed class ObtenerSolicitudQueryHandler(
          IDocumentoFirmadoValidator documentoFirmadoValidator,
          IFileStorageService fileStorageService,
          ISolicitudQueryRepository solicitudQueryRepository,
-         IAccesoEspecialRepository accesoEspecialRepository
+         ISolicitudConsultaAuthorizationService solicitudConsultaAuthorizationService
     ) : BaseQueryHandler<ObtenerSolicitudQuery, SolicitudDto?>(mapper)
 {
     private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly IDocumentoFirmadoValidator _documentoFirmadoValidator = documentoFirmadoValidator;
     private readonly IFileStorageService _fileStorageService = fileStorageService;
     private readonly ICurrentUserService _currentUser = currentUser;
-    private readonly IAccesoEspecialRepository _accesoEspecialRepository = accesoEspecialRepository;
+    private readonly ISolicitudConsultaAuthorizationService _solicitudConsultaAuthorizationService = solicitudConsultaAuthorizationService;
 
     public override async Task<SolicitudDto?> Handle(ObtenerSolicitudQuery request, CancellationToken cancellationToken)
     {
@@ -31,16 +30,12 @@ public sealed class ObtenerSolicitudQueryHandler(
 
         var idUsuario = _currentUser.UserIdLocal.Value;
 
-        if (!request.EsReuso)
-        {
-            var idsAreasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario);
-            var datos = await _solicitudQueryRepository.ObtenerParaAutorizacionAsync(
+        if (request.EsReuso)
+            await _solicitudConsultaAuthorizationService.AutorizarReusoPorIdAsync(
                 request.IdSolicitud, cancellationToken);
-
-            ReglaConsultaSolicitud.Validar(
-                datos, idUsuario, _currentUser.UserAreaId,
-                _currentUser.CodigoRolUsuario, idsAreasAccesoEspecial);
-        }
+        else
+            await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(
+                request.IdSolicitud, cancellationToken);
 
         var solicitud = await _solicitudQueryRepository.ObtenerSolicitudPorId(request.IdSolicitud, idUsuario, request.EsReuso, cancellationToken);
 

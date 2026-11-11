@@ -1,4 +1,5 @@
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
@@ -65,7 +66,8 @@ public class SolicitudReusoServiceTest
             sustentos.Object,
             plantillas.Object,
             etiquetas.Object,
-            correlativos.Object)
+            correlativos.Object,
+            AccesosEspeciales().Object)
             .Reusar(request, 4, esBorrador, CancellationToken.None);
 
         plantilla.Should().BeNull();
@@ -85,10 +87,18 @@ public class SolicitudReusoServiceTest
         }
     }
 
+    private static Mock<IAccesoEspecialRepository> AccesosEspeciales()
+    {
+        var accesos = new Mock<IAccesoEspecialRepository>();
+        accesos.Setup(r => r.GetAreasByUserIdAsync(It.IsAny<long>())).ReturnsAsync([]);
+        return accesos;
+    }
+
     private static ICurrentUserService Usuario()
     {
         var usuario = new Mock<ICurrentUserService>();
         usuario.Setup(u => u.UserIdLocal).Returns(10L);
+        usuario.Setup(u => u.RolUsuario).Returns(COFIDE.WFF.Domain.Common.Enums.RolUsuario.SolicitanteAprobador);
         usuario.Setup(u => u.UserAreaId).Returns(5L);
         usuario.Setup(u => u.UserAreaPadreId).Returns(2L);
         usuario.Setup(u => u.UserAreaDescripcionCorta).Returns("GTI");

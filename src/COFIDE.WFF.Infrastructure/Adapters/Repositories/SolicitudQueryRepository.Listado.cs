@@ -114,15 +114,13 @@ public partial class SolicitudQueryRepository
         if (gerencia?.Count > 0)
         {
             query = query.Where(s =>
-                s.UsuarioSolicitante.Area.IdAreaPadre.HasValue &&
-                gerencia.Contains(s.UsuarioSolicitante.Area.IdAreaPadre.Value));
+                gerencia.Contains(s.IdAreaPadreSolicitud));
         }
 
         if (departamento?.Count > 0)
         {
             query = query.Where(s =>
-                s.UsuarioSolicitante.IdArea.HasValue &&
-                departamento.Contains(s.UsuarioSolicitante.IdArea.Value));
+                departamento.Contains(s.IdAreaSolicitud));
         }
 
         if (solicitante?.Count > 0)
@@ -432,7 +430,7 @@ public partial class SolicitudQueryRepository
             request.Urgente,
             request.Usuario,
             request.Usuariodepartamento,
-            null);
+            request.IdsAreasAccesoEspecial);
 
         query = AplicarFiltrosGrilla(
             query,

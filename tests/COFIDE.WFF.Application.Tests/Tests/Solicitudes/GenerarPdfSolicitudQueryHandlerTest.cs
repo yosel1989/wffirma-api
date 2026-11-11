@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerSubTipoSolicitudPorArea;
 using COFIDE.WFF.Application.Features.Maestros.Queries.ObtenerTipoOperacionPorArea;
@@ -9,6 +8,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Models.Pdf;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Entities;
 using FluentAssertions;
@@ -22,16 +22,15 @@ public class GenerarPdfSolicitudQueryHandlerTest
     private readonly Mock<ISolicitudQueryRepository> _consultas = new();
     private readonly Mock<IMaestroRepository> _maestros = new();
     private readonly Mock<ISolicitudPdfGenerator> _generador = new();
-    private readonly Mock<IAccesoEspecialRepository> _accesoEspecialRepo = new();
+    private readonly Mock<ISolicitudConsultaAuthorizationService> _autorizacionConsulta = new();
     private SolicitudPdf? _modelo;
 
     public GenerarPdfSolicitudQueryHandlerTest()
     {
         _usuario.Setup(u => u.UserIdLocal).Returns(10);
         _usuario.Setup(u => u.CodigoRolUsuario).Returns("SOLAPR");
-        _consultas.Setup(c => c.ObtenerParaAutorizacionAsync(8, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Solicitud.CrearBorrador(
-                8, "SOL-1", 1, 2, 10, 3, 10, 5, 2, "Contrato", null, false, false, null, 0));
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         _generador.Setup(g => g.Generar(It.IsAny<SolicitudPdf>()))
             .Callback<SolicitudPdf>(m => _modelo = m)
             .Returns(new byte[] { 0x25, 0x50, 0x44, 0x46 });
@@ -98,11 +97,15 @@ public class GenerarPdfSolicitudQueryHandlerTest
     public async Task Sin_Permiso_O_Solicitud_Inexistente_No_Debe_Generar_El_Pdf(long idSolicitud)
     {
         _usuario.Setup(u => u.UserIdLocal).Returns(20);
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(idSolicitud, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new COFIDE.WFF.Domain.Exceptions.DomainException(
+                COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors.SolicitudErrors.PermisoVisualizarSolicitud));
         var act = () => Handler().Handle(new GenerarPdfSolicitudQuery(idSolicitud), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>();
         ex.Which.Error.Code.Should().Be("DOM_SOL_034");
         _generador.Verify(g => g.Generar(It.IsAny<SolicitudPdf>()), Times.Never);
+        _autorizacionConsulta.Verify(s => s.AutorizarPorIdAsync(idSolicitud, It.IsAny<CancellationToken>()), Times.Once);
         _consultas.Verify(c => c.ObtenerSolicitudPorId(It.IsAny<long>(), It.IsAny<long?>(),
             It.IsAny<bool>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Never);
     }
@@ -118,7 +121,7 @@ public class GenerarPdfSolicitudQueryHandlerTest
     }
 
     private GenerarPdfSolicitudQueryHandler Handler() =>
-        new(new Mock<IMapper>().Object, _usuario.Object, _consultas.Object, _maestros.Object, _generador.Object, _accesoEspecialRepo.Object);
+        new(new Mock<IMapper>().Object, _usuario.Object, _consultas.Object, _maestros.Object, _generador.Object, _autorizacionConsulta.Object);
 
     private static SolicitudDto Solicitud() => new()
     {
