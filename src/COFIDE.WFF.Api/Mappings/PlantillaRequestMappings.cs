@@ -13,7 +13,7 @@ namespace COFIDE.WFF.Api.Mappings
             new(r.NombrePlantilla, r.Descripcion, r.Visibilidad, r.EsReutilizable, r.Etapas);
 
         public static EditarPlantillaCommand ToCommand(this ActualizarPlantillaRequest r, long id) =>
-            new(id, r.NombrePlantilla, r.Descripcion, r.Etapas);
+            new(id, r.NombrePlantilla, r.Descripcion, r.Etapas, r.Visibilidad);
 
         public static ObtenerPlantillaPaginadoQuery ToQuery(this BuscarPlantillasRequest r) =>
             new(r.Busqueda, r.Visibilidad, r.Aprobadores, r.Gerencias)
