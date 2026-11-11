@@ -28,13 +28,17 @@ public class GenerarPdfSolicitudQueryHandlerTest
     public GenerarPdfSolicitudQueryHandlerTest()
     {
         _usuario.Setup(u => u.UserIdLocal).Returns(10);
+        _usuario.Setup(u => u.CodigoRolUsuario).Returns("SOLAPR");
+        _consultas.Setup(c => c.ObtenerParaAutorizacionAsync(8, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Solicitud.CrearBorrador(
+                8, "SOL-1", 1, 2, 10, 3, 10, 5, 2, "Contrato", null, false, false, null, 0));
         _generador.Setup(g => g.Generar(It.IsAny<SolicitudPdf>()))
             .Callback<SolicitudPdf>(m => _modelo = m)
             .Returns(new byte[] { 0x25, 0x50, 0x44, 0x46 });
 
         var tipo = (TipoSolicitud)Activator.CreateInstance(typeof(TipoSolicitud), nonPublic: true)!;
         NavegacionEf.Asignar(tipo, t => t.NombreTipoSolicitud, "Órdenes de compra");
-        _maestros.Setup(m => m.GetTipoSolicitudByIdAsync(1, It.IsAny<CancellationToken>(), false)).ReturnsAsync(tipo);
+        _maestros.Setup(m => m.GetTipoSolicitudByIdSinEstadoAsync(1, It.IsAny<CancellationToken>(), false)).ReturnsAsync(tipo);
         _maestros.Setup(m => m.GetSubTipoSolicitudCombo(null, It.IsAny<List<long>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SubTipoSolicitudComboDto> { new() { Id = 2, Nombre = "Bienes" } });
         _maestros.Setup(m => m.GetTipoOperacionCombo(null, It.IsAny<CancellationToken>()))
@@ -88,13 +92,19 @@ public class GenerarPdfSolicitudQueryHandlerTest
         _modelo.Firmantes.Should().OnlyContain(f => f.Orden == 1);
     }
 
-    [Fact]
-    public async Task Solicitud_Inexistente_Debe_Devolver_Null_Sin_Generar_El_Pdf()
+    [Theory]
+    [InlineData(8L)]
+    [InlineData(99L)]
+    public async Task Sin_Permiso_O_Solicitud_Inexistente_No_Debe_Generar_El_Pdf(long idSolicitud)
     {
-        var resultado = await Handler().Handle(new GenerarPdfSolicitudQuery(99), CancellationToken.None);
+        _usuario.Setup(u => u.UserIdLocal).Returns(20);
+        var act = () => Handler().Handle(new GenerarPdfSolicitudQuery(idSolicitud), CancellationToken.None);
 
-        resultado.Should().BeNull();
+        var ex = await act.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>();
+        ex.Which.Error.Code.Should().Be("DOM_SOL_034");
         _generador.Verify(g => g.Generar(It.IsAny<SolicitudPdf>()), Times.Never);
+        _consultas.Verify(c => c.ObtenerSolicitudPorId(It.IsAny<long>(), It.IsAny<long?>(),
+            It.IsAny<bool>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Never);
     }
 
     [Fact]

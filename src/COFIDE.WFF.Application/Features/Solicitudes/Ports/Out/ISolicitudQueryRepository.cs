@@ -7,6 +7,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPanelControl;
 using COFIDE.WFF.Domain.ValueObjects;
+using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 
 public interface ISolicitudQueryRepository
@@ -83,12 +84,8 @@ public interface ISolicitudQueryRepository
     #endregion
 
 
-    Task<bool> PuedeVerSolicitudAsync(
+    Task<Solicitud?> ObtenerParaAutorizacionAsync(
         long idSolicitud,
-        long? codigoUsuario,
-        long? areaUsuario,
-        string? roLUsuario,
-        List<long>? idsAreasAccesoEspecial,
         CancellationToken cancellationToken);
 }
 

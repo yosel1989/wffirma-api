@@ -5,6 +5,7 @@ using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Firmas.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Domain.DomainServices;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 
@@ -30,25 +31,15 @@ public sealed class ObtenerSolicitudQueryHandler(
 
         var idUsuario = _currentUser.UserIdLocal.Value;
 
-        // Abrir el detalle: solo se consume el repository si puede ver la solicitud
-        // por su rol OR por un acceso especial activo (misma regla que el listado).
-        // Reusar es solo del solicitante: en reuso no se aplica el acceso especial,
-        // se mantiene la validación que ya hace ObtenerSolicitudPorId.
         if (!request.EsReuso)
         {
-            // Solo accesos especiales activos.
             var idsAreasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario);
+            var datos = await _solicitudQueryRepository.ObtenerParaAutorizacionAsync(
+                request.IdSolicitud, cancellationToken);
 
-            var puedeVer = await _solicitudQueryRepository.PuedeVerSolicitudAsync(
-                request.IdSolicitud,
-                idUsuario,
-                _currentUser.UserAreaId,
-                _currentUser.CodigoRolUsuario,
-                idsAreasAccesoEspecial,
-                cancellationToken);
-
-            if (!puedeVer)
-                throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudSinAcceso);
+            ReglaConsultaSolicitud.Validar(
+                datos, idUsuario, _currentUser.UserAreaId,
+                _currentUser.CodigoRolUsuario, idsAreasAccesoEspecial);
         }
 
         var solicitud = await _solicitudQueryRepository.ObtenerSolicitudPorId(request.IdSolicitud, idUsuario, request.EsReuso, cancellationToken);

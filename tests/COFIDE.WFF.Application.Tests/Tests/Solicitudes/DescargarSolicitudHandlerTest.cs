@@ -28,6 +28,10 @@ public class DescargarSolicitudHandlerTest
 
     public DescargarSolicitudHandlerTest()
     {
+        _currentUserService.Setup(u => u.UserIdLocal).Returns(10);
+        _currentUserService.Setup(u => u.CodigoRolUsuario).Returns("SOLAPR");
+        _solicitudQueryRepo.Setup(r => r.ObtenerParaAutorizacionAsync(8, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Borrador());
         _archivos.Setup(a => a.CombinarRuta(It.IsAny<string>(), It.IsAny<string>()))
             .Returns((string carpeta, string nombre) => Path.Combine(carpeta, nombre));
         _archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -161,6 +165,30 @@ public class DescargarSolicitudHandlerTest
         dto.NombreArchivo.Should().Be("documentos.zip");
         dto.ContentType.Should().Be("application/zip");
         dto.Archivo.Should().Equal(9);
+    }
+
+    [Fact]
+    public async Task Sin_Permiso_No_Debe_Leer_Sustento_Ni_Generar_Zip()
+    {
+        _currentUserService.Setup(u => u.UserIdLocal).Returns(20);
+        var solicitud = Borrador();
+        solicitud.AgregarSustento(6, "anexo", "pdf", "sustentos", 10);
+        _solicitudes.Setup(s => s.ObtenerSolicitudSustentoPorId(6, It.IsAny<CancellationToken>(), false))
+            .ReturnsAsync(solicitud.Sustentos.Single());
+        var zip = new Mock<ISolicitudDescargaZipService>();
+
+        var descargarSustento = () => Sustento().Handle(new DescargarSolicitudSustentoQuery(6), CancellationToken.None);
+        var descargarZip = () => new DescargarSolicitudDocumentoZipQueryHandler(
+            _mapper.Object, zip.Object, _solicitudQueryRepo.Object, _accesoEspecialRepo.Object, _currentUserService.Object)
+            .Handle(new DescargarSolicitudDocumentoZipQuery(8, [4]), CancellationToken.None);
+
+        (await descargarSustento.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
+            .Which.Error.Code.Should().Be("DOM_SOL_034");
+        (await descargarZip.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
+            .Which.Error.Code.Should().Be("DOM_SOL_034");
+        _archivos.Verify(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        zip.Verify(z => z.DescargarDocumentosZipAsync(It.IsAny<long>(), It.IsAny<List<long>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Models.Pdf;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using COFIDE.WFF.Domain.Common.Tiempo;
+using COFIDE.WFF.Domain.DomainServices;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 
@@ -40,21 +41,13 @@ public sealed class GenerarPdfSolicitudQueryHandler(
 
         var idUsuario = _currentUser.UserIdLocal.Value;
 
-        // Solo accesos especiales activos.
         var idsAreasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario);
+        var datos = await _solicitudQueryRepository.ObtenerParaAutorizacionAsync(
+            request.IdSolicitud, cancellationToken);
 
-        // Imprimir el PDF de la solicitud: solo si puede verla por su rol
-        // OR por un acceso especial activo (misma regla que el listado).
-        var puedeVer = await _solicitudQueryRepository.PuedeVerSolicitudAsync(
-            request.IdSolicitud,
-            idUsuario,
-            _currentUser.UserAreaId,
-            _currentUser.CodigoRolUsuario,
-            idsAreasAccesoEspecial,
-            cancellationToken);
-
-        if (!puedeVer)
-            throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudSinAcceso);
+        ReglaConsultaSolicitud.Validar(
+            datos, idUsuario, _currentUser.UserAreaId,
+            _currentUser.CodigoRolUsuario, idsAreasAccesoEspecial);
 
         var solicitud = await _solicitudQueryRepository.ObtenerSolicitudPorId(
             request.IdSolicitud, idUsuario, esReuso: false, cancellationToken);

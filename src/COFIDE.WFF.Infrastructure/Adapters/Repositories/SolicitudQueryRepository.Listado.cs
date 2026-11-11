@@ -3,7 +3,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolici
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Application.Common.Pageds;
-using COFIDE.WFF.Domain.Common.Enums;
+using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
@@ -218,93 +218,14 @@ public partial class SolicitudQueryRepository
         return query;
     }
 
-    /// <summary>
-    /// Qué solicitudes puede ver el usuario: lo que ya ve por su rol OR las de las áreas
-    /// con acceso especial activo (una gerencia incluye sus departamentos).
-    /// Reescrita en una sola lambda por rol (sin el combinador Or ni HasValue/.Value) para que
-    /// EF Core + Oracle no genere literales booleanos (ORA-00904: "FALSE").
-    /// </summary>
     private static IQueryable<Solicitud> AplicarVisibilidad(
         IQueryable<Solicitud> query,
         long? codigoUsuario,
         long? areaUsuario,
         string? roLUsuario,
         List<long>? idsAreasAccesoEspecial)
-    {
-        var rol = RolUsuarioCodigo.Desde(roLUsuario);
-        if (rol is null)
-            return query;
-
-        var tieneAcceso = idsAreasAccesoEspecial is { Count: > 0 };
-
-        if (rol == RolUsuario.Coordinador && areaUsuario.HasValue)
-        {
-            var area = areaUsuario.Value;
-
-            // Sin acceso especial no cambia nada.
-            if (!tieneAcceso)
-                return query.Where(s => s.UsuarioSolicitante.IdArea == area);
-
-            var ids = idsAreasAccesoEspecial!;
-
-            // rol OR acceso especial
-            return query.Where(s =>
-                s.UsuarioSolicitante.IdArea == area ||
-                // acceso a un departamento: coincide el área del solicitante
-                ids.Contains(s.UsuarioSolicitante.IdArea!.Value) ||
-                // acceso a una gerencia: coincide el padre del área del solicitante
-                ids.Contains(s.UsuarioSolicitante.Area.IdAreaPadre!.Value));
-        }
-
-        if (rol == RolUsuario.SolicitanteAprobador && codigoUsuario.HasValue)
-        {
-            var usuario = codigoUsuario.Value;
-
-            // Sin acceso especial no cambia nada.
-            if (!tieneAcceso)
-                return query.Where(s => s.UsuarioSolicitante.Id == usuario);
-
-            var ids = idsAreasAccesoEspecial!;
-
-            // rol OR acceso especial
-            return query.Where(s =>
-                s.UsuarioSolicitante.Id == usuario ||
-                // acceso a un departamento
-                ids.Contains(s.UsuarioSolicitante.IdArea!.Value) ||
-                // acceso a una gerencia
-                ids.Contains(s.UsuarioSolicitante.Area.IdAreaPadre!.Value));
-        }
-
-        // Rol sin restricción: ya ve todo, el acceso especial no agrega nada.
-        return query;
-    }
-
-    private static Expression<Func<T, bool>> Or<T>(
-        Expression<Func<T, bool>> left,
-        Expression<Func<T, bool>> right)
-    {
-        var parametro = left.Parameters[0];
-        var cuerpoDerecho = new ReemplazarParametro(right.Parameters[0], parametro).Visit(right.Body)!;
-
-        return Expression.Lambda<Func<T, bool>>(
-            Expression.OrElse(left.Body, cuerpoDerecho),
-            parametro);
-    }
-
-    private sealed class ReemplazarParametro : ExpressionVisitor
-    {
-        private readonly ParameterExpression _origen;
-        private readonly Expression _destino;
-
-        public ReemplazarParametro(ParameterExpression origen, Expression destino)
-        {
-            _origen = origen;
-            _destino = destino;
-        }
-
-        protected override Expression VisitParameter(ParameterExpression node)
-            => node == _origen ? _destino : base.VisitParameter(node);
-    }
+        => query.Where(ReglaConsultaSolicitud.CrearPredicado(
+            codigoUsuario, areaUsuario, roLUsuario, idsAreasAccesoEspecial));
 
     private static IQueryable<Solicitud> AplicarFiltrosGrilla(
     IQueryable<Solicitud> query,
@@ -533,30 +454,12 @@ public partial class SolicitudQueryRepository
     }
 
 
-    /// <summary>
-    /// Verifica si un usuario tiene permiso para ver una solicitud específica.
-    /// </summary>
-    /// <param name="idSolicitud">Identificador único de la solicitud.</param>
-    /// <param name="codigoUsuario">Código del usuario que realiza la consulta.</param>
-    /// <param name="areaUsuario">Identificador del área del usuario.</param>
-    /// <param name="roLUsuario">Rol del usuario en formato de cadena.</param>
-    /// <param name="idsAreasAccesoEspecial">Lista de identificadores de áreas con acceso especial.</param>
-    /// <param name="cancellationToken">Token de cancelación para la operación asíncrona.</param>
-    /// <returns>Un valor booleano que indica si el usuario puede ver la solicitud.</returns>
-    public async Task<bool> PuedeVerSolicitudAsync(
+    public Task<Solicitud?> ObtenerParaAutorizacionAsync(
         long idSolicitud,
-        long? codigoUsuario,
-        long? areaUsuario,
-        string? roLUsuario,
-        List<long>? idsAreasAccesoEspecial,
         CancellationToken cancellationToken)
-    {
-        var output = await AplicarVisibilidad(_context.Set<Solicitud>().AsNoTracking(),
-                   codigoUsuario, areaUsuario, roLUsuario, idsAreasAccesoEspecial)
-                    .Where(s => s.Id == idSolicitud)
-                    .CountAsync(cancellationToken) > 0;
-               //.AnyAsync(s => s.Id == idSolicitud, cancellationToken);
-
-        return output;
-    }
+        => _context.Set<Solicitud>()
+            .AsNoTracking()
+            .Include(s => s.UsuarioSolicitante)
+                .ThenInclude(u => u.Area)
+            .FirstOrDefaultAsync(s => s.Id == idSolicitud, cancellationToken);
 }
