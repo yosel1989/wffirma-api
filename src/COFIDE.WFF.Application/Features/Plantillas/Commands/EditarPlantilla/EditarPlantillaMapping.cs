@@ -11,6 +11,7 @@ public static class EditarPlantillaMapping
             Id = request.Id,
             NombrePlantilla = request.NombrePlantilla,
             Descripcion = request.Descripcion,
+            Visibilidad = request.Visibilidad,
             EtapasRequest = request.Etapas!.Select(e => new EtapaEditModel
             {
                 Id = e.Id.HasValue ? e.Id.Value : 0,

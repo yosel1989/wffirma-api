@@ -7,5 +7,6 @@ public sealed record EditarPlantillaCommand
     long Id,
     string? NombrePlantilla,
     string? Descripcion,
-    List<PlantillaEtapaRequest>? Etapas
+    List<PlantillaEtapaRequest>? Etapas,
+    bool? Visibilidad = null
 ) : UpdateCommand<long, long>(Id);

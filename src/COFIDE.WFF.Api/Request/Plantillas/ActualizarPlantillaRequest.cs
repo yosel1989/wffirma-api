@@ -7,6 +7,7 @@ namespace COFIDE.WFF.Api.Request.Plantillas
     {
         public string? NombrePlantilla { get; init; }
         public string? Descripcion { get; init; }
+    public bool? Visibilidad { get; init; }
         public List<PlantillaEtapaRequest>? Etapas { get; init; }
     }
 }
