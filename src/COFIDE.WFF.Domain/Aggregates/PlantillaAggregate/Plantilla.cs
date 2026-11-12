@@ -86,6 +86,8 @@ public class Plantilla : AuditableEntity<long>
        Dictionary<long, ParametroDetalle> tipoAprobadorDict,
        long usuarioActualId)
     {
+        ActualizarDatosGenerales(plantillaRequest.NombrePlantilla, plantillaRequest.Descripcion, plantillaRequest.Visibilidad);
+
         var etapasIdsRequest = plantillaRequest.EtapasRequest.Where(x => x.Id != 0).Select(e => e.Id).ToHashSet();
 
         foreach (var etapa in _etapas.Where(e => e.Estado && !etapasIdsRequest.Contains(e.Id)))
@@ -131,6 +133,20 @@ public class Plantilla : AuditableEntity<long>
         }
 
         ValidarFlujoCompleto();
+    }
+
+    private void ActualizarDatosGenerales(string? nombrePlantilla, string? descripcion, bool? visibilidad)
+    {
+        NombrePlantilla = Vo.NombrePlantilla.Crear(nombrePlantilla);
+        Descripcion = Vo.DescripcionPlantilla.Crear(descripcion);
+
+        if (!visibilidad.HasValue)
+            return;
+
+        if (visibilidad.Value && ((EsReutilizable.HasValue && !EsReutilizable.Value) || !EsReutilizable.HasValue))
+            throw new DomainException(PlantillaErrors.ValidarPlantillaPublicaReutilizable);
+
+        Visibilidad = visibilidad.Value;
     }
 
     #endregion

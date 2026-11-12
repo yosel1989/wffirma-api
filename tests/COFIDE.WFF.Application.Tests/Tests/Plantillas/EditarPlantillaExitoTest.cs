@@ -52,9 +52,12 @@ public class EditarPlantillaExitoTest
                         new() { Id = 9, IdUsuarioAsignado = 100, IdUsuarioOrigen = 100, CargoUsuario = "Analista" }
                     }
                 }
-            }), CancellationToken.None);
+            }, true), CancellationToken.None);
 
         id.Should().Be(6);
+        plantilla.NombrePlantilla!.Valor.Should().Be("Flujo editado");
+        plantilla.Descripcion!.Valor.Should().Be("Descripcion");
+        plantilla.Visibilidad.Should().BeTrue();
         plantilla.Etapas.Should().ContainSingle(e => e.Id == 3 && e.Estado);
         plantillas.Verify(p => p.GuardarFlujoPlantillaAsync(plantilla), Times.Once);
     }
