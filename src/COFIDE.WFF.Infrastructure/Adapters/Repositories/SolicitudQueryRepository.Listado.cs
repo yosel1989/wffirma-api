@@ -3,12 +3,12 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarReporteSolici
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitudPaginado;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using VO = COFIDE.WFF.Domain.ValueObjects;
-using COFIDE.WFF.Domain.Common.Enums;
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories;
 
 /// <summary>
@@ -35,6 +35,7 @@ public partial class SolicitudQueryRepository
                     + " " +
                     (s.UsuarioSolicitante.ApellidoPaterno ?? "")
                 ).Trim(),
+               CodigoSolicitante = s.UsuarioSolicitante.CuentaLogueo,
                Estado = s.EstadoSolicitud.Nombre,
                FechaCreacion = s.FechaSolicitud,
                AprobadoresPendientes = s.SolicitudPlantilla.FirmantesFlujo
@@ -107,34 +108,19 @@ public partial class SolicitudQueryRepository
     bool? usuariodepartamento,
     List<long>? idsAreasAccesoEspecial)
     {
-        var rol = RolUsuarioCodigo.Desde(roLUsuario);
-        if (rol is not null)
-        {
-            if (rol == RolUsuario.Coordinador && areaUsuario.HasValue)
-            {
-                query = query.Where(s =>
-                    s.UsuarioSolicitante.IdArea.HasValue &&
-                    s.UsuarioSolicitante.IdArea.Value == areaUsuario.Value);
-            }
-            else if (rol == RolUsuario.SolicitanteAprobador && codigoUsuario.HasValue)
-            {
-                query = query.Where(s =>
-                    s.UsuarioSolicitante.Id == codigoUsuario.Value);
-            }
-        }
+        // Visibilidad primero (rol OR acceso especial); los filtros siguientes solo reducen.
+        query = AplicarVisibilidad(query, codigoUsuario, areaUsuario, roLUsuario, idsAreasAccesoEspecial);
 
         if (gerencia?.Count > 0)
         {
             query = query.Where(s =>
-                s.UsuarioSolicitante.Area.IdAreaPadre.HasValue &&
-                gerencia.Contains(s.UsuarioSolicitante.Area.IdAreaPadre.Value));
+                gerencia.Contains(s.IdAreaPadreSolicitud));
         }
 
         if (departamento?.Count > 0)
         {
             query = query.Where(s =>
-                s.UsuarioSolicitante.IdArea.HasValue &&
-                departamento.Contains(s.UsuarioSolicitante.IdArea.Value));
+                departamento.Contains(s.IdAreaSolicitud));
         }
 
         if (solicitante?.Count > 0)
@@ -229,6 +215,15 @@ public partial class SolicitudQueryRepository
 
         return query;
     }
+
+    private static IQueryable<Solicitud> AplicarVisibilidad(
+        IQueryable<Solicitud> query,
+        long? codigoUsuario,
+        long? areaUsuario,
+        string? roLUsuario,
+        List<long>? idsAreasAccesoEspecial)
+        => query.Where(ReglaConsultaSolicitud.CrearPredicado(
+            codigoUsuario, areaUsuario, roLUsuario, idsAreasAccesoEspecial));
 
     private static IQueryable<Solicitud> AplicarFiltrosGrilla(
     IQueryable<Solicitud> query,
@@ -435,7 +430,7 @@ public partial class SolicitudQueryRepository
             request.Urgente,
             request.Usuario,
             request.Usuariodepartamento,
-            null);
+            request.IdsAreasAccesoEspecial);
 
         query = AplicarFiltrosGrilla(
             query,
@@ -455,4 +450,14 @@ public partial class SolicitudQueryRepository
             .Select(ProyeccionListado)
             .ToListAsync(cancellationToken);
     }
+
+
+    public Task<Solicitud?> ObtenerParaAutorizacionAsync(
+        long idSolicitud,
+        CancellationToken cancellationToken)
+        => _context.Set<Solicitud>()
+            .AsNoTracking()
+            .Include(s => s.UsuarioSolicitante)
+                .ThenInclude(u => u.Area)
+            .FirstOrDefaultAsync(s => s.Id == idSolicitud, cancellationToken);
 }

@@ -1,4 +1,5 @@
 using AutoMapper;
+using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumentoZip;
@@ -6,7 +7,6 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSust
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSustentoZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitudZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
-using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using FluentAssertions;
 using Moq;
@@ -20,10 +20,13 @@ public class DescargarSolicitudHandlerTest
     private readonly Mock<IMapper> _mapper = new();
     private readonly Mock<IFileStorageService> _archivos = new();
     private readonly Mock<ISolicitudRepository> _solicitudes = new();
+    private readonly Mock<ISolicitudConsultaAuthorizationService> _autorizacionConsulta = new();
     private readonly byte[] _contenido = [1, 2, 3];
 
     public DescargarSolicitudHandlerTest()
     {
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         _archivos.Setup(a => a.CombinarRuta(It.IsAny<string>(), It.IsAny<string>()))
             .Returns((string carpeta, string nombre) => Path.Combine(carpeta, nombre));
         _archivos.Setup(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -151,12 +154,58 @@ public class DescargarSolicitudHandlerTest
         zip.Setup(z => z.DescargarDocumentosZipAsync(8, It.IsAny<List<long>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new byte[] { 9 }, "documentos.zip"));
 
-        var dto = await new DescargarSolicitudDocumentoZipQueryHandler(_mapper.Object, zip.Object)
+        var dto = await new DescargarSolicitudDocumentoZipQueryHandler(_mapper.Object, zip.Object, _autorizacionConsulta.Object)
             .Handle(new DescargarSolicitudDocumentoZipQuery(8, [4]), CancellationToken.None);
 
         dto.NombreArchivo.Should().Be("documentos.zip");
         dto.ContentType.Should().Be("application/zip");
         dto.Archivo.Should().Equal(9);
+    }
+
+    [Fact]
+    public async Task Sin_Permiso_No_Debe_Leer_Sustento_Ni_Generar_Zip()
+    {
+        var solicitud = Borrador();
+        solicitud.AgregarSustento(6, "anexo", "pdf", "sustentos", 10);
+        _solicitudes.Setup(s => s.ObtenerSolicitudSustentoPorId(6, It.IsAny<CancellationToken>(), false))
+            .ReturnsAsync(solicitud.Sustentos.Single());
+        _solicitudes.Setup(s => s.ObtenerSolicitudDocumentoPorId(4, It.IsAny<CancellationToken>(), false))
+            .ReturnsAsync(PrepararDocumento());
+        var zip = new Mock<ISolicitudDescargaZipService>();
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new COFIDE.WFF.Domain.Exceptions.DomainException(
+                COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors.SolicitudErrors.PermisoVisualizarSolicitud));
+
+        var descargarSustento = () => Sustento().Handle(new DescargarSolicitudSustentoQuery(6), CancellationToken.None);
+        var descargarDocumento = () => Documento().Handle(new DescargarSolicitudDocumentoQuery(4), CancellationToken.None);
+        var descargarZip = () => new DescargarSolicitudDocumentoZipQueryHandler(
+            _mapper.Object, zip.Object, _autorizacionConsulta.Object)
+            .Handle(new DescargarSolicitudDocumentoZipQuery(8, [4]), CancellationToken.None);
+        var descargarZipSustentos = () => new DescargarSolicitudSustentoZipQueryHandler(
+            _mapper.Object, zip.Object, _autorizacionConsulta.Object)
+            .Handle(new DescargarSolicitudSustentoZipQuery(8, [6]), CancellationToken.None);
+        var descargarZipCompleto = () => new DescargarTodoSolicitudZipQueryHandler(
+            _mapper.Object, zip.Object, _autorizacionConsulta.Object)
+            .Handle(new DescargarTodoSolicitudZipQuery(8), CancellationToken.None);
+
+        (await descargarSustento.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
+            .Which.Error.Code.Should().Be("DOM_SOL_034");
+        (await descargarDocumento.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
+            .Which.Error.Code.Should().Be("DOM_SOL_034");
+        (await descargarZip.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
+            .Which.Error.Code.Should().Be("DOM_SOL_034");
+        (await descargarZipSustentos.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
+            .Which.Error.Code.Should().Be("DOM_SOL_034");
+        (await descargarZipCompleto.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
+            .Which.Error.Code.Should().Be("DOM_SOL_034");
+        _archivos.Verify(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        zip.Verify(z => z.DescargarDocumentosZipAsync(It.IsAny<long>(), It.IsAny<List<long>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        zip.Verify(z => z.DescargarSustentosZipAsync(It.IsAny<long>(), It.IsAny<List<long>?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
+        zip.Verify(z => z.DescargarTodoZipAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+        _autorizacionConsulta.Verify(
+            s => s.AutorizarPorIdAsync(8, It.IsAny<CancellationToken>()), Times.Exactly(5));
     }
 
     [Fact]
@@ -166,7 +215,7 @@ public class DescargarSolicitudHandlerTest
         zip.Setup(z => z.DescargarSustentosZipAsync(8, It.IsAny<List<long>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((new byte[] { 8 }, "sustentos.zip"));
 
-        var dto = await new DescargarSolicitudSustentoZipQueryHandler(_mapper.Object, zip.Object)
+        var dto = await new DescargarSolicitudSustentoZipQueryHandler(_mapper.Object, zip.Object, _autorizacionConsulta.Object)
             .Handle(new DescargarSolicitudSustentoZipQuery(8, [6]), CancellationToken.None);
 
         dto.NombreArchivo.Should().Be("sustentos.zip");
@@ -180,7 +229,7 @@ public class DescargarSolicitudHandlerTest
         zip.Setup(z => z.DescargarTodoZipAsync(8, It.IsAny<CancellationToken>()))
             .ReturnsAsync((new byte[] { 7 }, "todo.zip"));
 
-        var dto = await new DescargarTodoSolicitudZipQueryHandler(_mapper.Object, zip.Object)
+        var dto = await new DescargarTodoSolicitudZipQueryHandler(_mapper.Object, zip.Object, _autorizacionConsulta.Object)
             .Handle(new DescargarTodoSolicitudZipQuery(8), CancellationToken.None);
 
         dto.NombreArchivo.Should().Be("todo.zip");
@@ -188,10 +237,10 @@ public class DescargarSolicitudHandlerTest
     }
 
     private DescargarSolicitudDocumentoHandler Documento() =>
-        new(_mapper.Object, _archivos.Object, _solicitudes.Object);
+        new(_mapper.Object, _archivos.Object, _solicitudes.Object, _autorizacionConsulta.Object);
 
     private DescargarSolicitudSustentoHandler Sustento() =>
-        new(_mapper.Object, _archivos.Object, _solicitudes.Object);
+        new(_mapper.Object, _archivos.Object, _solicitudes.Object, _autorizacionConsulta.Object);
 
     private static SolicitudDocumento PrepararDocumento(
         bool inCodigo = false,

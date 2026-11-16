@@ -14,9 +14,6 @@
     <None Remove="Logging\**" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Adapters\Repositories\SolicitudQueryRepository.Visibilidad.cs" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Adapters\Services\Startup\" />
     <Folder Include="Persistence\Migrations\" />
   </ItemGroup>
@@ -51,7 +48,6 @@
     <ProjectReference Include="..\COFIDE.WFF.Domain\COFIDE.WFF.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Adapters\Repositories\SolicitudQueryRepository.Visibilidad.cs" />
     <None Include="Adapters\Services\Pdf\Fonts\calibri.ttf" Link="Fonts/calibri.ttf" CopyToOutputDirectory="Always" />
     <None Include="Adapters\Services\Pdf\Fonts\calibrib.ttf" Link="Fonts/calibrib.ttf" CopyToOutputDirectory="Always" />
   </ItemGroup>

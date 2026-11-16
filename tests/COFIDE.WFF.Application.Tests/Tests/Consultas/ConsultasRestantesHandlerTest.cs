@@ -5,6 +5,7 @@ using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.DTOs;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
@@ -15,11 +16,13 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExce
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.PermisoSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerContextoUsuario;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
+using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors;
 using COFIDE.WFF.Domain.Common.Entities;
 using COFIDE.WFF.Domain.Common.Enums;
 using COFIDE.WFF.Domain.Entities;
@@ -217,8 +220,11 @@ public class ConsultasRestantesHandlerTest
         var solicitudes = new Mock<ISolicitudRepository>();
         solicitudes.Setup(s => s.ObtenerAgregadoSolicitudAsync(8, It.IsAny<CancellationToken>(), true)).ReturnsAsync(Borrador());
         var usuario = UsuarioActual(99, "USR99");
+        var autorizacion = new Mock<ISolicitudConsultaAuthorizationService>();
+        autorizacion.Setup(s => s.AutorizarSolicitudAsync(It.IsAny<Solicitud>()))
+            .ThrowsAsync(new DomainException(SolicitudErrors.PermisoVisualizarSolicitud));
 
-        var act = () => Permiso(solicitudes, usuario: usuario).Handle(new PermisoSolicitudQuery(8, false), CancellationToken.None);
+        var act = () => Permiso(solicitudes, usuario: usuario, autorizacion: autorizacion).Handle(new PermisoSolicitudQuery(8, false), CancellationToken.None);
 
         await act.Should().ThrowAsync<DomainException>();
     }
@@ -281,16 +287,25 @@ public class ConsultasRestantesHandlerTest
         usuario.Setup(u => u.UserCargoId).Returns(3);
         usuario.Setup(u => u.UserAreaId).Returns(5);
         usuario.Setup(u => u.CodigoRolUsuario).Returns("SOL");
-        consultas.Setup(c => c.ObtenerListadoSolicitud(It.IsAny<ReporteSolicitudExcelRequest>(), It.IsAny<CancellationToken>(), false))
+        var accesosEspeciales = new Mock<IAccesoEspecialRepository>();
+        accesosEspeciales.Setup(a => a.GetAreasByUserIdAsync(10)).ReturnsAsync([50, 51]);
+        consultas.Setup(c => c.ObtenerListadoSolicitud(
+                It.Is<ReporteSolicitudExcelRequest>(r =>
+                    r.IdsAreasAccesoEspecial!.Count == 2 &&
+                    r.IdsAreasAccesoEspecial[0] == 50 &&
+                    r.IdsAreasAccesoEspecial[1] == 51),
+                It.IsAny<CancellationToken>(),
+                false))
             .ReturnsAsync([new SolicitudPaginadoDto(), new SolicitudPaginadoDto()]);
         excel.Setup(e => e.GenerarReporteSolicitudes(It.Is<List<SolicitudPaginadoDto>>(l => l.Count == 2)))
             .Returns(new byte[] { 1, 2 });
 
-        var dto = await Excel(usuario, consultas, excel).Handle(ConsultaExcel(), CancellationToken.None);
+        var dto = await Excel(usuario, consultas, excel, accesosEspeciales).Handle(ConsultaExcel(), CancellationToken.None);
 
         dto.Contenido.Should().Equal(1, 2);
         dto.ContentType.Should().Be("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         dto.NombreArchivo.Should().StartWith("Reporte_Solicitudes_Cantidad_2_");
+        accesosEspeciales.Verify(a => a.GetAreasByUserIdAsync(10), Times.Once);
     }
 
     [Fact]
@@ -358,20 +373,32 @@ public class ConsultasRestantesHandlerTest
     private PermisoSolicitudQueryHandler Permiso(
         Mock<ISolicitudRepository> solicitudes,
         Mock<IPlantillaRepository>? plantillas = null,
-        Mock<ICurrentUserService>? usuario = null) =>
-        new(
+        Mock<ICurrentUserService>? usuario = null,
+        Mock<ISolicitudConsultaAuthorizationService>? autorizacion = null)
+    {
+        if (autorizacion is null)
+        {
+            autorizacion = new Mock<ISolicitudConsultaAuthorizationService>();
+            autorizacion.Setup(s => s.AutorizarSolicitudAsync(It.IsAny<Solicitud>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        return new PermisoSolicitudQueryHandler(
             _mapper.Object,
             solicitudes.Object,
             (usuario ?? UsuarioActual()).Object,
             (plantillas ?? new Mock<IPlantillaRepository>()).Object,
             new Mock<IParametroRepository>().Object,
-            new Mock<COFIDE.WFF.Domain.DomainServices.IWorkflowDomainService>().Object);
+            new Mock<COFIDE.WFF.Domain.DomainServices.IWorkflowDomainService>().Object,
+            autorizacion.Object);
+    }
 
     private DescargarReporteSolicitudExcelQueryHandler Excel(
         Mock<ICurrentUserService> usuario,
         Mock<ISolicitudQueryRepository>? consultas = null,
-        Mock<ISolicitudExcelReportService>? excel = null) =>
-        new(_mapper.Object, usuario.Object, (consultas ?? new Mock<ISolicitudQueryRepository>()).Object, (excel ?? new Mock<ISolicitudExcelReportService>()).Object);
+        Mock<ISolicitudExcelReportService>? excel = null,
+        Mock<IAccesoEspecialRepository>? accesosEspeciales = null) =>
+        new(_mapper.Object, usuario.Object, (consultas ?? new Mock<ISolicitudQueryRepository>()).Object, (excel ?? new Mock<ISolicitudExcelReportService>()).Object, (accesosEspeciales ?? new Mock<IAccesoEspecialRepository>()).Object);
 
     private Task Movimiento(
         Mock<IGeneradorCorrelativoIdRepository> correlativos,

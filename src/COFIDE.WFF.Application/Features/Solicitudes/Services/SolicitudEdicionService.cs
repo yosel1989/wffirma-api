@@ -1,5 +1,6 @@
 ﻿using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Mappings;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
@@ -17,7 +18,8 @@ public class SolicitudEdicionService(
         ISolicitudDocumentoService solicitudDocumentoService,
         ISolicitudSustentoService solicitudSustentoService,
         ISolicitudDocumentoTagService solicitudDocumentoTagService,
-        IGeneradorCorrelativoIdRepository generadorCorrelativoIdRepository
+        IGeneradorCorrelativoIdRepository generadorCorrelativoIdRepository,
+        IAccesoEspecialRepository accesoEspecialRepository
     ) : ISolicitudEdicionService
 {
     private readonly ICurrentUserService _currentUser = currentUser;
@@ -27,6 +29,7 @@ public class SolicitudEdicionService(
     private readonly ISolicitudSustentoService _solicitudSustentoService = solicitudSustentoService;
     private readonly ISolicitudDocumentoTagService _solicitudDocumentoTagService = solicitudDocumentoTagService;
     private readonly IGeneradorCorrelativoIdRepository _generadorCorrelativoIdRepository = generadorCorrelativoIdRepository;
+    private readonly IAccesoEspecialRepository _accesoEspecialRepository = accesoEspecialRepository;
 
     public async Task<(Solicitud solicitud, Plantilla? plantilla)> Editar(SolicitudRequestDto cmd, long idSolicitud, bool esBorrador, CancellationToken cancellationToken)
     {
@@ -40,6 +43,8 @@ public class SolicitudEdicionService(
         if (solicitud is null)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudInvalid);
 
+        var areasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUSuario);
+        solicitud.ValidarPermisoEscritura(usuario, _currentUser.UserAreaId, areasAccesoEspecial);
 
         #region 01. Generacion de Correlativos
         var cantidadNuevosDocumentos = cmd.Documentos?.Count ?? 0;
@@ -59,7 +64,6 @@ public class SolicitudEdicionService(
 
         #region 02. Persistencia de Solicitud
         long? idPlantillaOrigen = solicitud.SolicitudPlantilla == null ? 0 : solicitud.SolicitudPlantilla.IdPlantilla;
-        solicitud.EsPropietarioOAdministradorDeLaSolicitud(usuario);
         if (solicitud.InCodigo != cmd.InCodigo)
             await _solicitudDocumentoService.SincronizarCambioCodigoAsync(solicitud, cmd.InCodigo, cancellationToken);
         var documentos = await _solicitudDocumentoService.CrearDocumentoInput(cmd.Documentos, solicitud.CodigoSolicitud, solicitud.InCodigo, cmd.Tags, cancellationToken);
@@ -68,16 +72,19 @@ public class SolicitudEdicionService(
 
         if (esBorrador)
         {
-            solicitud.EditarSolicitudBorrador(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo, idUSuario);
+            solicitud.EditarSolicitudBorrador(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo,
+                usuario, _currentUser.UserAreaId, areasAccesoEspecial);
             solicitud.NotificarCorreoBorrador(_currentUser.UserCorreo);
         }
         else if (solicitud.EsBorradorDevueltoPorCambioEstado())
         {
-            solicitud.EditarBorradorDevueltoYEnviar(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo, idUSuario, correoUsuario);
+            solicitud.EditarBorradorDevueltoYEnviar(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo,
+                usuario, _currentUser.UserAreaId, areasAccesoEspecial, correoUsuario);
         }
         else
         {
-            solicitud.EditarSolicitudBorradorYEnviar(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo, idUSuario, correoUsuario);
+            solicitud.EditarSolicitudBorradorYEnviar(editSolicitud, generarIdDocumento, generarIdSustento, generarIdCodigoReferencia, generarIdCorreo,
+                usuario, _currentUser.UserAreaId, areasAccesoEspecial, correoUsuario);
         }
         #endregion
 

@@ -2,6 +2,7 @@
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudExcel;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
@@ -12,12 +13,14 @@ public sealed class DescargarReporteSolicitudExcelQueryHandler(
         IMapper mapper,
         ICurrentUserService currentUser,
         ISolicitudQueryRepository solicitudQueryRepository,
-        ISolicitudExcelReportService excelReportService
+        ISolicitudExcelReportService excelReportService,
+        IAccesoEspecialRepository accesoEspecialRepository
     ) : BaseQueryHandler<DescargarReporteSolicitudExcelQuery, ReporteSolicitudExcelDto>(mapper)
 {
     private readonly ICurrentUserService _currentUser = currentUser;
     private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
     private readonly ISolicitudExcelReportService _excelReportService = excelReportService;
+    private readonly IAccesoEspecialRepository _accesoEspecialRepository = accesoEspecialRepository;
 
     public override async Task<ReporteSolicitudExcelDto> Handle(DescargarReporteSolicitudExcelQuery qry, CancellationToken cancellationToken)
     {
@@ -31,6 +34,7 @@ public sealed class DescargarReporteSolicitudExcelQueryHandler(
         var areaUsuario = _currentUser.UserAreaId;
         var rolUsuario = _currentUser.CodigoRolUsuario;
         var idDepartamento = _currentUser.UserAreaId;
+        var idsAreasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario.Value);
 
         var request = new ReporteSolicitudExcelRequest
         {
@@ -40,6 +44,7 @@ public sealed class DescargarReporteSolicitudExcelQueryHandler(
             AreaUsuario = areaUsuario,
             RoLUsuario = rolUsuario,
             DepartamentoUsuario = idDepartamento,
+            IdsAreasAccesoEspecial = idsAreasAccesoEspecial,
             Fechainicio = qry.fechainicio,
             Fechafin = qry.fechafin,
             Gerencia = qry.gerencia,

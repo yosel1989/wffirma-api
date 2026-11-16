@@ -1,5 +1,6 @@
 ﻿using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate;
 using COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales;
+using FluentAssertions;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 
@@ -129,6 +130,37 @@ namespace COFIDE.WFF.Infrastructure.Tests.Tests.AccesosEspeciales
             var resultado = await repository.GetByIdAnyStatusAsync(100, tracking: false);
 
             Assert.NotNull(resultado);
+        }
+
+        [Fact]
+        public async Task GetAreasByUserIdAsync_SoloDevuelveActivos_YReflejaLaReactivacion()
+        {
+            var dbName = NuevoDbName();
+            using (var seed = CrearDbContext(dbName))
+            {
+                var activo = AccesoEspecial.Crear(100, 7, 10);
+                var inactivo = AccesoEspecial.Crear(101, 7, 20);
+                inactivo.Desactivar();
+                var eliminado = AccesoEspecial.Crear(102, 7, 30);
+                eliminado.Eliminar();
+                seed.AccesosEspeciales.AddRange(activo, inactivo, eliminado);
+                await seed.SaveChangesAsync();
+            }
+
+            using (var contexto = CrearDbContext(dbName))
+            {
+                var repository = new AccesoEspecialRepository(contexto);
+
+                (await repository.GetAreasByUserIdAsync(7)).Should().Equal(10);
+
+                var accesoReactivado = await repository.GetByIdAnyStatusAsync(101, tracking: true);
+                accesoReactivado!.Activar();
+                await contexto.SaveChangesAsync();
+            }
+
+            using var verificacion = CrearDbContext(dbName);
+            var areasActivas = await new AccesoEspecialRepository(verificacion).GetAreasByUserIdAsync(7);
+            areasActivas.Should().Equal(10, 20);
         }
 
         // ---------- Delete ----------

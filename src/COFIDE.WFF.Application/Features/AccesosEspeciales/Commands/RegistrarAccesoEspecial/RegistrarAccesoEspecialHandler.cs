@@ -11,7 +11,7 @@ using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 
 namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.RegistrarAccesoEspecial
 {
-    public sealed class RegistrarAccesoEspecialCommandHandler(
+    public sealed class RegistrarAccesoEspecialHandler(
         ICurrentUserService currentUser,
         IMapper mapper,
         IAccesoEspecialRegistrarService usecase,

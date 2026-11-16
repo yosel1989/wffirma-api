@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Models.Pdf;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Application.Tests.Support;
 using COFIDE.WFF.Domain.Entities;
 using FluentAssertions;
@@ -21,18 +22,22 @@ public class GenerarPdfSolicitudQueryHandlerTest
     private readonly Mock<ISolicitudQueryRepository> _consultas = new();
     private readonly Mock<IMaestroRepository> _maestros = new();
     private readonly Mock<ISolicitudPdfGenerator> _generador = new();
+    private readonly Mock<ISolicitudConsultaAuthorizationService> _autorizacionConsulta = new();
     private SolicitudPdf? _modelo;
 
     public GenerarPdfSolicitudQueryHandlerTest()
     {
         _usuario.Setup(u => u.UserIdLocal).Returns(10);
+        _usuario.Setup(u => u.CodigoRolUsuario).Returns("SOLAPR");
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         _generador.Setup(g => g.Generar(It.IsAny<SolicitudPdf>()))
             .Callback<SolicitudPdf>(m => _modelo = m)
             .Returns(new byte[] { 0x25, 0x50, 0x44, 0x46 });
 
         var tipo = (TipoSolicitud)Activator.CreateInstance(typeof(TipoSolicitud), nonPublic: true)!;
         NavegacionEf.Asignar(tipo, t => t.NombreTipoSolicitud, "Órdenes de compra");
-        _maestros.Setup(m => m.GetTipoSolicitudByIdAsync(1, It.IsAny<CancellationToken>(), false)).ReturnsAsync(tipo);
+        _maestros.Setup(m => m.GetTipoSolicitudByIdSinEstadoAsync(1, It.IsAny<CancellationToken>(), false)).ReturnsAsync(tipo);
         _maestros.Setup(m => m.GetSubTipoSolicitudCombo(null, It.IsAny<List<long>?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<SubTipoSolicitudComboDto> { new() { Id = 2, Nombre = "Bienes" } });
         _maestros.Setup(m => m.GetTipoOperacionCombo(null, It.IsAny<CancellationToken>()))
@@ -86,13 +91,23 @@ public class GenerarPdfSolicitudQueryHandlerTest
         _modelo.Firmantes.Should().OnlyContain(f => f.Orden == 1);
     }
 
-    [Fact]
-    public async Task Solicitud_Inexistente_Debe_Devolver_Null_Sin_Generar_El_Pdf()
+    [Theory]
+    [InlineData(8L)]
+    [InlineData(99L)]
+    public async Task Sin_Permiso_O_Solicitud_Inexistente_No_Debe_Generar_El_Pdf(long idSolicitud)
     {
-        var resultado = await Handler().Handle(new GenerarPdfSolicitudQuery(99), CancellationToken.None);
+        _usuario.Setup(u => u.UserIdLocal).Returns(20);
+        _autorizacionConsulta.Setup(s => s.AutorizarPorIdAsync(idSolicitud, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new COFIDE.WFF.Domain.Exceptions.DomainException(
+                COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Errors.SolicitudErrors.PermisoVisualizarSolicitud));
+        var act = () => Handler().Handle(new GenerarPdfSolicitudQuery(idSolicitud), CancellationToken.None);
 
-        resultado.Should().BeNull();
+        var ex = await act.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>();
+        ex.Which.Error.Code.Should().Be("DOM_SOL_034");
         _generador.Verify(g => g.Generar(It.IsAny<SolicitudPdf>()), Times.Never);
+        _autorizacionConsulta.Verify(s => s.AutorizarPorIdAsync(idSolicitud, It.IsAny<CancellationToken>()), Times.Once);
+        _consultas.Verify(c => c.ObtenerSolicitudPorId(It.IsAny<long>(), It.IsAny<long?>(),
+            It.IsAny<bool>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Never);
     }
 
     [Fact]
@@ -106,7 +121,7 @@ public class GenerarPdfSolicitudQueryHandlerTest
     }
 
     private GenerarPdfSolicitudQueryHandler Handler() =>
-        new(new Mock<IMapper>().Object, _usuario.Object, _consultas.Object, _maestros.Object, _generador.Object);
+        new(new Mock<IMapper>().Object, _usuario.Object, _consultas.Object, _maestros.Object, _generador.Object, _autorizacionConsulta.Object);
 
     private static SolicitudDto Solicitud() => new()
     {

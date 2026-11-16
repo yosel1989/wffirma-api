@@ -1,4 +1,5 @@
 ﻿using COFIDE.WFF.Domain.Aggregates.AccesoEspecialAggregate.Vo;
+using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using Microsoft.EntityFrameworkCore;
 
 namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
@@ -24,6 +25,7 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories.AccesosEspeciales
 
             return total > 0;
         }
+
 
     }
 }

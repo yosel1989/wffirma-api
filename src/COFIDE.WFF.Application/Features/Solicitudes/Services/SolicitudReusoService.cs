@@ -1,5 +1,6 @@
 ﻿using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.Mappings;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
@@ -8,6 +9,7 @@ using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Factories;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Inputs;
+using COFIDE.WFF.Domain.Entities;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Services;
 
@@ -19,7 +21,8 @@ public class SolicitudReusoService(
     ISolicitudSustentoService solicitudSustentoService,
     ISolicitudPlantillaService solicitudPlantillaService,
     ISolicitudDocumentoTagService solicitudDocumentoTagService,
-    IGeneradorCorrelativoIdRepository generadorCorrelativoIdRepository
+    IGeneradorCorrelativoIdRepository generadorCorrelativoIdRepository,
+    IAccesoEspecialRepository accesoEspecialRepository
 ) : ISolicitudReusoService
 {
     private readonly ICurrentUserService _currentUser = currentUser;
@@ -30,6 +33,7 @@ public class SolicitudReusoService(
     private readonly ISolicitudPlantillaService _solicitudPlantillaService = solicitudPlantillaService;
     private readonly ISolicitudDocumentoTagService _solicitudDocumentoTagService = solicitudDocumentoTagService;
     private readonly IGeneradorCorrelativoIdRepository _generadorCorrelativoIdRepository = generadorCorrelativoIdRepository;
+    private readonly IAccesoEspecialRepository _accesoEspecialRepository = accesoEspecialRepository;
 
     public async Task<(Solicitud, Plantilla?)> Reusar(SolicitudRequestDto cmd, long idSolicitudOrigen, bool esBorrador, CancellationToken cancellationToken)
     {
@@ -41,6 +45,12 @@ public class SolicitudReusoService(
 
         var solicitudOrigen = await _solicitudRepository.ObtenerAgregadoSolicitudAsync(idSolicitudOrigen, cancellationToken)
         ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.SolicitudOrigenNotFound);
+
+        var rolUsuario = _currentUser.RolUsuario
+            ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.UserNotAuthenticated);
+        var usuario = new Usuario(idUSuario, rolUsuario);
+        var areasAccesoEspecial = await _accesoEspecialRepository.GetAreasByUserIdAsync(idUSuario);
+        solicitudOrigen.ValidarPermisoReuso(usuario, idArea, areasAccesoEspecial);
 
         #region 01. Generacion de Correlativos
         var cantidadNuevosCodigoReferencia = cmd.CodigosReferencia?.Count ?? 0;

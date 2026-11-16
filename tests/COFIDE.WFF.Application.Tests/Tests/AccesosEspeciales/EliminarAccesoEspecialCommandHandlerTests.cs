@@ -10,7 +10,7 @@ public class EliminarAccesoEspecialCommandHandlerTests
     private readonly Mock<IAccesoEspecialRepository> _repoMock;
     private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<ICurrentUserService> _currentUserMock;
-    private readonly EliminarAccesoEspecialCommandHandler _handler;
+    private readonly EliminarAccesoEspecialHandler _handler;
 
     public EliminarAccesoEspecialCommandHandlerTests()
     {
@@ -18,7 +18,7 @@ public class EliminarAccesoEspecialCommandHandlerTests
         _mapperMock = new Mock<IMapper>();
         _currentUserMock = new Mock<ICurrentUserService>();
 
-        _handler = new EliminarAccesoEspecialCommandHandler(_currentUserMock.Object, _mapperMock.Object, _repoMock.Object);
+        _handler = new EliminarAccesoEspecialHandler(_currentUserMock.Object, _mapperMock.Object, _repoMock.Object);
     }
 
     [Fact]

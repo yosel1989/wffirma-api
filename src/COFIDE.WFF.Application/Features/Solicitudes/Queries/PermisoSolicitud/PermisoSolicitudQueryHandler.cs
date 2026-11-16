@@ -5,6 +5,7 @@ using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Application.Features.Solicitudes.Services;
 using COFIDE.WFF.Domain.DomainServices;
 using COFIDE.WFF.Domain.Entities;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
@@ -17,7 +18,8 @@ public sealed class PermisoSolicitudQueryHandler(
         ICurrentUserService currentUser,
         IPlantillaRepository plantillaRepository,
         IParametroRepository parametroRepository,
-        IWorkflowDomainService workflowDomainService
+        IWorkflowDomainService workflowDomainService,
+        ISolicitudConsultaAuthorizationService solicitudConsultaAuthorizationService
     )
     : BaseQueryHandler<PermisoSolicitudQuery, bool>(mapper)
 {
@@ -26,6 +28,7 @@ public sealed class PermisoSolicitudQueryHandler(
     private readonly IPlantillaRepository _plantillaRepository = plantillaRepository;
     private readonly IParametroRepository _parametroRepository = parametroRepository;
     private readonly IWorkflowDomainService _workflowDomainService = workflowDomainService;
+    private readonly ISolicitudConsultaAuthorizationService _solicitudConsultaAuthorizationService = solicitudConsultaAuthorizationService;
 
     public override async Task<bool> Handle(PermisoSolicitudQuery request, CancellationToken cancellationToken)
     {
@@ -53,7 +56,10 @@ public sealed class PermisoSolicitudQueryHandler(
 
             _workflowDomainService.ConstruirFirmanteFlujoEtapa(solicitud, plantilla, tipoAprobadorDict);
         }
-        solicitud.ValidarPermisoSolicitud(usuarioActual, idArea, request.Revisar, usuario);
+        if (request.Revisar)
+            solicitud.ValidarPermisoSolicitud(usuarioActual, idArea, revisar: true, usuario);
+        else
+            await _solicitudConsultaAuthorizationService.AutorizarSolicitudAsync(solicitud);
 
         return true;
     }

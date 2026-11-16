@@ -8,7 +8,7 @@ using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
 
 namespace COFIDE.WFF.Application.Features.AccesosEspeciales.Commands.EliminarAccesoEspecial
 {
-    public sealed class EliminarAccesoEspecialCommandHandler(
+    public sealed class EliminarAccesoEspecialHandler(
         ICurrentUserService currentUser,
         IMapper mapper,
         IAccesoEspecialRepository repository

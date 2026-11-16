@@ -151,8 +151,11 @@ public class Solicitud : AuditableEntity<long>
         Func<long> generarIdSustento,
         Func<long> generarIdCodigoReferencia,
         Func<long> generarIdCorreo,
-        long usuarioActualId)
+        Usuario usuarioActual,
+        long? areaUsuario,
+        IReadOnlyCollection<long>? areasAccesoEspecial)
     {
+        ValidarPermisoEscritura(usuarioActual, areaUsuario, areasAccesoEspecial);
 
         if (EstadoSolicitud != ValueObject.EstadoSolicitud.Borrador && EstadoSolicitud != ValueObject.EstadoSolicitud.EnCurso)
             throw new DomainException(SolicitudErrors.EditarSoloBorrador);
@@ -165,7 +168,7 @@ public class Solicitud : AuditableEntity<long>
         InCodigo = solicitudRequest.InCodigo;
         DefinirUrgencia(solicitudRequest.EsUrgente, solicitudRequest.FechaLimite);
 
-        IdUsuarioAccion = usuarioActualId;
+        IdUsuarioAccion = usuarioActual.Id;
         FechaAccion = HoraSistema.Ahora;
 
         var idsDocumentosConservar = solicitudRequest.DocumentoIdsConservar.ToHashSet();
@@ -211,9 +214,12 @@ public class Solicitud : AuditableEntity<long>
        Func<long> generarIdSustento,
        Func<long> generarIdCodigoReferencia,
        Func<long> generarIdCorreo,
-       long usuarioActualId,
+       Usuario usuarioActual,
+       long? areaUsuario,
+       IReadOnlyCollection<long>? areasAccesoEspecial,
        string? correoSolicitante)
     {
+        ValidarPermisoEscritura(usuarioActual, areaUsuario, areasAccesoEspecial);
 
         if (EstadoSolicitud != ValueObject.EstadoSolicitud.Borrador
            && EstadoSolicitud != ValueObject.EstadoSolicitud.Rechazado
@@ -236,7 +242,7 @@ public class Solicitud : AuditableEntity<long>
         }
 
         DefinirUrgencia(solicitudRequest.EsUrgente, solicitudRequest.FechaLimite);
-        IdUsuarioAccion = usuarioActualId;
+        IdUsuarioAccion = usuarioActual.Id;
         FechaAccion = HoraSistema.Ahora;
 
 
@@ -608,14 +614,21 @@ public class Solicitud : AuditableEntity<long>
     #endregion
 
     #region Anular
-    public void Anular(long usuarioAccionId)
+    public void Anular(
+        Usuario usuarioAccion,
+        long? areaUsuario,
+        IReadOnlyCollection<long>? areasAccesoEspecial)
     {
+        ValidarAccesoEspecialSoloLectura(usuarioAccion, areaUsuario, areasAccesoEspecial);
+        if (IdUsuarioSolicitante != usuarioAccion.Id)
+            throw new DomainException(SolicitudErrors.PermisoAnularSolicitud);
+
         if (EstadoSolicitud == ValueObject.EstadoSolicitud.Anulado)
             throw new DomainException(SolicitudErrors.SolicitudYaAnulada);
 
         CambiarEstado(ValueObject.EstadoSolicitud.Anulado);
         FechaAccion = HoraSistema.Ahora;
-        IdUsuarioAccion = usuarioAccionId;
+        IdUsuarioAccion = usuarioAccion.Id;
 
         foreach (var documento in _documentos.Where(x => x.Estado))
         {
@@ -652,7 +665,7 @@ public class Solicitud : AuditableEntity<long>
             SolicitudPlantilla.Inactivar();
         }
 
-        AddDomainEvent(new SolicitudEventoRegistradoDomainEvent(this.Id, ValueObjects.TipoEvento.RequestCancelled.Codigo, usuarioAccionId, null, null, null, null));
+        AddDomainEvent(new SolicitudEventoRegistradoDomainEvent(this.Id, ValueObjects.TipoEvento.RequestCancelled.Codigo, usuarioAccion.Id, null, null, null, null));
     }
     #endregion
 
@@ -746,7 +759,41 @@ public class Solicitud : AuditableEntity<long>
            ];
     }
 
-    public void EsPropietarioOAdministradorDeLaSolicitud(Usuario usuario)
+    public void ValidarPermisoEscritura(
+        Usuario usuario,
+        long? areaUsuario,
+        IReadOnlyCollection<long>? areasAccesoEspecial)
+    {
+        ValidarAccesoEspecialSoloLectura(usuario, areaUsuario, areasAccesoEspecial);
+        EsPropietarioOAdministradorDeLaSolicitud(usuario);
+    }
+
+    public void ValidarPermisoReuso(
+        Usuario usuario,
+        long? areaUsuario,
+        IReadOnlyCollection<long>? areasAccesoEspecial)
+    {
+        ValidarAccesoEspecialSoloLectura(usuario, areaUsuario, areasAccesoEspecial);
+    }
+
+    private void ValidarAccesoEspecialSoloLectura(
+        Usuario usuario,
+        long? areaUsuario,
+        IReadOnlyCollection<long>? areasAccesoEspecial)
+    {
+        if (usuario.EsAdministrador() || IdUsuarioSolicitante == usuario.Id)
+            return;
+
+        var solicitudEnAreaEspecial = areasAccesoEspecial?.Contains(IdAreaSolicitud) == true
+            || areasAccesoEspecial?.Contains(IdAreaPadreSolicitud) == true;
+        var accesoNormalDeCoordinador = usuario.EsCoordinador()
+            && areaUsuario == IdAreaSolicitud;
+
+        if (solicitudEnAreaEspecial && !accesoNormalDeCoordinador)
+            throw new DomainException(SolicitudErrors.PermisoEscrituraAccesoEspecial);
+    }
+
+    private void EsPropietarioOAdministradorDeLaSolicitud(Usuario usuario)
     {
         if (usuario.EsSolicitante() && IdUsuarioSolicitante != usuario.Id)
             throw new DomainException(SolicitudErrors.PermisoEditarSolicitud);
@@ -1212,16 +1259,18 @@ public class Solicitud : AuditableEntity<long>
     /// reenvío de un borrador devuelto desde "En curso"
     /// </summary>
     public void EditarBorradorDevueltoYEnviar(
-       SolicitudEditModel solicitudRequest,
-       Func<long> generarIdDocumento,
-       Func<long> generarIdSustento,
-       Func<long> generarIdCodigoReferencia,
-       Func<long> generarIdCorreo,
-       long usuarioActualId,
-       string? correoSolicitante)
+        SolicitudEditModel solicitudRequest,
+        Func<long> generarIdDocumento,
+        Func<long> generarIdSustento,
+        Func<long> generarIdCodigoReferencia,
+        Func<long> generarIdCorreo,
+        Usuario usuarioActual,
+        long? areaUsuario,
+        IReadOnlyCollection<long>? areasAccesoEspecial,
+        string? correoSolicitante)
     {
         EditarSolicitudBorradorYEnviar(solicitudRequest, generarIdDocumento, generarIdSustento,
-            generarIdCodigoReferencia, generarIdCorreo, usuarioActualId, correoSolicitante);
+            generarIdCodigoReferencia, generarIdCorreo, usuarioActual, areaUsuario, areasAccesoEspecial, correoSolicitante);
 
         foreach (var documento in _documentos)
             documento.RechazarFirmas();

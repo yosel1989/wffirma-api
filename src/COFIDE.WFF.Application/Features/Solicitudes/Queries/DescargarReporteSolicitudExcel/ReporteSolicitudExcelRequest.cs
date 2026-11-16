@@ -8,6 +8,7 @@ public class ReporteSolicitudExcelRequest
     public long? AreaUsuario { get; set; }
     public string? RoLUsuario { get; set; }
     public long? DepartamentoUsuario { get; set; }
+    public List<long>? IdsAreasAccesoEspecial { get; set; }
     public string? Fechainicio { get; set; }
     public string? Fechafin { get; set; }
     public List<long>? Gerencia { get; set; }
