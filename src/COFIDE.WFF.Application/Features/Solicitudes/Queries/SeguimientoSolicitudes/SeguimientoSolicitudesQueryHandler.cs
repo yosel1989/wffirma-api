@@ -3,6 +3,7 @@ using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Domain.Common.Enums;
 using COFIDE.WFF.Domain.DomainServices;
 using MediatR;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
@@ -31,8 +32,7 @@ public sealed class SeguimientoSolicitudesQueryHandler(
         var idUsuario = _currentUser.UserIdLocal;
         var areaUsuario = _currentUser.UserAreaId;
         var rolUsuario = _currentUser.CodigoRolUsuario;
-        var areasAccesoEspecial = string.Equals(
-            rolUsuario?.Trim(), "COORD", StringComparison.OrdinalIgnoreCase)
+        var areasAccesoEspecial = RolUsuarioCodigo.Desde(rolUsuario) == RolUsuario.Coordinador
             ? await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario.Value)
             : null;
         var idDepartamento = _currentUser.UserAreaId;
