@@ -1,4 +1,7 @@
+using System.Reflection;
+using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.DomainServices;
+using COFIDE.WFF.Infrastructure.Adapters.Repositories;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using COFIDE.WFF.Infrastructure.Security;
 using FluentAssertions;
@@ -9,6 +12,27 @@ namespace COFIDE.WFF.Infrastructure.Tests.Tests.Adapters.Repositories;
 
 public class ReglaConsultaSolicitudSqlTest
 {
+    [Fact]
+    public void Seguimiento_Coordinador_Debe_Traducir_Acceso_Especial_Y_Participacion_Al_Sql()
+    {
+        var opciones = new DbContextOptionsBuilder<WorkflowFirmaDbContext>()
+            .UseOracle("Data Source=sin-conexion")
+            .Options;
+        using var contexto = new WorkflowFirmaDbContext(opciones, new CurrentUserService(new HttpContextAccessor()));
+
+        var paginado = AplicarFiltrosSeguimiento(contexto, [5, 50], incluirParticipacionUsuario: true)
+            .Select(s => s.Id)
+            .ToQueryString();
+        var reporte = AplicarFiltrosSeguimiento(contexto, null, incluirParticipacionUsuario: false)
+            .Select(s => s.Id)
+            .ToQueryString();
+
+        paginado.Should().Contain("ID_AREA").And.Contain("ID_AREA_PADRE")
+            .And.Contain("ID_USUARIO_ASIGNADO").And.Contain(" OR ");
+        reporte.Should().NotContain("ID_AREA_PADRE");
+        reporte.Should().NotContain("ID_USUARIO_ASIGNADO");
+    }
+
     [Theory]
     [InlineData("COORD", false)]
     [InlineData("COORD", true)]
@@ -59,5 +83,40 @@ public class ReglaConsultaSolicitudSqlTest
             pagina.Should().Contain("WHERE");
             resumen.Should().Contain("WHERE");
         }
+    }
+
+    private static IQueryable<Solicitud> AplicarFiltrosSeguimiento(
+        WorkflowFirmaDbContext contexto,
+        List<long>? areasAccesoEspecial,
+        bool incluirParticipacionUsuario)
+    {
+        var metodo = typeof(SolicitudSeguimientoRepository).GetMethod(
+            "AplicarFiltrosPrincipalesSeguimiento",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        metodo.Should().NotBeNull();
+
+        return (IQueryable<Solicitud>)metodo!.Invoke(null,
+        [
+            contexto.Set<Solicitud>().AsNoTracking(),
+            20L,
+            90L,
+            "COORD",
+            areasAccesoEspecial,
+            incluirParticipacionUsuario,
+            90L,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        ])!;
     }
 }

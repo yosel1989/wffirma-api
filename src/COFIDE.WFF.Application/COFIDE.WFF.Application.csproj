@@ -47,4 +47,8 @@
     <ProjectReference Include="..\COFIDE.WFF.Domain\COFIDE.WFF.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\Usuarios\Commands\ActualizarPreferenciaSonido\" />
+  </ItemGroup>
+
 </Project>

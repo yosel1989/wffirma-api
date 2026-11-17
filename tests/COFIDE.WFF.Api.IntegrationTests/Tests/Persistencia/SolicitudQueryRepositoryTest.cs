@@ -67,6 +67,15 @@ public class SolicitudQueryRepositoryTest(WorkflowApiFactory api)
     }
 
     [FactConBaseDeDatos]
+    public async Task Conteo_No_Vistas_Debe_Ejecutarse_Y_Ser_Cero_Para_Un_Usuario_Inexistente()
+    {
+        await using var scope = api.CrearScope();
+        var consultas = scope.ServiceProvider.GetRequiredService<ISolicitudQueryRepository>();
+
+        (await consultas.ContarSolicitudesPorAprobarNoVistas(UsuarioInexistente, CancellationToken.None)).Should().Be(0);
+    }
+
+    [FactConBaseDeDatos]
     public async Task Panel_De_Control_Debe_Ejecutarse()
     {
         await using var scope = api.CrearScope();
