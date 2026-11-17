@@ -13,6 +13,7 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
     public long IdPlantillaEtapa { get; private set; }
     public bool RevAprobado { get; private set; }
     public DateTime? FechaRevision { get; private set; }
+    public DateTime? FechaVistaSolicitud { get; private set; }
     #endregion
 
     private readonly List<HistorialRevision> _historialRevision = [];
@@ -124,10 +125,17 @@ public class SolicitudFirmanteFlujo : AuditableEntity<long>
         IdUsuarioAsignado = request.IdUsuarioAsignado;
     }
 
+    public DateTime RegistrarVistaSolicitud()
+    {
+        FechaVistaSolicitud ??= HoraSistema.Ahora;
+        return FechaVistaSolicitud.Value;
+    }
+
     public void ResetearPorRechazo()
     {
         RevAprobado = false;
         FechaRevision = null;
+        FechaVistaSolicitud = null;
     }
 
     public void RestaurarAprobacion(DateTime? fechaRevision)

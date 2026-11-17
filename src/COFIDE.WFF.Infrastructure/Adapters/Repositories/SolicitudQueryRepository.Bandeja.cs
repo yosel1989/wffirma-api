@@ -463,4 +463,68 @@ public partial class SolicitudQueryRepository
 
         return pagedItems;
     }
+
+    /// <summary>
+    /// Cuenta las solicitudes en curso que siguen en turno del usuario y cuya fila de firmante no registra vista.
+    /// </summary>
+    /// <param name="idUsuario">Identificador del usuario asignado.</param>
+    /// <param name="cancellationToken">Token para cancelar la consulta.</param>
+    /// <returns>Cantidad de solicitudes distintas que cumplen las condiciones.</returns>
+    public Task<int> ContarSolicitudesPorAprobarNoVistas(long idUsuario, CancellationToken cancellationToken)
+        => FirmantesEnTurno()
+            .Where(sf =>
+                sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id == idUsuario &&
+                sf.FechaVistaSolicitud == null)
+            .Select(sf => sf.SolicitudPlantilla.Solicitud.Id)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+    /// <summary>
+    /// Obtiene los destinatarios de una solicitud que actualmente tienen un turno pendiente de aprobación.
+    /// </summary>
+    /// <param name="idSolicitud">Identificador de la solicitud.</param>
+    /// <param name="cancellationToken">Token para cancelar la consulta.</param>
+    /// <returns>Cuentas de logueo distintas y no vacías de los usuarios asignados en turno.</returns>
+    public async Task<IReadOnlyList<string>> ObtenerCodigosUsuarioEnTurnoAsync(long idSolicitud, CancellationToken cancellationToken)
+        => await FirmantesEnTurno()
+            .Where(sf =>
+                sf.SolicitudPlantilla.Solicitud.Id == idSolicitud &&
+                sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo != null &&
+                sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo != "")
+            .Select(sf => sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo!)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+    /// <summary>
+    /// Filas de firmante activas de solicitudes en curso cuya etapa es la pendiente mas baja (turno actual),
+    /// con el usuario asignado activo y sin aprobar ni revisar.
+    /// </summary>
+    private IQueryable<SolicitudFirmanteFlujo> FirmantesEnTurno()
+    {
+        var estadoEnCurso = VO.EstadoSolicitud.EnCurso.Codigo;
+        var flujos = _context.Set<SolicitudFirmanteFlujo>().AsNoTracking();
+
+        var etapasPendientesMinimas = flujos
+            .Where(sf => sf.Estado && sf.FirmanteFlujo.Estado &&
+                !sf.RevAprobado &&
+                sf.FechaRevision == null)
+            .GroupBy(sf => sf.SolicitudPlantilla.Solicitud.Id)
+            .Select(g => new
+            {
+                IdSolicitud = g.Key,
+                OrdenEtapaMinima = g.Min(x => x.FirmanteFlujo.PlantillaEtapa.OrdenEtapa)
+            });
+
+        return flujos
+            .Where(sf =>
+                sf.Estado &&
+                sf.FirmanteFlujo.Estado &&
+                sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Estado &&
+                sf.SolicitudPlantilla.Solicitud.IdEstadoSolicitud == estadoEnCurso &&
+                !sf.RevAprobado &&
+                sf.FechaRevision == null &&
+                etapasPendientesMinimas.Any(e =>
+                    e.IdSolicitud == sf.SolicitudPlantilla.Solicitud.Id &&
+                    e.OrdenEtapaMinima == sf.FirmanteFlujo.PlantillaEtapa.OrdenEtapa));
+    }
 }

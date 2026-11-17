@@ -25,4 +25,8 @@
     <ProjectReference Include="..\COFIDE.WFF.Infrastructure\COFIDE.WFF.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Request\Usuarios\" />
+  </ItemGroup>
+
 </Project>
