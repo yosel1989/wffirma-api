@@ -1,5 +1,6 @@
 using AutoMapper;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.CambiarEstadoPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
@@ -28,7 +29,8 @@ public class CambiarEstadoPlantillaCommandHandlerTest
         var handler = new CambiarEstadoPlantillaCommandHandler(
             new Mock<IMapper>().Object,
             currentUser.Object,
-            repository.Object);
+            repository.Object,
+            new Mock<IAccesoEspecialRepository>().Object);
 
         var estadoDesactivado = await handler.Handle(
             new CambiarEstadoPlantillaCommand(1, false),

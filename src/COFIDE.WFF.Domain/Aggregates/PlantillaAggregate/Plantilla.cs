@@ -248,11 +248,19 @@ public class Plantilla : AuditableEntity<long>
         EsNuevo = true;
     }
 
-    public void PermitirActualizarPlantilla(long usuarioId, string gerenciaUsuario, Usuario usuario)
+    public void PermitirActualizarPlantilla(
+        long usuarioId,
+        long? idAreaUsuario,
+        long? idAreaPadreUsuario,
+        Usuario usuario)
     {
         if (usuario.EsCoordinador())
         {   
-            if ((Visibilidad.HasValue && Visibilidad.Value) && GerenciaUsuario != gerenciaUsuario)
+            if ((Visibilidad.HasValue && Visibilidad.Value) &&
+                (!idAreaUsuario.HasValue ||
+                 !idAreaPadreUsuario.HasValue ||
+                 IdAreaPlantilla != idAreaUsuario ||
+                 IdAreaPadrePlantilla != idAreaPadreUsuario))
             {
                 throw new DomainException(PlantillaErrors.PermisoCoordinadorPlantillaArea);
             }
