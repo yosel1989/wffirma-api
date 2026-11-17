@@ -1,5 +1,6 @@
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicitudes;
 using COFIDE.WFF.Application.Tests.Support;
@@ -52,10 +53,17 @@ public class SeguimientoSolicitudesQueryHandlerTest
     public async Task Handle_Debe_Responder_Segun_El_Caso(SeguimientoCase caso)
     {
         var repositorio = new Mock<ISolicitudSeguimientoRepository>(MockBehavior.Strict);
+        var repositorioAccesos = new Mock<IAccesoEspecialRepository>(MockBehavior.Strict);
         if (caso.Repositorio is not null)
+        {
             ConfigurarRepositorio(repositorio, caso);
+            if (string.Equals(caso.Usuario.CodigoRolUsuario?.Trim(), "COORD", StringComparison.OrdinalIgnoreCase))
+                repositorioAccesos.Setup(r => r.GetAreasByUserIdAsync(caso.Usuario.UserIdLocal!.Value))
+                    .ReturnsAsync([]);
+        }
 
-        var act = () => new SeguimientoSolicitudesQueryHandler(Usuario(caso.Usuario), repositorio.Object)
+        var act = () => new SeguimientoSolicitudesQueryHandler(
+                Usuario(caso.Usuario), repositorioAccesos.Object, repositorio.Object)
             .Handle(Consulta(caso), CancellationToken.None);
 
         if (caso.Esperado.CodigoError is not null)
@@ -63,6 +71,7 @@ public class SeguimientoSolicitudesQueryHandlerTest
             var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();
             ex.Which.Error.Code.Should().Be(caso.Esperado.CodigoError);
             repositorio.VerifyNoOtherCalls();
+            repositorioAccesos.VerifyNoOtherCalls();
             return;
         }
 
@@ -90,6 +99,8 @@ public class SeguimientoSolicitudesQueryHandlerTest
             caso.Usuario.UserIdLocal,
             caso.Usuario.UserAreaId,
             caso.Usuario.CodigoRolUsuario,
+            null,
+            true,
             caso.Usuario.UserAreaId,
             filtros.Fechainicio, filtros.Fechafin,
             filtros.Gerencia, filtros.Departamento, filtros.Solicitante,
@@ -97,6 +108,105 @@ public class SeguimientoSolicitudesQueryHandlerTest
             filtros.Asunto, filtros.Referencia, filtros.Estado, filtros.Firmante, filtros.Codigosolicitud,
             filtros.Encurso, filtros.Aprobada, filtros.Rechazada, filtros.IncluirResumen,
             It.IsAny<CancellationToken>()), Times.Once);
+        repositorioAccesos.Verify(r => r.GetAreasByUserIdAsync(It.IsAny<long>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_Coordinador_Debe_Pasar_Sus_AreasDeAccesoEspecial_Al_Repositorio()
+    {
+        var areasAccesoEspecial = new List<long> { 5, 50 };
+        var currentUser = Usuario(new SeguimientoUsuarioData(20, 7, 90, "COORD"));
+        var repositorioAccesos = new Mock<IAccesoEspecialRepository>(MockBehavior.Strict);
+        repositorioAccesos.Setup(r => r.GetAreasByUserIdAsync(20))
+            .ReturnsAsync(areasAccesoEspecial);
+
+        var resultadoVacio = new PagedResult<SeguimientoSolicitudesDto, SeguimientoSolicitudesResumenDto>(
+            [], 0, 1, 10)
+        {
+            ExtraData = new SeguimientoSolicitudesResumenDto()
+        };
+        var repositorio = new Mock<ISolicitudSeguimientoRepository>(MockBehavior.Strict);
+        repositorio.Setup(r => r.ObtenerPaginadoSeguimiento(
+                It.IsAny<PagedQueryParams>(),
+                It.IsAny<long?>(), It.IsAny<long?>(), It.IsAny<string?>(),
+                It.IsAny<List<long>?>(), It.IsAny<bool>(), It.IsAny<long?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+                It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<string?>(),
+                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(resultadoVacio);
+
+        var query = new SeguimientoSolicitudesQuery(
+            null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null);
+        var handler = new SeguimientoSolicitudesQueryHandler(
+            currentUser, repositorioAccesos.Object, repositorio.Object);
+
+        await handler.Handle(query, CancellationToken.None);
+
+        repositorioAccesos.Verify(r => r.GetAreasByUserIdAsync(20), Times.Once);
+        repositorio.Verify(r => r.ObtenerPaginadoSeguimiento(
+            It.IsAny<PagedQueryParams>(), 20, 90, "COORD",
+            It.Is<List<long>?>(areas => areas != null && areas.SequenceEqual(areasAccesoEspecial)),
+            true, 90,
+            It.IsAny<string?>(), It.IsAny<string?>(),
+            It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+            It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+            It.IsAny<string?>(), It.IsAny<string?>(),
+            It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<string?>(),
+            It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_TamanoPagina_Debe_Limitarse_A_50()
+    {
+        var repositorio = new Mock<ISolicitudSeguimientoRepository>(MockBehavior.Strict);
+        var resultado = new PagedResult<SeguimientoSolicitudesDto, SeguimientoSolicitudesResumenDto>(
+            [], 0, 1, 50)
+        {
+            ExtraData = new SeguimientoSolicitudesResumenDto()
+        };
+        repositorio.Setup(r => r.ObtenerPaginadoSeguimiento(
+                It.Is<PagedQueryParams>(p => p.PageSize == 50 && p.PageNumber == 1),
+                It.IsAny<long?>(), It.IsAny<long?>(), It.IsAny<string?>(),
+                It.IsAny<List<long>?>(), It.IsAny<bool>(), It.IsAny<long?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+                It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+                It.IsAny<string?>(), It.IsAny<string?>(),
+                It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<string?>(),
+                It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(resultado);
+        var usuario = Usuario(new SeguimientoUsuarioData(20, 7, 90, "SOLAPR"));
+        var accesos = new Mock<IAccesoEspecialRepository>(MockBehavior.Strict);
+        var query = new SeguimientoSolicitudesQuery(
+            null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null)
+        {
+            PageSize = 120
+        };
+        var handler = new SeguimientoSolicitudesQueryHandler(usuario, accesos.Object, repositorio.Object);
+
+        var respuesta = await handler.Handle(query, CancellationToken.None);
+
+        respuesta.PageSize.Should().Be(50);
+        repositorio.Verify(r => r.ObtenerPaginadoSeguimiento(
+            It.Is<PagedQueryParams>(p => p.PageSize == 50 && p.PageNumber == 1),
+            It.IsAny<long?>(), It.IsAny<long?>(), It.IsAny<string?>(),
+            It.IsAny<List<long>?>(), It.IsAny<bool>(), It.IsAny<long?>(),
+            It.IsAny<string?>(), It.IsAny<string?>(),
+            It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+            It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
+            It.IsAny<string?>(), It.IsAny<string?>(),
+            It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<string?>(),
+            It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        accesos.VerifyNoOtherCalls();
     }
 
     private static void ConfigurarRepositorio(Mock<ISolicitudSeguimientoRepository> repositorio, SeguimientoCase caso)
@@ -124,7 +234,7 @@ public class SeguimientoSolicitudesQueryHandlerTest
 
         repositorio.Setup(r => r.ObtenerPaginadoSeguimiento(
                 It.IsAny<PagedQueryParams>(),
-                It.IsAny<long?>(), It.IsAny<long?>(), It.IsAny<string?>(), It.IsAny<long?>(),
+                It.IsAny<long?>(), It.IsAny<long?>(), It.IsAny<string?>(), It.IsAny<List<long>?>(), It.IsAny<bool>(), It.IsAny<long?>(),
                 It.IsAny<string?>(), It.IsAny<string?>(),
                 It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
                 It.IsAny<List<long>?>(), It.IsAny<List<long>?>(), It.IsAny<List<long>?>(),
