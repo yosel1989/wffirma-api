@@ -29,6 +29,12 @@ public class PlantillaRepository(
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Plantilla?> ObtenerParaActivacionAsync(long id, CancellationToken cancellationToken)
+    {
+        return await _context.Plantillas
+            .FirstOrDefaultAsync(plantilla => plantilla.Id == id, cancellationToken);
+    }
+
     public async Task<long> ObtenerSiguienteIdAsync(CancellationToken cancellationToken)
     {
         var maxId = await _context.Plantillas

@@ -7,6 +7,7 @@ using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.RegistrarPlantilla;
+using COFIDE.WFF.Application.Features.Plantillas.Commands.CambiarEstadoPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Models;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.GestionPlantillas;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPlantillaPaginado;
@@ -64,6 +65,30 @@ public class PlantillaController : BaseApiController
         var response = ResponseDto<long>.Ok(
             result,
             "Operacion exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Activa o desactiva una plantilla.
+    /// </summary>
+    [HttpPut("{idPlantilla:long}/activaciones")]
+    [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResponseDto<bool>>> CambiarActivacionPlantilla(
+        [FromRoute] long idPlantilla,
+        [FromBody] CambiarEstadoPlantillaRequest request,
+        CancellationToken cancellationToken)
+    {
+        var activo = await _mediator.Send(
+            new CambiarEstadoPlantillaCommand(idPlantilla, request.Activo),
+            cancellationToken);
+
+        var response = ResponseDto<bool>.Ok(
+            activo,
+            "Operación exitosa",
             HttpContext.TraceIdentifier);
 
         return Ok(response);

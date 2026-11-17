@@ -3,6 +3,7 @@ namespace COFIDE.WFF.Application.Features.Plantillas.Queries.GestionPlantillas;
 public class GestionPlantillasDto
 {
     public long IdPlantilla { get; set; }
+    public bool Activo { get; set; }
     public string? NombrePlantilla { get; set; }
     public string? Creador { get; set; }
     public DateTime FechaCreacion { get; set; }

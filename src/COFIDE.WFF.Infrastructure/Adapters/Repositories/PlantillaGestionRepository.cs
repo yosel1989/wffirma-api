@@ -31,7 +31,7 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
         CancellationToken cancellationToken)
     {
         var query = _context.Plantillas.AsNoTracking()
-            .Where(p => p.Estado && p.EsReutilizable == true);
+            .Where(p => p.EsReutilizable == true);
 
         query = AplicarAlcancePorRol(query, codigoUsuario, departamentoUsuario, gerenciaUsuario, rolUsuario, areasAccesoEspecial);
         query = AplicarFiltros(
@@ -211,6 +211,7 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
         return query.Select(p => new GestionPlantillasDto
         {
             IdPlantilla = p.Id,
+            Activo = p.Estado,
             NombrePlantilla = p.NombrePlantilla != null ? p.NombrePlantilla.Valor : null,
             Creador = _context.Usuarios
                 .Where(u => p.IdUsuarioPropietario.HasValue && u.Id == p.IdUsuarioPropietario.Value)
