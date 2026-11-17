@@ -50,7 +50,13 @@ public class SolicitudRepository(
     }
     #endregion
 
-
+    public Task<List<SolicitudFirmanteFlujo>> ObtenerFirmantesParaVisualizacionAsync(long idSolicitud, long idUsuario, CancellationToken cancellationToken)
+    {
+        return _context.SolicitudFirmanteFlujos.AsTracking()
+            .Where(f => f.Estado && f.SolicitudPlantilla.Estado && f.FirmanteFlujo.Estado &&
+                f.SolicitudPlantilla.IdSolicitud == idSolicitud && f.FirmanteFlujo.IdUsuarioAsignado == idUsuario)
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<Solicitud?> ObtenerSolicitudParaRevision(long id, CancellationToken cancellationToken, bool tracking = false)
     {
