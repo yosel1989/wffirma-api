@@ -958,13 +958,14 @@ public class Solicitud : AuditableEntity<long>
     private List<string> RestaurarEnCursoOAprobada(SolicitudFirmanteFlujo punto, Func<long> generarId)
     {
         var archivos = new List<string>();
+        var fechaPunto = punto.ObtenerFechaRevisionEfectiva()!.Value;
 
         foreach (var firmante in OrdenarPorFechaDesc(FirmantesActivos().Where(f => ParticipaEnRestauracion(f, punto))))
         {
             if (FirmoYAprobo(firmante))
                 archivos.AddRange(RenovarDetalles(firmante, generarId));
 
-            ReiniciarFirmante(firmante, punto);
+            ReiniciarFirmante(firmante, fechaPunto);
         }
 
         return archivos;
@@ -1004,12 +1005,12 @@ public class Solicitud : AuditableEntity<long>
 
         return firmante.Id == punto.Id
             || firmante.RevAprobado
+            || firmante.FechaVistaSolicitud.HasValue
             || firmante.HistRevision.Any(h => h.Estado && h.FechaRevision.HasValue);
     }
 
-    private static void ReiniciarFirmante(SolicitudFirmanteFlujo firmante, SolicitudFirmanteFlujo punto)
+    private static void ReiniciarFirmante(SolicitudFirmanteFlujo firmante, DateTime fechaPunto)
     {
-        var fechaPunto = punto.ObtenerFechaRevisionEfectiva()!.Value;
         firmante.ResetearPorRechazo();
         firmante.InactivarHistorialRevisionPosterior(fechaPunto, incluirPuntoSeleccionado: true);
     }

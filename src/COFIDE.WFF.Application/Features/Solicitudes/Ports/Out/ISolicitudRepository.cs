@@ -15,6 +15,8 @@ public interface ISolicitudRepository : IGenericRepository<Solicitud, long>
     Task<Solicitud?> ObtenerSolicitudConDocumentosYSustentosPorIdAsync(long id, List<long>? idsDocumentos, List<long>? idsSustentos, CancellationToken cancellationToken, bool tracking = false);
     void GuardarFlujoSolicitudAsync(Solicitud solicitud);
 
+    /// <summary>Obtiene con tracking las filas activas de la solicitud asignadas al usuario, sin filtrar por turno ni aprobacion.</summary>
+    Task<List<SolicitudFirmanteFlujo>> ObtenerFirmantesParaVisualizacionAsync(long idSolicitud, long idUsuario, CancellationToken cancellationToken);
 
     #region SOLICITUD SUSTENTO
 
