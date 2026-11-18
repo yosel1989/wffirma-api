@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using COFIDE.WFF.Application.Common.Constants;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Features.Solicitudes.Services;
 namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitudZip;
@@ -16,7 +17,12 @@ public class DescargarTodoSolicitudZipQueryHandler(
         DescargarTodoSolicitudZipQuery request,
         CancellationToken cancellationToken)
     {
-        await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(request.Id, cancellationToken);
+        if (string.Equals(request.Origen, OrigenSolicitud.MisSolicitudes, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(request.Origen, OrigenSolicitud.SeguimientoSolicitudes, StringComparison.OrdinalIgnoreCase))
+        {
+            await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(
+                request.Id, cancellationToken);
+        }
 
         var result = await _solicitudDescargaZipService.DescargarTodoZipAsync(
             request.Id,
