@@ -3,14 +3,11 @@ using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate.Events;
 using MediatR;
-using ValueObject = COFIDE.WFF.Domain.ValueObjects;
 namespace COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 
 /// <summary>
-/// Avisa en tiempo real a cada firmante en turno que la solicitud llego a su bandeja, reutilizando el envio
-/// existente del NotificacionesHub (firma-documento). El tipo de aviso se identifica por el campo "mensaje"
-/// (<see cref="CodigosNotificacionTiempoReal.SolicitudPorAprobar"/>), sin documento asociado (id 0).
-/// Es adicional al correo; el adaptador del hub no propaga errores para no afectar la aprobacion ni el correo.
+/// Avisa en tiempo real a cada firmante en turno que la solicitud llegó a su bandeja.
+/// El aviso de solicitud pendiente de firma es adicional al correo y no está asociado a un documento.
 /// </summary>
 public class NotificarSolicitudPorAprobarHubEventHandler(
         ISolicitudQueryRepository solicitudQueryRepository,
@@ -18,12 +15,10 @@ public class NotificarSolicitudPorAprobarHubEventHandler(
     ) : INotificationHandler<DomainEventNotification<SolicitudPorAprobarFirmantesDomainEvent>>
 {
     private readonly ISolicitudQueryRepository _solicitudQueryRepository = solicitudQueryRepository;
-    private const long SinDocumento = 0;
-
     private readonly INotificacionTiempoRealPort _notificacionTiempoRealPort = notificacionTiempoRealPort;
 
     /// <summary>
-    /// Envía el aviso por el mecanismo existente del hub a cada firmante que está en turno.
+    /// Envía el aviso de solicitud pendiente de firma a cada firmante que está en turno.
     /// </summary>
     /// <param name="notification">Evento de solicitud por aprobar publicado después del commit.</param>
     /// <param name="cancellationToken">Token para cancelar las consultas y los envíos.</param>
@@ -32,16 +27,14 @@ public class NotificarSolicitudPorAprobarHubEventHandler(
     {
         var idSolicitud = notification.DomainEvent.IdSolicitud;
 
-        var codigosUsuario = await _solicitudQueryRepository.ObtenerCodigosUsuarioEnTurnoAsync(idSolicitud, cancellationToken);
+        var destinatarios = await _solicitudQueryRepository.ObtenerDestinatariosSolicitudPendienteFirmaAsync(idSolicitud, cancellationToken);
 
-        foreach (var codigoUsuario in codigosUsuario)
+        foreach (var destinatario in destinatarios)
         {
-            await _notificacionTiempoRealPort.NotificarFirmaDocumentoAsync(
+            await _notificacionTiempoRealPort.NotificarSolicitudPendienteFirma(
                 idSolicitud,
-                SinDocumento,
-                ValueObject.EstadoSolicitud.EnCurso.Codigo.ToString(),
-                firmado: false,
-                codigoUsuario,
+                destinatario.TotalSolicitudesPendientesFirma,
+                destinatario.CodigoUsuario,
                 CodigosNotificacionTiempoReal.SolicitudPorAprobar,
                 cancellationToken);
         }

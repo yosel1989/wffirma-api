@@ -1,0 +1,30 @@
+%% Diagrama local. Actualizar junto con cambios al pipeline HTTP, MediatR o transacciones.
+flowchart TD
+	A[HTTP request] --> B[CorrelationMiddleware: header o TraceIdentifier]
+	B --> C[ExceptionHandlingMiddleware]
+	C --> D[Autenticacion, autorizacion, routing]
+	D --> E[Controller]
+	E -->	F[Enviar Command o Query a MediatR]
+	F --> G[ValidationBehavior]
+	G --> H[AuditingBehavior]
+	H --> I[AuthenticatedUserBehavior]
+	I --> J[TransactionBehavior]
+	J --> P{El tipo termina en Command?}
+	P -->|No: query| K[Handler sin transacción]
+	P -->|Sí| R[Iniciar transacción]
+	R --> L[Handler de command]
+	K --> M[Application port]
+	L --> M
+	M --> N[Infrastructure adapter o repository]
+	N --> O[WorkflowFirmaDbContext / Oracle]
+	O --> T[Resultado del handler]
+	T -->|Query| Q[HTTP response]
+	T -->|Command| S[Dispatch de eventos pre-commit]
+	S --> X[Commit y confirmar archivos]
+	X --> W[Publicar eventos post-commit]
+	W --> Q
+	R -. excepcion .-> Y[Rollback y descartar archivos]
+	L -. excepcion .-> Y
+	Y --> U[ResponseDto y estado HTTP]
+	C -. excepcion .-> U
+	U --> Z[HTTP error response]
