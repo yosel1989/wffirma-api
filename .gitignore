@@ -141,6 +141,7 @@ tests/COFIDE.WFF.Api.IntegrationTests/Resources/Configuracion/conexiones.json
 #####################
 # Others
 #####################
+/docs/
 *.DS_Store
 Thumbs.db
 desktop.ini
