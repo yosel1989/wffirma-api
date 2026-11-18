@@ -20,10 +20,15 @@ public class PlantillaRepository(
     /// </summary>
     public override async Task<Plantilla?> GetByIdAsync(long id, bool tracking = false)
     {
+        var estadosExcluidos = new List<EstadoPlantilla>
+        {
+            EstadoPlantilla.Eliminada,
+            EstadoPlantilla.Inactiva,
+        };
+
         IQueryable<Plantilla> query = _context.Plantillas
             .Where(plantilla => plantilla.Id == id &&
-                plantilla.EstadoPlantilla != EstadoPlantilla.Eliminada);
-
+                !estadosExcluidos.Contains(plantilla.EstadoPlantilla));
         if (!tracking)
             query = query.AsNoTracking();
 
@@ -209,12 +214,18 @@ public class PlantillaRepository(
 
     public async Task<Plantilla?> ValidarExistenciaNombrePlantilla(string nombrePlantilla, bool visibilidad, long usuarioId)
     {
+        var estadosExcluidos = new List<EstadoPlantilla>
+        {
+            EstadoPlantilla.Eliminada,
+            EstadoPlantilla.Inactiva,
+        };
+
         nombrePlantilla = nombrePlantilla.Trim().ToUpper();
 
         var plantilla = await _context.Plantillas
             .AsNoTracking()
             .Where(p =>
-                p.EstadoPlantilla != EstadoPlantilla.Eliminada &&
+                !estadosExcluidos.Contains(p.EstadoPlantilla) &&
                 p.NombrePlantilla!.Valor.ToUpper() == nombrePlantilla &&
                 p.Visibilidad == visibilidad &&
                 (
@@ -287,10 +298,16 @@ public class PlantillaRepository(
     public async Task<PagedResult<PlantillaPaginadoDto>> ObtenerPaginado(PlantillaPaginadoRequest requestPaginado)
     {
 
+        var estadosExcluidos = new List<EstadoPlantilla>
+        {
+            EstadoPlantilla.Eliminada,
+            EstadoPlantilla.Inactiva,
+        };
+
         var query = _context.Plantillas
             .AsNoTracking()
             .Where(p =>
-                p.EstadoPlantilla != EstadoPlantilla.Eliminada &&
+                !estadosExcluidos.Contains(p.EstadoPlantilla) &&
                 p.Visibilidad == requestPaginado.Visibilidad &&
                 p.EsReutilizable == true);
 
