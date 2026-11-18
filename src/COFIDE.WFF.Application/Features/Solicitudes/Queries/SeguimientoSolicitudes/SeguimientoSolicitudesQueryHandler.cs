@@ -1,7 +1,9 @@
 ﻿using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
+using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+using COFIDE.WFF.Domain.Common.Enums;
 using COFIDE.WFF.Domain.DomainServices;
 using MediatR;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
@@ -10,10 +12,14 @@ namespace COFIDE.WFF.Application.Features.Solicitudes.Queries.SeguimientoSolicit
 
 public sealed class SeguimientoSolicitudesQueryHandler(
     ICurrentUserService currentUser,
-        ISolicitudSeguimientoRepository solicitudQueryRepository
+    IAccesoEspecialRepository accesoEspecialRepository,
+    ISolicitudSeguimientoRepository solicitudQueryRepository
     ) : IRequestHandler<SeguimientoSolicitudesQuery, SeguimientoSolicitudesResponseDto>
 {
+    private const int MaxPageSize = 50;
+
     private readonly ICurrentUserService _currentUser = currentUser;
+    private readonly IAccesoEspecialRepository _accesoEspecialRepository = accesoEspecialRepository;
     private readonly ISolicitudSeguimientoRepository _solicitudQueryRepository = solicitudQueryRepository;
 
     public async Task<SeguimientoSolicitudesResponseDto> Handle(SeguimientoSolicitudesQuery request, CancellationToken cancellationToken)
@@ -26,20 +32,26 @@ public sealed class SeguimientoSolicitudesQueryHandler(
         var idUsuario = _currentUser.UserIdLocal;
         var areaUsuario = _currentUser.UserAreaId;
         var rolUsuario = _currentUser.CodigoRolUsuario;
+        var areasAccesoEspecial = RolUsuarioCodigo.Desde(rolUsuario) == RolUsuario.Coordinador
+            ? await _accesoEspecialRepository.GetAreasByUserIdAsync(idUsuario.Value)
+            : null;
         var idDepartamento = _currentUser.UserAreaId;
 
         var paginationParams = new PagedQueryParams
         {
             PageNumber = request.PageNumber,
-            PageSize = request.PageSize,
+            PageSize = Math.Min(request.PageSize, MaxPageSize),
             SearchTerm = request.SearchTerm
         };
+        paginationParams.Normalize();
 
         var pagedResult = await _solicitudQueryRepository.ObtenerPaginadoSeguimiento(
             paginationParams,
             idUsuario,
             areaUsuario,
             rolUsuario,
+            areasAccesoEspecial,
+            incluirParticipacionUsuario: true,
             idDepartamento,
             request.Fechainicio,
             request.Fechafin,

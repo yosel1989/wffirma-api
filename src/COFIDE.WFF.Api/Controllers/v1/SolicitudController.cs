@@ -5,10 +5,12 @@ using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Mappings;
 using COFIDE.WFF.Api.Request.Solicitudes;
+
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqueado;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.AnularSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Commands.RegistrarVistaSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarEnviarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.EditarSolicitud;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.CambiarEstadoSolicitud;
@@ -22,6 +24,7 @@ using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudSust
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitudZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DetectarConflictosCodigosReferencia;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.GenerarPdfSolicitud;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.ContarSolicitudesNoVistas;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerBandejaEntrada;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerPuntosRestauracion;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerDocumentoBloqueadoPaginado;
@@ -203,6 +206,19 @@ public class SolicitudController : BaseApiController
 
     #region REVISIONES
 
+    [HttpPut("{id}/visualizacion")]
+    [SwaggerOperation(
+        Summary = "Registrar la primera visualizacion de la solicitud por el firmante asignado",
+        Description = "Llamar despues de mostrar el detalle completo. Solo actualiza las filas del usuario autenticado, sin exigir turno ni estado pendiente. Conserva la primera fecha y no modifica las notificaciones.",
+        OperationId = "RegistrarVistaSolicitud")]
+    [ProducesResponseType(typeof(ResponseDto<DateTime>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ResponseDto<DateTime>>> RegistrarVistaSolicitud(long id, CancellationToken cancellationToken)
+    {
+        var fecha = await _mediator.Send(new RegistrarVistaSolicitudCommand(id), cancellationToken);
+        return Ok(ResponseDto<DateTime>.Ok(fecha, ResponseCodes.OperacionExitosa, HttpContext.TraceIdentifier));
+    }
+
     [HttpPut("{id}/aprobaciones")]
     [SwaggerOperation(
         Summary = DescriptionSwagger.SolicitudController.AprobarSolicitud.Summary,
@@ -318,10 +334,17 @@ public class SolicitudController : BaseApiController
     #endregion
 
     [HttpGet("{id}")]
+    [SwaggerOperation(
+        Summary = "Obtener el detalle de una solicitud",
+        Description = "Origen es opcional. Solo mis_solicitudes y seguimiento_solicitudes aplican la autorizacion de consulta por rol, area y accesos especiales. Sin origen o con otro valor se omite esa validacion. La autenticacion y la autorizacion de reuso se mantienen.")]
     [ProducesResponseType(typeof(ResponseDto<SolicitudDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<SolicitudDto>>> GetSolicitud(long id, [FromQuery] bool esReuso = false, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<ResponseDto<SolicitudDto>>> GetSolicitud(
+        long id,
+        [FromQuery] bool esReuso = false,
+        [FromQuery] string? origen = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ObtenerSolicitudQuery(id, esReuso), cancellationToken);
+        var result = await _mediator.Send(new ObtenerSolicitudQuery(id, esReuso, origen), cancellationToken);
         if (result is null)
             return NotFound(ResponseDto<SolicitudDto>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
@@ -363,6 +386,18 @@ public class SolicitudController : BaseApiController
             HttpContext.TraceIdentifier);
 
         return Ok(response);
+    }
+
+    [HttpGet("bandeja-entrada/no-vistas/conteo")]
+    [SwaggerOperation(
+        Summary = "Contar solicitudes por aprobar que el usuario aun no abrio",
+        Description = "Cuenta las solicitudes en curso en turno del usuario autenticado cuya fila de firmante no tiene fecha de visualizacion. Se usa para el circulo rojo de la campana.",
+        OperationId = "ContarSolicitudesNoVistas")]
+    [ProducesResponseType(typeof(ResponseDto<int>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ResponseDto<int>>> ContarSolicitudesNoVistas(CancellationToken cancellationToken)
+    {
+        var total = await _mediator.Send(new ContarSolicitudesNoVistasQuery(), cancellationToken);
+        return Ok(ResponseDto<int>.Ok(total, ResponseCodes.OperacionExitosa, HttpContext.TraceIdentifier));
     }
 
     /// <summary>listado de documentos bloqueado</summary>

@@ -123,7 +123,7 @@ public class SolicitudConsultaHandlerTest
         var act = () => new ObtenerSolicitudQueryHandler(
             _mapper.Object, _usuario.Object, new Mock<IDocumentoFirmadoValidator>().Object,
             archivos.Object, consulta.Object, _autorizacionConsulta.Object)
-            .Handle(new ObtenerSolicitudQuery(1, false), cancelacion.Token);
+            .Handle(new ObtenerSolicitudQuery(1, false, "mis_solicitudes"), cancelacion.Token);
 
         var ex = await act.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>();
         ex.Which.Error.Code.Should().Be("DOM_SOL_034");
@@ -131,6 +131,40 @@ public class SolicitudConsultaHandlerTest
         consulta.Verify(r => r.ObtenerSolicitudPorId(It.IsAny<long>(), It.IsAny<long?>(),
             It.IsAny<bool>(), It.IsAny<CancellationToken>(), It.IsAny<bool>()), Times.Never);
         archivos.Verify(a => a.GetFileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    [InlineData("bandeja_entrada", false)]
+    [InlineData("mis_solicitudes", true)]
+    [InlineData("seguimiento_solicitudes", true)]
+    [InlineData("MIS_SOLICITUDES", true)]
+    public async Task ObtenerSolicitud_Debe_Autorizar_Consulta_Solo_Para_Origenes_Indicados(
+        string? origen, bool autorizar)
+    {
+        _usuario.Setup(u => u.UserIdLocal).Returns(10);
+        var autorizacion = new Mock<ISolicitudConsultaAuthorizationService>(MockBehavior.Strict);
+        if (autorizar)
+            autorizacion.Setup(s => s.AutorizarPorIdAsync(1, CancellationToken.None))
+                .Returns(Task.CompletedTask);
+        var consulta = new Mock<ISolicitudQueryRepository>(MockBehavior.Strict);
+        var dto = new SolicitudDto { Documentos = [] };
+        consulta.Setup(r => r.ObtenerSolicitudPorId(1, 10, false, CancellationToken.None, false))
+            .ReturnsAsync(dto);
+        var archivos = new Mock<IFileStorageService>(MockBehavior.Strict);
+        var handler = new ObtenerSolicitudQueryHandler(
+            _mapper.Object, _usuario.Object, new Mock<IDocumentoFirmadoValidator>().Object,
+            archivos.Object, consulta.Object, autorizacion.Object);
+
+        var resultado = await handler.Handle(new ObtenerSolicitudQuery(1, false, origen), CancellationToken.None);
+
+        resultado.Should().BeSameAs(dto);
+        autorizacion.Verify(s => s.AutorizarPorIdAsync(1, CancellationToken.None),
+            autorizar ? Times.Once() : Times.Never());
+        autorizacion.VerifyNoOtherCalls();
+        consulta.Verify(r => r.ObtenerSolicitudPorId(1, 10, false, CancellationToken.None, false), Times.Once);
+        archivos.VerifyNoOtherCalls();
     }
 
     [Fact]

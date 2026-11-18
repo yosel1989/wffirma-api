@@ -100,6 +100,8 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
     long? codigoUsuario,
     long? areaUsuario,
     string? roLUsuario,
+    List<long>? areasAccesoEspecial,
+    bool incluirParticipacionUsuario,
     long? departamentoUsuario,
     string? fechainicio,
     string? fechafin,
@@ -126,11 +128,22 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
             {
                 var rol = roLUsuario.Trim().ToUpper();
 
-                if (rol == "COORD" && areaUsuario.HasValue)
+                if (rol == "COORD")
                 {
+                    var areasEspeciales = areasAccesoEspecial ?? [];
                     query = query.Where(s =>
-                        s.UsuarioSolicitante.IdArea.HasValue &&
-                        s.UsuarioSolicitante.IdArea.Value == areaUsuario.Value);
+                        (areaUsuario.HasValue &&
+                            s.UsuarioSolicitante.IdArea.HasValue &&
+                            s.UsuarioSolicitante.IdArea.Value == areaUsuario.Value) ||
+                        (s.UsuarioSolicitante.IdArea.HasValue &&
+                            areasEspeciales.Contains(s.UsuarioSolicitante.IdArea.Value)) ||
+                        (s.UsuarioSolicitante.Area.IdAreaPadre.HasValue &&
+                            areasEspeciales.Contains(s.UsuarioSolicitante.Area.IdAreaPadre.Value)) ||
+                        (incluirParticipacionUsuario && codigoUsuario.HasValue &&
+                            s.SolicitudPlantilla.FirmantesFlujo.Any(sf =>
+                                sf.Estado &&
+                                sf.FirmanteFlujo.Estado &&
+                                sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.Id == codigoUsuario.Value)));
                 }
                 else if (rol == "SOLAPR" && codigoUsuario.HasValue)
                 {
@@ -293,6 +306,8 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
         long? codigoUsuario,
         long? areaUsuario,
         string? roLUsuario,
+        List<long>? areasAccesoEspecial,
+        bool incluirParticipacionUsuario,
         long? departamentoUsuario,
         string? fechainicio,
         string? fechafin,
@@ -320,6 +335,8 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                 codigoUsuario,
                 areaUsuario,
                 roLUsuario,
+                areasAccesoEspecial,
+                incluirParticipacionUsuario,
                 departamentoUsuario,
                 fechainicio,
                 fechafin,
@@ -388,6 +405,8 @@ namespace COFIDE.WFF.Infrastructure.Adapters.Repositories
                request.CodigoUsuario,
                request.AreaUsuario,
                request.RoLUsuario,
+               null,
+               incluirParticipacionUsuario: false,
                request.DepartamentoUsuario,
                request.Fechainicio,
                request.Fechafin,

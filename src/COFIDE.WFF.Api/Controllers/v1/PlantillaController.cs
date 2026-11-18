@@ -3,7 +3,6 @@ using COFIDE.WFF.Api.ApiVersions;
 using COFIDE.WFF.Api.Constants;
 using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
-using COFIDE.WFF.Application.Common.Interfaces;
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.RegistrarPlantilla;

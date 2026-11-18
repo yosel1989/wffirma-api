@@ -47,6 +47,11 @@ namespace COFIDE.WFF.Infrastructure.Persistence.Configuration
             builder.Property(x => x.FechaRevision)
                    .HasColumnName("TS_FECHA_REVISION");
 
+            builder.Property(x => x.FechaVistaSolicitud)
+                   .HasColumnName("TS_FECHA_VISTA_SOLICITUD")
+                   .HasColumnType("TIMESTAMP")
+                   .IsRequired(false);
+
             builder.HasOne(a => a.SolicitudPlantilla)
                    .WithMany(s => s.FirmantesFlujo)
                    .HasForeignKey(a => a.IdSolicitudPlantilla)

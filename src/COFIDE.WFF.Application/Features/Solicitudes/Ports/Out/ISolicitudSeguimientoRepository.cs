@@ -13,6 +13,8 @@ public interface ISolicitudSeguimientoRepository
         long? codigoUsuario,
         long? areaUsuario,
         string? roLUsuario,
+        List<long>? areasAccesoEspecial,
+        bool incluirParticipacionUsuario,
         long? departamentoUsuario,
         string? fechainicio,
         string? fechafin,
