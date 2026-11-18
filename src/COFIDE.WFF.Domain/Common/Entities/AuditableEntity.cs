@@ -5,7 +5,10 @@ namespace COFIDE.WFF.Domain.Common.Entities;
 
 public abstract class AuditableEntity<TKey> : BaseEntity<TKey>, IAuditableEntity<TKey> where TKey : struct
 {
-    public bool Estado { get; set; }
+    /// <summary>
+    /// Obtiene o establece el estado lógico activo o inactivo.
+    /// </summary>
+    public virtual bool Estado { get; set; }
     // Auditorísa de creación
     public DateTime FechaCreacion { get; private set; } = HoraSistema.Ahora;
     public string UsuarioCreacion { get; private set; } = string.Empty;
@@ -29,6 +32,13 @@ public abstract class AuditableEntity<TKey> : BaseEntity<TKey>, IAuditableEntity
         FechaModificacion = HoraSistema.Ahora;
         TerminalModificacion = terminalUsuario;
     }
-    public void Activar() => Estado = true;
-    public void Desactivar() => Estado = false;
+    /// <summary>
+    /// Activa la entidad.
+    /// </summary>
+    public virtual void Activar() => Estado = true;
+
+    /// <summary>
+    /// Desactiva la entidad.
+    /// </summary>
+    public virtual void Desactivar() => Estado = false;
 }

@@ -16,6 +16,19 @@ public class Plantilla : AuditableEntity<long>
     public bool? EsReutilizable { get; private set; }
     public long? IdAreaPlantilla { get; private set; }
     public long? IdAreaPadrePlantilla { get; private set; }
+    /// <summary>
+    /// Obtiene o establece la vista compatible de activación de la plantilla.
+    /// </summary>
+    public override bool Estado
+    {
+        get => EstadoPlantilla == EstadoPlantilla.Activa;
+        set => EstadoPlantilla = value ? EstadoPlantilla.Activa : EstadoPlantilla.Inactiva;
+    }
+
+    /// <summary>
+    /// Obtiene el estado lógico de la plantilla.
+    /// </summary>
+    public EstadoPlantilla EstadoPlantilla { get; private set; } = EstadoPlantilla.Activa;
     #endregion
 
     #region Referencias
@@ -248,11 +261,52 @@ public class Plantilla : AuditableEntity<long>
         EsNuevo = true;
     }
 
-    public void PermitirActualizarPlantilla(long usuarioId, string gerenciaUsuario, Usuario usuario)
+    /// <summary>
+    /// Elimina lógicamente la plantilla sin modificar sus datos ni su flujo.
+    /// </summary>
+    public void EliminarLogicamente()
+    {
+        if (EstadoPlantilla == EstadoPlantilla.Eliminada)
+            throw new DomainException(PlantillaErrors.PlantillaYaNoExiste);
+
+        EstadoPlantilla = EstadoPlantilla.Eliminada;
+    }
+
+    /// <summary>
+    /// Activa la plantilla cuando no fue eliminada.
+    /// </summary>
+    public override void Activar()
+    {
+        if (EstadoPlantilla == EstadoPlantilla.Eliminada)
+            throw new DomainException(PlantillaErrors.PlantillaEliminada);
+
+        base.Activar();
+    }
+
+    /// <summary>
+    /// Desactiva la plantilla cuando no fue eliminada.
+    /// </summary>
+    public override void Desactivar()
+    {
+        if (EstadoPlantilla == EstadoPlantilla.Eliminada)
+            throw new DomainException(PlantillaErrors.PlantillaEliminada);
+
+        base.Desactivar();
+    }
+
+    public void PermitirActualizarPlantilla(
+        long usuarioId,
+        long? idAreaUsuario,
+        long? idAreaPadreUsuario,
+        Usuario usuario)
     {
         if (usuario.EsCoordinador())
         {   
-            if ((Visibilidad.HasValue && Visibilidad.Value) && GerenciaUsuario != gerenciaUsuario)
+            if ((Visibilidad.HasValue && Visibilidad.Value) &&
+                (!idAreaUsuario.HasValue ||
+                 !idAreaPadreUsuario.HasValue ||
+                 IdAreaPlantilla != idAreaUsuario ||
+                 IdAreaPadrePlantilla != idAreaPadreUsuario))
             {
                 throw new DomainException(PlantillaErrors.PermisoCoordinadorPlantillaArea);
             }
@@ -264,6 +318,46 @@ public class Plantilla : AuditableEntity<long>
                 throw new DomainException(PlantillaErrors.PropietarioPlantilla);
         }
 
+    }
+
+    /// <summary>
+    /// Determina si el usuario puede cambiar el estado de la plantilla según su alcance.
+    /// </summary>
+    public bool PermitirCambiarEstadoPlantilla(
+        long usuarioId,
+        long? idAreaUsuario,
+        long? idAreaPadreUsuario,
+        Usuario usuario,
+        IReadOnlyCollection<long> areasAccesoEspecial)
+    {
+        if (usuario.EsAdministrador())
+            return true;
+
+        if (usuario.EsCoordinador())
+        {
+            var tieneAccesoAreaPropia =
+                idAreaUsuario.HasValue &&
+                idAreaPadreUsuario.HasValue &&
+                IdAreaPlantilla == idAreaUsuario &&
+                IdAreaPadrePlantilla == idAreaPadreUsuario;
+            var tieneAccesoAreaEspecial =
+                (IdAreaPlantilla.HasValue &&
+                 areasAccesoEspecial.Contains(IdAreaPlantilla.Value)) ||
+                (IdAreaPadrePlantilla.HasValue &&
+                 areasAccesoEspecial.Contains(IdAreaPadrePlantilla.Value));
+
+            return tieneAccesoAreaPropia || tieneAccesoAreaEspecial;
+        }
+
+        if (usuario.EsSolicitante())
+        {
+            if (IdUsuarioPropietario != usuarioId)
+                throw new DomainException(PlantillaErrors.PropietarioPlantilla);
+
+            return true;
+        }
+
+        return false;
     }
 
     public bool ValidarPermisoPlantilla(long usuarioId, string gerenciaUsuario, Usuario usuario)

@@ -15,6 +15,32 @@ public class PlantillaRepository(
         WorkflowFirmaDbContext context
     ) : GenericRepository<Plantilla, long>(context), IPlantillaRepository
 {
+    /// <summary>
+    /// Obtiene una plantilla activa o inactiva por su identificador.
+    /// </summary>
+    public override async Task<Plantilla?> GetByIdAsync(long id, bool tracking = false)
+    {
+        IQueryable<Plantilla> query = _context.Plantillas
+            .Where(plantilla => plantilla.Id == id &&
+                plantilla.EstadoPlantilla != EstadoPlantilla.Eliminada);
+
+        if (!tracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Obtiene todas las plantillas activas e inactivas.
+    /// </summary>
+    public override async Task<IEnumerable<Plantilla>> GetAllAsync()
+    {
+        return await _context.Plantillas
+            .AsNoTracking()
+            .Where(plantilla => plantilla.EstadoPlantilla != EstadoPlantilla.Eliminada)
+            .ToListAsync();
+    }
+
     public async Task<Plantilla?> ObtenerAgregadoPlantillaAsync(long id, CancellationToken cancellationToken, bool tracking = false)
     {
         IQueryable<Plantilla> query = _context.Set<Plantilla>()
@@ -25,8 +51,19 @@ public class PlantillaRepository(
             query = query.AsNoTracking();
 
         return await query
-            .Where(x => x.Estado && x.Id == id)
+            .Where(x => x.EstadoPlantilla != EstadoPlantilla.Eliminada && x.Id == id)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<Plantilla?> ObtenerParaActivacionAsync(long id, CancellationToken cancellationToken)
+    {
+        return await ObtenerParaCambioEstadoAsync(id, cancellationToken);
+    }
+
+    public async Task<Plantilla?> ObtenerParaCambioEstadoAsync(long id, CancellationToken cancellationToken)
+    {
+        return await _context.Plantillas
+            .FirstOrDefaultAsync(plantilla => plantilla.Id == id, cancellationToken);
     }
 
     public async Task<long> ObtenerSiguienteIdAsync(CancellationToken cancellationToken)
@@ -177,7 +214,7 @@ public class PlantillaRepository(
         var plantilla = await _context.Plantillas
             .AsNoTracking()
             .Where(p =>
-                p.Estado &&
+                p.EstadoPlantilla != EstadoPlantilla.Eliminada &&
                 p.NombrePlantilla!.Valor.ToUpper() == nombrePlantilla &&
                 p.Visibilidad == visibilidad &&
                 (
@@ -196,7 +233,7 @@ public class PlantillaRepository(
     {
         var query = await _context.Plantillas
         .AsNoTracking()
-        .Where(p => p.Estado && p.Id == IdPlantilla)
+        .Where(p => p.EstadoPlantilla != EstadoPlantilla.Eliminada && p.Id == IdPlantilla)
         .Select(p => new PlantillaDto
         {
             IdPlantilla = p.Id,
@@ -250,7 +287,12 @@ public class PlantillaRepository(
     public async Task<PagedResult<PlantillaPaginadoDto>> ObtenerPaginado(PlantillaPaginadoRequest requestPaginado)
     {
 
-        var query = _context.Plantillas.AsNoTracking().Where(p => p.Estado && p.Visibilidad == requestPaginado.Visibilidad && p.EsReutilizable == true);
+        var query = _context.Plantillas
+            .AsNoTracking()
+            .Where(p =>
+                p.EstadoPlantilla != EstadoPlantilla.Eliminada &&
+                p.Visibilidad == requestPaginado.Visibilidad &&
+                p.EsReutilizable == true);
 
         query = AplicarPermisos(
             query,
