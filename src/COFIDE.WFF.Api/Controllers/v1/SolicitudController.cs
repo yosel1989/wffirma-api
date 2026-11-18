@@ -5,6 +5,7 @@ using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Mappings;
 using COFIDE.WFF.Api.Request.Solicitudes;
+
 using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Commands.ActivarDocumentoBloqueado;
@@ -333,10 +334,17 @@ public class SolicitudController : BaseApiController
     #endregion
 
     [HttpGet("{id}")]
+    [SwaggerOperation(
+        Summary = "Obtener el detalle de una solicitud",
+        Description = "Origen es opcional. Solo mis_solicitudes y seguimiento_solicitudes aplican la autorizacion de consulta por rol, area y accesos especiales. Sin origen o con otro valor se omite esa validacion. La autenticacion y la autorizacion de reuso se mantienen.")]
     [ProducesResponseType(typeof(ResponseDto<SolicitudDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<SolicitudDto>>> GetSolicitud(long id, [FromQuery] bool esReuso = false, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<ResponseDto<SolicitudDto>>> GetSolicitud(
+        long id,
+        [FromQuery] bool esReuso = false,
+        [FromQuery] string? origen = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new ObtenerSolicitudQuery(id, esReuso), cancellationToken);
+        var result = await _mediator.Send(new ObtenerSolicitudQuery(id, esReuso, origen), cancellationToken);
         if (result is null)
             return NotFound(ResponseDto<SolicitudDto>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
