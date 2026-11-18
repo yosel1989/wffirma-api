@@ -206,7 +206,7 @@ public class DescargarSolicitudHandlerTest
             .Handle(new DescargarSolicitudSustentoZipQuery(8, [6]), CancellationToken.None);
         var descargarZipCompleto = () => new DescargarTodoSolicitudZipQueryHandler(
             _mapper.Object, zip.Object, _autorizacionConsulta.Object)
-            .Handle(new DescargarTodoSolicitudZipQuery(8), CancellationToken.None);
+            .Handle(new DescargarTodoSolicitudZipQuery(8, "mis_solicitudes"), CancellationToken.None);
 
         (await descargarSustento.Should().ThrowAsync<COFIDE.WFF.Domain.Exceptions.DomainException>())
             .Which.Error.Code.Should().Be("DOM_SOL_034");
@@ -240,6 +240,27 @@ public class DescargarSolicitudHandlerTest
 
         dto.NombreArchivo.Should().Be("sustentos.zip");
         dto.ContentType.Should().Be("application/zip");
+    }
+
+    [Theory]
+    [InlineData("mis_solicitudes", true)]
+    [InlineData("SEGUIMIENTO_SOLICITUDES", true)]
+    [InlineData(null, false)]
+    [InlineData("bandeja_entrada", false)]
+    public async Task Zip_Completo_Debe_Autorizar_Solo_Para_Origenes_Indicados(string? origen, bool autorizar)
+    {
+        var zip = new Mock<ISolicitudDescargaZipService>();
+        zip.Setup(z => z.DescargarTodoZipAsync(8, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new byte[] { 7 }, "todo.zip"));
+        var handler = new DescargarTodoSolicitudZipQueryHandler(
+            _mapper.Object, zip.Object, _autorizacionConsulta.Object);
+
+        await handler.Handle(new DescargarTodoSolicitudZipQuery(8, origen), CancellationToken.None);
+
+        _autorizacionConsulta.Verify(
+            s => s.AutorizarPorIdAsync(8, It.IsAny<CancellationToken>()),
+            autorizar ? Times.Once() : Times.Never());
+        zip.Verify(z => z.DescargarTodoZipAsync(8, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

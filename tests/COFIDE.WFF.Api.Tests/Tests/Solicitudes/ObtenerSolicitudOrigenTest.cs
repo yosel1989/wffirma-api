@@ -2,6 +2,7 @@ using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Api.Controllers.v1;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarSolicitudDocumento;
+using COFIDE.WFF.Application.Features.Solicitudes.Queries.DescargarTodoSolicitudZip;
 using COFIDE.WFF.Application.Features.Solicitudes.Queries.ObtenerSolicitud;
 using FluentAssertions;
 using MediatR;
@@ -61,6 +62,36 @@ public class ObtenerSolicitudOrigenTest
         mediator.Verify(m => m.Send(
             It.Is<DescargarSolicitudDocumentoQuery>(q =>
                 q.IdSolicitudDocumento == 4 && q.Origen == origen),
+            cancelacion.Token), Times.Once);
+        mediator.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task DescargarZip_Debe_Enviar_Origen_Al_Query()
+    {
+        using var cancelacion = new CancellationTokenSource();
+        const string origen = "seguimiento_solicitudes";
+        var dto = new DescargarTodoSolicitudZipDto
+        {
+            Archivo = [1],
+            ContentType = "application/zip",
+            NombreArchivo = "solicitud.zip"
+        };
+        var mediator = new Mock<IMediator>(MockBehavior.Strict);
+        mediator.Setup(m => m.Send(
+                It.Is<DescargarTodoSolicitudZipQuery>(q => q.Id == 12 && q.Origen == origen),
+                cancelacion.Token))
+            .ReturnsAsync(dto);
+        var controller = new SolicitudController(mediator.Object, new Mock<ICorrelationContext>().Object);
+
+        var resultado = await controller.DescargarZip(12, origen, cancelacion.Token);
+
+        var archivo = resultado.Should().BeOfType<FileContentResult>().Subject;
+        archivo.FileDownloadName.Should().Be("solicitud.zip");
+        archivo.ContentType.Should().Be("application/zip");
+        archivo.FileContents.Should().Equal(1);
+        mediator.Verify(m => m.Send(
+            It.Is<DescargarTodoSolicitudZipQuery>(q => q.Id == 12 && q.Origen == origen),
             cancelacion.Token), Times.Once);
         mediator.VerifyNoOtherCalls();
     }
