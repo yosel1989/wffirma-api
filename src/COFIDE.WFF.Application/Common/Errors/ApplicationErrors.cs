@@ -13,6 +13,10 @@ public static class ApplicationErrors
     public static readonly ApplicationError DocumentoVacio = new("APP_SOL_003", "El documento se encuentra vacío.");
     public static readonly ApplicationError SustentoVacio = new("APP_SOL_004", "El documento de sustento se encuentra vacío.");
     public static readonly ApplicationError PlantillaInvalid = new("APP_SOL_005", "Plantilla inválida.");
+    public static readonly ApplicationError PlantillaYaNoExiste = new(
+        "APP_PLT_001",
+        "La plantilla ya no existe",
+        (int)System.Net.HttpStatusCode.NotFound);
     public static readonly ApplicationError DetalleFirmaInvalid = new("APP_SOL_006", "Detalle de Firma inválida.");
     public static readonly ApplicationError ConfiguracionInvalid = new("APP_SOL_011", "La configuración de flujo es inválida.");
 

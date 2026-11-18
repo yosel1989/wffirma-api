@@ -7,4 +7,5 @@ public abstract class ApplicationExceptionBase(
     ) : Exception(error.Description, inner)
 {
     public ApplicationError Error { get; } = error;
+    public int? HttpStatusCode { get; } = error.HttpStatusCode;
 }

@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.RegistrarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.CambiarEstadoPlantilla;
+using COFIDE.WFF.Application.Features.Plantillas.Commands.EliminarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Models;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.GestionPlantillas;
 using COFIDE.WFF.Application.Features.Plantillas.Queries.ObtenerPlantillaPaginado;
@@ -88,6 +89,34 @@ public class PlantillaController : BaseApiController
 
         var response = ResponseDto<bool>.Ok(
             activo,
+            "Operación exitosa",
+            HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Elimina lógicamente una plantilla conservando sus datos.
+    /// </summary>
+    /// <remarks>
+    /// Si la respuesta es 404, el cliente debe mostrar “La plantilla ya no existe”
+    /// y refrescar la lista para retirar el registro obsoleto.
+    /// </remarks>
+    [HttpDelete("{idPlantilla:long}")]
+    [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ResponseDto<bool>>> EliminarPlantilla(
+        [FromRoute] long idPlantilla,
+        CancellationToken cancellationToken)
+    {
+        var eliminado = await _mediator.Send(
+            new EliminarPlantillaCommand(idPlantilla),
+            cancellationToken);
+
+        var response = ResponseDto<bool>.Ok(
+            eliminado,
             "Operación exitosa",
             HttpContext.TraceIdentifier);
 
