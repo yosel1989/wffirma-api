@@ -43,5 +43,7 @@ public static class PlantillaErrors
     public static readonly DomainError PermisoCoordinadorPlantillaPrivada = new("DOM_SOL_034", "No tiene permisos para editar esta plantilla privada.");
     public static readonly DomainError PermisoCoordinadorPlantillaArea = new("DOM_SOL_034", "No tiene permisos para editar esta plantilla o pertenece a otra área.");
     public static readonly DomainError EsPlantillaPrivada = new("DOM_PLT_025", "La plantilla seleccionada es privada.");
+    public static readonly DomainError PlantillaYaNoExiste = new("DOM_PLT_029", "La plantilla ya no existe.");
+    public static readonly DomainError PlantillaEliminada = new("DOM_PLT_030", "No se puede cambiar el estado de una plantilla eliminada.");
 
 }

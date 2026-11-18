@@ -60,7 +60,7 @@ public class ExceptionHandlingMiddleware
             errors,
             context.TraceIdentifier);
 
-        context.Response.StatusCode = 400;
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
         await context.Response.WriteAsJsonAsync(response);
     }
 
@@ -73,7 +73,8 @@ public class ExceptionHandlingMiddleware
                 ex.Error.Description)
             .WithCorrelationId(context.TraceIdentifier);
 
-        context.Response.StatusCode = 400;
+        context.Response.StatusCode =
+            ex.HttpStatusCode ?? StatusCodes.Status400BadRequest;
         await context.Response.WriteAsJsonAsync(response);
     }
 

@@ -488,11 +488,15 @@ public class SolicitudController : BaseApiController
         return File(result.Archivo, result.ContentType, result.NombreArchivo);
     }
 
+    /// <remarks>El origen mis_solicitudes o seguimiento_solicitudes activa la autorización de consulta.</remarks>
     [HttpGet("{id}/descargar-zip")]
-    public async Task<IActionResult> DescargarZip(long id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DescargarZip(
+        long id,
+        [FromQuery] string? origen = null,
+        CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(
-            new DescargarTodoSolicitudZipQuery(id),
+            new DescargarTodoSolicitudZipQuery(id, origen),
             cancellationToken);
 
         return File(result.Archivo, result.ContentType, result.NombreArchivo);
@@ -504,12 +508,16 @@ public class SolicitudController : BaseApiController
 
     #region Documentos y Sustentos
 
-    /// <summary>Obtener areas para combo</summary>
+    /// <summary>Descarga un documento de una solicitud.</summary>
+    /// <remarks>El origen mis_solicitudes o seguimiento_solicitudes activa la autorización de consulta.</remarks>
     [HttpGet("documentos/{id}/descarga")]
     [ProducesResponseType(typeof(ResponseDto<DescargarSolicitudDocumentoDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<DescargarSolicitudDocumentoDto>>> ObtenerDocumento(long id, CancellationToken cancellationToken)
+    public async Task<ActionResult<ResponseDto<DescargarSolicitudDocumentoDto>>> ObtenerDocumento(
+        long id,
+        [FromQuery] string? origen = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new DescargarSolicitudDocumentoQuery(id), cancellationToken);
+        var result = await _mediator.Send(new DescargarSolicitudDocumentoQuery(id, origen), cancellationToken);
         if (result is null)
             return NotFound(ResponseDto<DescargarSolicitudDocumentoDto>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));

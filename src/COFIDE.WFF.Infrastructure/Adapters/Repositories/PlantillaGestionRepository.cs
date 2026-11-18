@@ -31,7 +31,9 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
         CancellationToken cancellationToken)
     {
         var query = _context.Plantillas.AsNoTracking()
-            .Where(p => p.Estado && p.EsReutilizable == true);
+            .Where(p =>
+                p.EsReutilizable == true &&
+                p.EstadoPlantilla != EstadoPlantilla.Eliminada);
 
         query = AplicarAlcancePorRol(query, codigoUsuario, departamentoUsuario, gerenciaUsuario, rolUsuario, areasAccesoEspecial);
         query = AplicarFiltros(
@@ -61,7 +63,7 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
             .ToListAsync(cancellationToken);
 
         return new PagedResult<GestionPlantillasDto>(
-            data,
+            data.Select(ConvertirProyeccion).ToList(),
             totalCount,
             paginationParams.PageNumber,
             paginationParams.PageSize);
@@ -203,14 +205,15 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
         return query;
     }
 
-    private IQueryable<GestionPlantillasDto> Proyectar(IQueryable<Plantilla> query)
+    private IQueryable<PlantillaGestionProyeccion> Proyectar(IQueryable<Plantilla> query)
     {
         var codigoFirmante = VO.TipoAprobador.Firmante.Codigo;
         var codigoVisador = VO.TipoAprobador.Visador.Codigo;
 
-        return query.Select(p => new GestionPlantillasDto
+        return query.Select(p => new PlantillaGestionProyeccion
         {
             IdPlantilla = p.Id,
+            Activo = p.EstadoPlantilla == EstadoPlantilla.Activa ? 1 : 0,
             NombrePlantilla = p.NombrePlantilla != null ? p.NombrePlantilla.Valor : null,
             Creador = _context.Usuarios
                 .Where(u => p.IdUsuarioPropietario.HasValue && u.Id == p.IdUsuarioPropietario.Value)
@@ -233,5 +236,32 @@ public class PlantillaGestionRepository(WorkflowFirmaDbContext context) : IPlant
                 .SelectMany(e => e.Firmantes.Where(f => f.Estado))
                 .Count()
         });
+    }
+
+    private static GestionPlantillasDto ConvertirProyeccion(PlantillaGestionProyeccion proyeccion) =>
+        new()
+        {
+            IdPlantilla = proyeccion.IdPlantilla,
+            Activo = proyeccion.Activo == 1,
+            NombrePlantilla = proyeccion.NombrePlantilla,
+            Creador = proyeccion.Creador,
+            FechaCreacion = proyeccion.FechaCreacion,
+            FechaModificacion = proyeccion.FechaModificacion,
+            NumeroEtapas = proyeccion.NumeroEtapas,
+            NumeroFirmantes = proyeccion.NumeroFirmantes,
+            NumeroVisadores = proyeccion.NumeroVisadores
+        };
+
+    private sealed class PlantillaGestionProyeccion
+    {
+        public long IdPlantilla { get; init; }
+        public int Activo { get; init; }
+        public string? NombrePlantilla { get; init; }
+        public string? Creador { get; init; }
+        public DateTime FechaCreacion { get; init; }
+        public DateTime? FechaModificacion { get; init; }
+        public int NumeroEtapas { get; init; }
+        public int NumeroFirmantes { get; init; }
+        public int NumeroVisadores { get; init; }
     }
 }

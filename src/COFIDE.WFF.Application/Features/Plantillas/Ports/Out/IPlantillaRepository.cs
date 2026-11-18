@@ -9,6 +9,8 @@ namespace COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
 public interface IPlantillaRepository : IGenericRepository<Plantilla, long>
 {
     Task<Plantilla?> ObtenerAgregadoPlantillaAsync(long id, CancellationToken cancellationToken, bool tracking = false);
+    Task<Plantilla?> ObtenerParaActivacionAsync(long id, CancellationToken cancellationToken);
+    Task<Plantilla?> ObtenerParaCambioEstadoAsync(long id, CancellationToken cancellationToken);
     Task<long> ObtenerSiguienteIdAsync(CancellationToken cancellationToken);
     Task<long> ObtenerSiguienteIdEtapaAsync(CancellationToken cancellationToken);
     Task<long> ObtenerSiguienteIdFirmanteAsync(CancellationToken cancellationToken);
