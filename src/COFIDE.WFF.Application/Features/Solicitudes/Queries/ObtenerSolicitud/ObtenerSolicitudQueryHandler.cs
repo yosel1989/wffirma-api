@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using COFIDE.WFF.Application.Common.Constants;
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
@@ -33,7 +34,8 @@ public sealed class ObtenerSolicitudQueryHandler(
         if (request.EsReuso)
             await _solicitudConsultaAuthorizationService.AutorizarReusoPorIdAsync(
                 request.IdSolicitud, cancellationToken);
-        else
+        else if (string.Equals(request.Origen, OrigenSolicitud.MisSolicitudes, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(request.Origen, OrigenSolicitud.SeguimientoSolicitudes, StringComparison.OrdinalIgnoreCase))
             await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(
                 request.IdSolicitud, cancellationToken);
 
