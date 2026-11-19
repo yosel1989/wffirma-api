@@ -1,8 +1,11 @@
-﻿using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
+﻿using COFIDE.WFF.Application.Common.Pageds;
+using COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerUsuariosCombo;
+using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerUsuariosPaginado;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.UsuarioBuscador;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Infrastructure.Adapters.Repositories.Base;
+using COFIDE.WFF.Infrastructure.Extensions;
 using COFIDE.WFF.Infrastructure.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
@@ -40,6 +43,63 @@ public class UsuarioRepository(
             .FirstOrDefaultAsync(u =>
                 u.CuentaLogueo.ToUpper() == cuentaLogueo.ToUpper()
                 && u.Estado);
+    }
+
+    /// <inheritdoc />
+    public async Task<PagedResult<UsuarioPaginadoDto>> ObtenerPaginadoAsync(
+        PagedQueryParams pagination, long? idGerencia, long? idDepartamento, long? idCargo,
+        bool? estado, long? idUsuario, CancellationToken cancellationToken)
+    {
+        var usuarios = _context.Usuarios.AsNoTracking();
+
+        if (idUsuario.HasValue)
+            usuarios = usuarios.Where(u => u.Id == idUsuario.Value);
+        if (idCargo.HasValue)
+            usuarios = usuarios.Where(u => u.IdCargo == idCargo.Value);
+        if (estado.HasValue)
+            usuarios = usuarios.Where(u => u.Estado == estado.Value);
+
+        var listado = from usuario in usuarios
+                      let area = usuario.Area
+                      let padre = area.AreaPadre
+                      let abuelo = padre.AreaPadre
+                      let gerenciaId = area != null && area.Tipo == 'G' ? (long?)area.Id
+                          : padre != null && padre.Tipo == 'G' ? padre.Id
+                          : abuelo != null && abuelo.Tipo == 'G' ? abuelo.Id : null
+                      let departamentoId = area != null && area.Tipo == 'D' ? (long?)area.Id
+                          : padre != null && padre.Tipo == 'D' ? padre.Id
+                          : abuelo != null && abuelo.Tipo == 'D' ? abuelo.Id : null
+                      where (!idGerencia.HasValue || gerenciaId == idGerencia)
+                          && (!idDepartamento.HasValue || departamentoId == idDepartamento)
+                      select new UsuarioPaginadoDto
+                      {
+                          IdUsuario = usuario.Id,
+                          CuentaLogueo = usuario.CuentaLogueo,
+                          NombreCompleto = usuario.Nombres + " " + usuario.ApellidoPaterno
+                              + (usuario.ApellidoMaterno == null ? "" : " " + usuario.ApellidoMaterno),
+                          NombreGerencia = area != null && area.Tipo == 'G' ? area.NombreArea
+                              : padre != null && padre.Tipo == 'G' ? padre.NombreArea
+                              : abuelo != null && abuelo.Tipo == 'G' ? abuelo.NombreArea : null,
+                          NombreDepartamento = area != null && area.Tipo == 'D' ? area.NombreArea
+                              : padre != null && padre.Tipo == 'D' ? padre.NombreArea
+                              : abuelo != null && abuelo.Tipo == 'D' ? abuelo.NombreArea : null,
+                          NombreCargo = usuario.Cargo != null ? usuario.Cargo.NombreCargo : null,
+                          Estado = usuario.Estado
+                      };
+
+        var total = await listado.CountAsync(cancellationToken);
+        var offset = (pagination.PageNumber - 1L) * pagination.PageSize;
+        if (offset >= total)
+            return new PagedResult<UsuarioPaginadoDto>([], total, pagination.PageNumber, pagination.PageSize);
+
+        var criterios = pagination.Sorts ?? [];
+        var ordenado = criterios.Any(s => string.Equals(s.PropertyName,
+            nameof(UsuarioPaginadoDto.IdUsuario), StringComparison.OrdinalIgnoreCase))
+            ? listado.OrderByMultiple(criterios)
+            : listado.OrderByMultiple(criterios.Append((nameof(UsuarioPaginadoDto.IdUsuario), false)));
+
+        var items = await ordenado.Skip((int)offset).Take(pagination.PageSize).ToListAsync(cancellationToken);
+        return new PagedResult<UsuarioPaginadoDto>(items, total, pagination.PageNumber, pagination.PageSize);
     }
 
     public async Task<List<UsuarioBuscadorDto>> BuscarAsync(string termino, CancellationToken cancellationToken)
