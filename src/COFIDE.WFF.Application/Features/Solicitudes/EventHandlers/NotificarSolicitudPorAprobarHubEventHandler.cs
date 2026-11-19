@@ -34,8 +34,8 @@ public class NotificarSolicitudPorAprobarHubEventHandler(
             await _notificacionTiempoRealPort.NotificarSolicitudPendienteFirma(
                 idSolicitud,
                 destinatario.TotalSolicitudesPendientesFirma,
-                destinatario.CodigoUsuario,
-                CodigosNotificacionTiempoReal.SolicitudPorAprobar,
+                new List<string> { destinatario.CodigoUsuario },
+                MensajesNotificacion.SolicitudPorAprobar,
                 cancellationToken);
         }
     }

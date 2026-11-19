@@ -11,17 +11,17 @@ public interface INotificacionTiempoRealPort
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Envía al aprobador en turno un aviso de solicitud pendiente de firma, sin documento asociado.
+    /// Envía a los aprobadores en turno un aviso de solicitud pendiente de firma, sin documento asociado.
     /// </summary>
     /// <param name="solicitudId">Identificador de la solicitud que origina el aviso.</param>
-    /// <param name="totalSolicitudesPendientesFirma">Total de pendientes en turno del destinatario, vistas o no.</param>
-    /// <param name="codigoUsuario">Cuenta de logueo del destinatario en el hub.</param>
-    /// <param name="mensaje">Código del aviso.</param>
+    /// <param name="totalSolicitudesPendientesFirma">Total de pendientes en turno compartido por los destinatarios, vistas o no.</param>
+    /// <param name="idUsuario">Cuentas de logueo de los destinatarios en el hub.</param>
+    /// <param name="mensaje">Texto del mensaje enviado a los destinatarios.</param>
     /// <param name="cancellationToken">Token de cancelación del envío.</param>
     Task NotificarSolicitudPendienteFirma(
         long solicitudId,
         int totalSolicitudesPendientesFirma,
-        string codigoUsuario,
+        List<string> idUsuario,
         string mensaje,
         CancellationToken cancellationToken);
 }

@@ -1,4 +1,5 @@
-﻿using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
+﻿using COFIDE.WFF.Application.Common.Constants;
+using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
 using COFIDE.WFF.Infrastructure.Exceptions;
 using COFIDE.WFF.Infrastructure.Providers;
 using Microsoft.Extensions.Logging;
@@ -54,21 +55,25 @@ public class HubSocketRealtimeAdapter(
     public async Task NotificarSolicitudPendienteFirma(
         long solicitudId,
         int totalSolicitudesPendientesFirma,
-        string codigoUsuario,
+        List<string> idUsuario,
         string mensaje,
         CancellationToken cancellationToken)
     {
         var payload = new
         {
-            solicitudId,
-            totalSolicitudesPendientesFirma,
-            codigoUsuario,
-            mensaje
+            idUsuario = idUsuario.Select(usuario => usuario.ToLowerInvariant()).ToList(),
+            eventName = EventosNotificacion.SolicitudPendiente,
+            message = mensaje,
+            data = JsonSerializer.SerializeToElement(new
+            {
+                solicitudId,
+                totalSolicitudesPendientesFirma
+            })
         };
 
         try
         {
-            await EnviarAsync("NotificacionesHub/solicitud-pendiente-firma", payload, cancellationToken);
+            await EnviarAsync("NotificacionesHub/enviar-usuario", payload, cancellationToken);
             _logger.LogInformation("Aviso de solicitud pendiente de firma enviado. Solicitud={SolicitudId}", solicitudId);
         }
         catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException

@@ -26,7 +26,7 @@ public sealed class NotificacionTiempoRealDePrueba : INotificacionTiempoRealPort
         bool firmado, string codigoUsuario, string mensaje, CancellationToken cancellationToken) =>
         Task.CompletedTask;
 
-    public Task NotificarSolicitudPendienteFirma(long solicitudId, int totalSolicitudesPendientesFirma, string codigoUsuario,
+    public Task NotificarSolicitudPendienteFirma(long solicitudId, int totalSolicitudesPendientesFirma, List<string> idUsuario,
         string mensaje, CancellationToken cancellationToken) =>
         Task.CompletedTask;
 }

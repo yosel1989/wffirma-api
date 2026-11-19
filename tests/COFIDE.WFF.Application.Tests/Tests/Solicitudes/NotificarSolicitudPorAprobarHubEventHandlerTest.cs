@@ -1,4 +1,3 @@
-using COFIDE.WFF.Application.Common.Constants;
 using COFIDE.WFF.Application.Common.Events;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
@@ -28,9 +27,11 @@ public class NotificarSolicitudPorAprobarHubEventHandlerTest
         await Handler().Handle(Evento(5), cancelacion.Token);
 
         _hub.Verify(x => x.NotificarSolicitudPendienteFirma(
-            5, 5, "jperez", CodigosNotificacionTiempoReal.SolicitudPorAprobar, cancelacion.Token), Times.Once);
+            5, 5, It.Is<List<string>>(usuarios => usuarios.Count == 1 && usuarios[0] == "jperez"),
+            "Tiene una solicitud pendiente por firmar o aprobar", cancelacion.Token), Times.Once);
         _hub.Verify(x => x.NotificarSolicitudPendienteFirma(
-            5, 2, "mlopez", CodigosNotificacionTiempoReal.SolicitudPorAprobar, cancelacion.Token), Times.Once);
+            5, 2, It.Is<List<string>>(usuarios => usuarios.Count == 1 && usuarios[0] == "mlopez"),
+            "Tiene una solicitud pendiente por firmar o aprobar", cancelacion.Token), Times.Once);
         _hub.VerifyNoOtherCalls();
     }
 

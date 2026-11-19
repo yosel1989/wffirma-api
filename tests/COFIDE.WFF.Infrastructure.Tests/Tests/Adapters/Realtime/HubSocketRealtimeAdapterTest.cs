@@ -10,7 +10,7 @@ namespace COFIDE.WFF.Infrastructure.Tests.Tests.Adapters.Realtime;
 public class HubSocketRealtimeAdapterTest
 {
     [Theory]
-    [InlineData(true, "/NotificacionesHub/solicitud-pendiente-firma", 0L, "SOLICITUD_POR_APROBAR")]
+    [InlineData(true, "/NotificacionesHub/enviar-usuario", 0L, "Tiene una solicitud pendiente por firmar o aprobar")]
     [InlineData(false, "/NotificacionesHub/firma-documento", 19L, "")]
     public async Task EnviaCadaAvisoConSuRutaYCuerpo(bool esSolicitudPendiente, string ruta, long documentoId, string mensaje)
     {
@@ -19,7 +19,7 @@ public class HubSocketRealtimeAdapterTest
         var adaptador = new HubSocketRealtimeAdapter(cliente, new ApiKeyDePrueba(), NullLogger<HubSocketRealtimeAdapter>.Instance);
 
         if (esSolicitudPendiente)
-            await adaptador.NotificarSolicitudPendienteFirma(42, 7, "jperez", mensaje, default);
+            await adaptador.NotificarSolicitudPendienteFirma(42, 7, new List<string> { "JPerez", "MLoPEZ" }, mensaje, default);
         else
             await adaptador.NotificarFirmaDocumentoAsync(42, documentoId, "2", true, "jperez", mensaje, default);
 
@@ -28,17 +28,22 @@ public class HubSocketRealtimeAdapterTest
         Assert.Equal("clave-de-prueba", http.ApiKey);
         using var json = JsonDocument.Parse(Assert.IsType<string>(http.Cuerpo));
         var cuerpo = json.RootElement;
-        Assert.Equal(42L, cuerpo.GetProperty("solicitudId").GetInt64());
-        Assert.Equal("jperez", cuerpo.GetProperty("codigoUsuario").GetString());
-        Assert.Equal(mensaje, cuerpo.GetProperty("mensaje").GetString());
 
         if (esSolicitudPendiente)
         {
             Assert.Equal(4, cuerpo.EnumerateObject().Count());
-            Assert.Equal(7, cuerpo.GetProperty("totalSolicitudesPendientesFirma").GetInt32());
+            Assert.Equal(new[] { "jperez", "mlopez" }, cuerpo.GetProperty("idUsuario").EnumerateArray().Select(usuario => usuario.GetString()));
+            Assert.Equal("notificacion-solicitud-pendiente", cuerpo.GetProperty("eventName").GetString());
+            Assert.Equal(mensaje, cuerpo.GetProperty("message").GetString());
+            var data = cuerpo.GetProperty("data");
+            Assert.Equal(42L, data.GetProperty("solicitudId").GetInt64());
+            Assert.Equal(7, data.GetProperty("totalSolicitudesPendientesFirma").GetInt32());
         }
         else
         {
+            Assert.Equal(42L, cuerpo.GetProperty("solicitudId").GetInt64());
+            Assert.Equal("jperez", cuerpo.GetProperty("codigoUsuario").GetString());
+            Assert.Equal(mensaje, cuerpo.GetProperty("mensaje").GetString());
             Assert.Equal(6, cuerpo.EnumerateObject().Count());
             Assert.Equal(documentoId, cuerpo.GetProperty("solicitudDocumentoId").GetInt64());
             Assert.True(cuerpo.GetProperty("firmado").GetBoolean());
