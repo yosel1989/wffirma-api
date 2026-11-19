@@ -219,7 +219,7 @@ public class WorkflowDomainService : IWorkflowDomainService
       Plantilla plantilla,
       Func<long> generarIdSolicitudFirmante)
     {
-        foreach (var item in plantilla.Etapas)
+        foreach (var item in plantilla.Etapas.OrderBy(x => x.OrdenEtapa))
         {
             foreach (var item2 in item.Firmantes)
             {

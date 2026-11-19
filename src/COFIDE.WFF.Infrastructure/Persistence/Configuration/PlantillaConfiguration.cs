@@ -11,6 +11,17 @@ public class PlantillaConfiguration : AuditableEntityConfiguration<Plantilla, lo
     {
         base.Configure(builder);
 
+        builder.Ignore(x => x.Estado);
+
+        builder.Property(x => x.EstadoPlantilla)
+            .HasColumnName("CH_ESTADO")
+            .HasColumnType("CHAR(1)")
+            .HasConversion(
+                estado => ConvertirEstadoAProveedor(estado),
+                estado => ConvertirEstadoDesdeProveedor(estado))
+            .IsRequired()
+            .IsConcurrencyToken();
+
         builder.ToTable("WFF_PLANTILLA");
 
         builder.HasKey(a => a.Id)
@@ -80,4 +91,19 @@ public class PlantillaConfiguration : AuditableEntityConfiguration<Plantilla, lo
                   .HasConstraintName("FK_PLANTILLA_USUARIO")
                   .OnDelete(DeleteBehavior.Restrict);*/
     }
+
+    private static string ConvertirEstadoAProveedor(EstadoPlantilla estado) =>
+        estado == EstadoPlantilla.Activa
+            ? "A"
+            : estado == EstadoPlantilla.Inactiva ? "I" : "E";
+
+    private static EstadoPlantilla ConvertirEstadoDesdeProveedor(string estado) =>
+        estado.Trim() switch
+        {
+            "A" => EstadoPlantilla.Activa,
+            "I" => EstadoPlantilla.Inactiva,
+            "E" => EstadoPlantilla.Eliminada,
+            _ => throw new InvalidOperationException(
+                $"Estado de plantilla no reconocido: {estado}.")
+        };
 }

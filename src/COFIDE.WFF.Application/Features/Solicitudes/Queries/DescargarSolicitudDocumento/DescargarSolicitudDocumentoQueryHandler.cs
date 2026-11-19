@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using COFIDE.WFF.Application.Common.Constants;
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
@@ -32,8 +33,12 @@ public sealed class DescargarSolicitudDocumentoHandler(
         if (solicitudDocumento is null)
             throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.DocumentoVacio);
 
-        await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(
-            solicitudDocumento.Solicitud.Id, cancellationToken);
+        if (string.Equals(request.Origen, OrigenSolicitud.MisSolicitudes, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(request.Origen, OrigenSolicitud.SeguimientoSolicitudes, StringComparison.OrdinalIgnoreCase))
+        {
+            await _solicitudConsultaAuthorizationService.AutorizarPorIdAsync(
+                solicitudDocumento.Solicitud.Id, cancellationToken);
+        }
 
         string ruta;
         string nombre;

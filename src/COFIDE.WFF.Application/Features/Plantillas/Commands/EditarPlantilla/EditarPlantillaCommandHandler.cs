@@ -23,14 +23,17 @@ public sealed class EditarPlantillaCommandHandler(
     public override async Task<long> Handle(EditarPlantillaCommand request, CancellationToken cancellationToken)
     {
         long usuarioActual = _currentUser.UserIdLocal!.Value;
-        string gerenciaUsuario = _currentUser.UserGerenciaNombre!;
         var rolUusario = _currentUser.RolUsuario;
         var usuario = new Usuario(usuarioActual, rolUusario!.Value);
 
         var plantilla = await _plantillaRepository.ObtenerAgregadoPlantillaAsync(request.Id, cancellationToken, true)
         ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.PlantillaInvalid);
 
-        plantilla.PermitirActualizarPlantilla(usuarioActual, gerenciaUsuario, usuario);
+        plantilla.PermitirActualizarPlantilla(
+            usuarioActual,
+            _currentUser.UserAreaId,
+            _currentUser.UserAreaPadreId,
+            usuario);
 
         var tipoAprobadorDict = (await _parametroRepository
            .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoAprobador, cancellationToken))
