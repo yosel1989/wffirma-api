@@ -7,11 +7,11 @@ namespace COFIDE.WFF.Api.Request.Usuarios;
 /// </summary>
 public sealed class UsuarioPaginadoRequest : PaginadoRequest
 {
-    /// <summary>Identificador opcional de la gerencia del usuario.</summary>
-    public long? IdGerencia { get; set; }
+    /// <summary>Gerencias opcionales. Se ignoran si se envía al menos un departamento.</summary>
+    public List<long>? IdGerencia { get; set; }
 
-    /// <summary>Identificador opcional del departamento del usuario.</summary>
-    public long? IdDepartamento { get; set; }
+    /// <summary>Departamentos opcionales. Si se envían, tienen prioridad sobre las gerencias.</summary>
+    public List<long>? IdDepartamento { get; set; }
 
     /// <summary>Identificador opcional del cargo del usuario.</summary>
     public long? IdCargo { get; set; }

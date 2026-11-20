@@ -25,9 +25,9 @@ public sealed class ObtenerUsuariosPaginadoValidator : AbstractValidator<Obtener
             .WithMessage("El número de página debe ser mayor que cero.");
         RuleFor(x => x.PageSize).InclusiveBetween(1, PagedDefaults.MaxPageSize)
             .WithMessage($"El tamaño de página debe estar entre 1 y {PagedDefaults.MaxPageSize}.");
-        RuleFor(x => x.IdGerencia).GreaterThan(0L)
+        RuleForEach(x => x.IdGerencia).GreaterThan(0L)
             .WithMessage("El identificador de gerencia debe ser mayor que cero.");
-        RuleFor(x => x.IdDepartamento).GreaterThan(0L)
+        RuleForEach(x => x.IdDepartamento).GreaterThan(0L)
             .WithMessage("El identificador de departamento debe ser mayor que cero.");
         RuleFor(x => x.IdCargo).GreaterThan(0L)
             .WithMessage("El identificador de cargo debe ser mayor que cero.");

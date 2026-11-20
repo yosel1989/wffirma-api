@@ -18,7 +18,7 @@ public sealed class UsuarioRepositoryPaginadoTests
         await using var context = await CrearContextoAsync();
         var repository = new UsuarioRepository(context);
 
-        var result = await repository.ObtenerPaginadoAsync(new(), 10, 20, 40, false, 1, default);
+        var result = await repository.ObtenerPaginadoAsync(new(), [10], [20], 40, false, 1, default);
         var item = Assert.Single(result.Items);
 
         Assert.Equal(1, result.TotalCount);
@@ -53,6 +53,35 @@ public sealed class UsuarioRepositoryPaginadoTests
         Assert.Empty(ultima.Items);
         Assert.Equal(2, ultima.TotalCount);
         Assert.Equal(3, ultima.PageNumber);
+    }
+
+    /// <summary>Sin departamentos, filtra por gerencia incluyendo usuarios de sus áreas hijas.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ObtenerPaginadoAsync_SoloGerencias_IncluyeUsuariosDeAreasHijas(bool departamentosVacio)
+    {
+        await using var context = await CrearContextoAsync();
+        var repository = new UsuarioRepository(context);
+
+        var result = await repository.ObtenerPaginadoAsync(
+            new(), [999, 10], departamentosVacio ? [] : null, null, null, null, default);
+
+        Assert.Equal(1L, Assert.Single(result.Items).IdUsuario);
+    }
+
+    /// <summary>Con departamentos, la gerencia enviada se ignora.</summary>
+    [Fact]
+    public async Task ObtenerPaginadoAsync_ConDepartamentos_IgnoraGerencias()
+    {
+        await using var context = await CrearContextoAsync();
+        var repository = new UsuarioRepository(context);
+
+        var coincide = await repository.ObtenerPaginadoAsync(new(), [999], [20], null, null, null, default);
+        var noCoincide = await repository.ObtenerPaginadoAsync(new(), [10], [999], null, null, null, default);
+
+        Assert.Equal(1L, Assert.Single(coincide.Items).IdUsuario);
+        Assert.Empty(noCoincide.Items);
     }
 
     /// <summary>Prepara una jerarquía de tres niveles y usuarios con y sin asignaciones.</summary>

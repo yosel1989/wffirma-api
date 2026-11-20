@@ -47,9 +47,14 @@ public class UsuarioRepository(
 
     /// <inheritdoc />
     public async Task<PagedResult<UsuarioPaginadoDto>> ObtenerPaginadoAsync(
-        PagedQueryParams pagination, long? idGerencia, long? idDepartamento, long? idCargo,
+        PagedQueryParams pagination, IReadOnlyCollection<long>? idGerencia, IReadOnlyCollection<long>? idDepartamento, long? idCargo,
         bool? estado, long? idUsuario, CancellationToken cancellationToken)
     {
+        var departamentos = idDepartamento?.Distinct().ToList() ?? [];
+        var gerencias = idGerencia?.Distinct().ToList() ?? [];
+        var filtrarPorDepartamento = departamentos.Count > 0;
+        var filtrarPorGerencia = !filtrarPorDepartamento && gerencias.Count > 0;
+
         var usuarios = _context.Usuarios.AsNoTracking();
 
         if (idUsuario.HasValue)
@@ -69,8 +74,8 @@ public class UsuarioRepository(
                       let departamentoId = area != null && area.Tipo == 'D' ? (long?)area.Id
                           : padre != null && padre.Tipo == 'D' ? padre.Id
                           : abuelo != null && abuelo.Tipo == 'D' ? abuelo.Id : null
-                      where (!idGerencia.HasValue || gerenciaId == idGerencia)
-                          && (!idDepartamento.HasValue || departamentoId == idDepartamento)
+                      where (!filtrarPorGerencia || (gerenciaId.HasValue && gerencias.Contains(gerenciaId.Value)))
+                          && (!filtrarPorDepartamento || (departamentoId.HasValue && departamentos.Contains(departamentoId.Value)))
                       select new UsuarioPaginadoDto
                       {
                           IdUsuario = usuario.Id,
