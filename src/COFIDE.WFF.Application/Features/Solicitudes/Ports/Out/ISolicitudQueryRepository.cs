@@ -25,12 +25,13 @@ public interface ISolicitudQueryRepository
     Task<int> ContarSolicitudesPorAprobarNoVistas(long idUsuario, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Obtiene las cuentas de logueo que el hub usa para identificar a los firmantes en turno de una solicitud.
+    /// Obtiene los destinatarios en turno para una solicitud y el total de pendientes en turno de cada uno, vistas o no.
     /// </summary>
-    /// <param name="idSolicitud">Identificador de la solicitud.</param>
+    /// <param name="idSolicitud">Identificador de la solicitud que origina el aviso.</param>
     /// <param name="cancellationToken">Token para cancelar la consulta.</param>
-    /// <returns>Cuentas de logueo distintas y no vacías; una lista vacía si no hay destinatarios elegibles.</returns>
-    Task<IReadOnlyList<string>> ObtenerCodigosUsuarioEnTurnoAsync(long idSolicitud, CancellationToken cancellationToken);
+    /// <returns>Una lista vacía si no hay destinatarios elegibles con cuenta de logueo.</returns>
+    Task<IReadOnlyList<DestinatarioSolicitudPendienteFirmaDto>> ObtenerDestinatariosSolicitudPendienteFirmaAsync(
+        long idSolicitud, CancellationToken cancellationToken);
 
     Task<SolicitudDto?> ObtenerSolicitudPorId(long id, long? idUsuario, bool esReuso, CancellationToken cancellationToken, bool tracking = false);
 
