@@ -18,5 +18,5 @@ public sealed class ObtenerCargosQueryHandler(
     /// <returns>Lista de cargos para el combo.</returns>
     public override Task<List<ObtenerCargosDto>> Handle(
         ObtenerCargosQuery request, CancellationToken cancellationToken)
-        => cargoRepository.GetObtenerCargos(cancellationToken);
+        => cargoRepository.ObtenerCargos(cancellationToken);
 }

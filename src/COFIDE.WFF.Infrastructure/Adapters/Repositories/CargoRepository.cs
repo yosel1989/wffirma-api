@@ -13,7 +13,7 @@ public class CargoRepository(WorkflowFirmaDbContext context)
     : GenericRepository<Cargo, long>(context), ICargoRepository
 {
     /// <inheritdoc />
-    public async Task<List<ObtenerCargosDto>> GetObtenerCargos(CancellationToken cancellationToken)
+    public async Task<List<ObtenerCargosDto>> ObtenerCargos(CancellationToken cancellationToken)
         => await _context.Set<Cargo>()
             .AsNoTracking()
             .OrderBy(cargo => cargo.NombreCargo)

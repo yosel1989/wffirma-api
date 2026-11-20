@@ -10,5 +10,5 @@ public interface ICargoRepository : IGenericRepository<Cargo, long>
     /// <summary>Obtiene todos los cargos ordenados por nombre para una selección.</summary>
     /// <param name="cancellationToken">Token de cancelación de la consulta.</param>
     /// <returns>Lista de identificadores y nombres de cargos.</returns>
-    Task<List<ObtenerCargosDto>> GetObtenerCargos(CancellationToken cancellationToken);
+    Task<List<ObtenerCargosDto>> ObtenerCargos(CancellationToken cancellationToken);
 }
