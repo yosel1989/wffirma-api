@@ -11,7 +11,7 @@ public class CargoRepositoryTests
 {
     /// <summary>Comprueba la proyección y el orden de cargos activos e inactivos.</summary>
     [Fact]
-    public async Task GetCargoCombo_DevuelveTodosLosCargosOrdenadosPorNombre()
+    public async Task GetCargo_DevuelveTodosLosCargosOrdenadosPorNombre()
     {
         await using var context = CrearContexto();
         context.Set<Cargo>().AddRange(
@@ -28,7 +28,7 @@ public class CargoRepositoryTests
 
     /// <summary>Comprueba que una tabla vacía produce una lista vacía.</summary>
     [Fact]
-    public async Task GetCargoCombo_SinCargos_DevuelveListaVacia()
+    public async Task GetCargo_SinCargos_DevuelveListaVacia()
     {
         await using var context = CrearContexto();
 
