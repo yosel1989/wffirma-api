@@ -55,9 +55,11 @@ public class MaestroController : BaseApiController
 
     [HttpGet("usuarios")]
     [ProducesResponseType(typeof(ResponseDto<List<UsuariosComboDto>>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ResponseDto<List<UsuariosComboDto>>>> ObtenerComboUsuarios(CancellationToken cancellationToken)
+    public async Task<ActionResult<ResponseDto<List<UsuariosComboDto>>>> ObtenerComboUsuarios(
+        CancellationToken cancellationToken,
+        [FromQuery] bool? todos)
     {
-        var result = await _mediator.Send(new ObtenerUsuariosComboQuery(), cancellationToken);
+        var result = await _mediator.Send(new ObtenerUsuariosComboQuery(todos), cancellationToken);
         if (result.Count == 0)
             return NotFound(ResponseDto<List<UsuariosComboDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));

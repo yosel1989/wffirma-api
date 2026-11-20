@@ -12,7 +12,7 @@ public sealed class ObtenerUsuariosComboQueryHandler(
 
     public override async Task<List<UsuariosComboDto>> Handle(ObtenerUsuariosComboQuery request, CancellationToken cancellationToken)
     {
-        var dtoItems = await _usuarioRepository.GetUsuarioCombo(cancellationToken);
+        var dtoItems = await _usuarioRepository.GetUsuarioCombo(request.Todos, cancellationToken);
         return dtoItems;
     }
 }

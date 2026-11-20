@@ -68,12 +68,27 @@ public class ConsultasComboQueryHandlerTest
     {
         var repo = new Mock<IUsuarioRepository>();
         var esperado = new List<UsuariosComboDto> { new(), new() };
-        repo.Setup(r => r.GetUsuarioCombo(It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
+        repo.Setup(r => r.GetUsuarioCombo(It.IsAny<bool?>(), It.IsAny<CancellationToken>())).ReturnsAsync(esperado);
 
         var resultado = await new ObtenerUsuariosComboQueryHandler(_mapper.Object, repo.Object)
             .Handle(new ObtenerUsuariosComboQuery(), CancellationToken.None);
 
         resultado.Should().HaveCount(2);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Usuarios_Debe_Reenviar_Todos_Al_Repositorio(bool? todos)
+    {
+        var repo = new Mock<IUsuarioRepository>();
+        repo.Setup(r => r.GetUsuarioCombo(todos, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        await new ObtenerUsuariosComboQueryHandler(_mapper.Object, repo.Object)
+            .Handle(new ObtenerUsuariosComboQuery(todos), CancellationToken.None);
+
+        repo.Verify(r => r.GetUsuarioCombo(todos, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

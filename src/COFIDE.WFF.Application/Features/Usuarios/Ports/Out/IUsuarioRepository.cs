@@ -10,7 +10,10 @@ public interface IUsuarioRepository
     Task<Usuario?> GetByIdAsync(long idUsuario, bool tracking = false);
     Task<Usuario?> GetByCuentaLogueoAsync(string cuentaLogueo, bool tracking = false);
     Task<List<UsuarioBuscadorDto>> BuscarAsync(string termino, CancellationToken cancellationToken);
-    Task<List<UsuariosComboDto>> GetUsuarioCombo(CancellationToken cancellationToken);
+    /// <summary>Obtiene el combo de usuarios.</summary>
+    /// <param name="todos">Si se envía (con cualquier valor), incluye usuarios inactivos; si es <c>null</c>, solo activos.</param>
+    /// <param name="cancellationToken">Token de cancelación de la consulta.</param>
+    Task<List<UsuariosComboDto>> GetUsuarioCombo(bool? todos, CancellationToken cancellationToken);
 
     /// <summary>Obtiene una página de usuarios y el total de coincidencias de los filtros.</summary>
     /// <param name="pagination">Parámetros de paginación y ordenamiento.</param>

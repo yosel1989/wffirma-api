@@ -172,13 +172,16 @@ public class UsuarioRepository(
                  u.Area.AreaPadre.AreaPadre.NombreArea.ToUpper().Contains(" " + t)));
     }
 
-    public async Task<List<UsuariosComboDto>> GetUsuarioCombo(CancellationToken cancellationToken)
+    public async Task<List<UsuariosComboDto>> GetUsuarioCombo(bool? todos, CancellationToken cancellationToken)
     {
         try
         {
-var usuarios = await _context.Usuarios
-                .AsNoTracking()
-                .Where(u => u.Estado)
+            var query = _context.Usuarios.AsNoTracking();
+
+            if (todos is null)
+                query = query.Where(u => u.Estado);
+
+            var usuarios = await query
                 .OrderBy(u => u.ApellidoPaterno)
                 .ThenBy(u => u.ApellidoMaterno)
                 .ThenBy(u => u.Nombres)

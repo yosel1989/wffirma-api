@@ -2,4 +2,4 @@
 
 namespace COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerUsuariosCombo;
 
-public sealed record ObtenerUsuariosComboQuery() : BaseQuery<List<UsuariosComboDto>>;
+public sealed record ObtenerUsuariosComboQuery(bool? Todos = null) : BaseQuery<List<UsuariosComboDto>>;
