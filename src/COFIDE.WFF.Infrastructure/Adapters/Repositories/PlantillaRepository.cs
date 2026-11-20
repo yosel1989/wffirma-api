@@ -68,6 +68,7 @@ public class PlantillaRepository(
     public async Task<Plantilla?> ObtenerParaCambioEstadoAsync(long id, CancellationToken cancellationToken)
     {
         return await _context.Plantillas
+            .Where(x => x.EstadoPlantilla != EstadoPlantilla.Eliminada && x.Id == id)
             .FirstOrDefaultAsync(plantilla => plantilla.Id == id, cancellationToken);
     }
 

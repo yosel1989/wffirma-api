@@ -12,7 +12,7 @@ public static class ApplicationErrors
     public static readonly ApplicationError TipoEtapaInvalid = new("APP_SOL_002", "Tipo de etapa inválida.");
     public static readonly ApplicationError DocumentoVacio = new("APP_SOL_003", "El documento se encuentra vacío.");
     public static readonly ApplicationError SustentoVacio = new("APP_SOL_004", "El documento de sustento se encuentra vacío.");
-    public static readonly ApplicationError PlantillaInvalid = new("APP_SOL_005", "Plantilla inválida.");
+    public static readonly ApplicationError PlantillaInvalid = new("APP_SOL_005", "La plantilla ya no existe");
     public static readonly ApplicationError PlantillaYaNoExiste = new(
         "APP_PLT_001",
         "La plantilla ya no existe",
