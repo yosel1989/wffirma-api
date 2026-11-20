@@ -479,21 +479,28 @@ public partial class SolicitudQueryRepository
             .Distinct()
             .CountAsync(cancellationToken);
 
-    /// <summary>
-    /// Obtiene los destinatarios de una solicitud que actualmente tienen un turno pendiente de aprobación.
-    /// </summary>
-    /// <param name="idSolicitud">Identificador de la solicitud.</param>
-    /// <param name="cancellationToken">Token para cancelar la consulta.</param>
-    /// <returns>Cuentas de logueo distintas y no vacías de los usuarios asignados en turno.</returns>
-    public async Task<IReadOnlyList<string>> ObtenerCodigosUsuarioEnTurnoAsync(long idSolicitud, CancellationToken cancellationToken)
-        => await FirmantesEnTurno()
-            .Where(sf =>
-                sf.SolicitudPlantilla.Solicitud.Id == idSolicitud &&
-                sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo != null &&
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<DestinatarioSolicitudPendienteFirmaDto>> ObtenerDestinatariosSolicitudPendienteFirmaAsync(
+        long idSolicitud, CancellationToken cancellationToken)
+    {
+        var pendientes = FirmantesEnTurno()
+            .Where(sf => sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo != null &&
                 sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo != "")
-            .Select(sf => sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo!)
+            .Select(sf => new
+            {
+                SolicitudId = sf.SolicitudPlantilla.Solicitud.Id,
+                CodigoUsuario = sf.FirmanteFlujo.FirmanteFlujoUsuarioAsignado.CuentaLogueo!
+            });
+
+        var destinatarios = pendientes.Where(p => p.SolicitudId == idSolicitud).Select(p => p.CodigoUsuario);
+
+        return await pendientes
+            .Where(p => destinatarios.Contains(p.CodigoUsuario))
             .Distinct()
+            .GroupBy(p => p.CodigoUsuario)
+            .Select(g => new DestinatarioSolicitudPendienteFirmaDto(g.Key, g.Count()))
             .ToListAsync(cancellationToken);
+    }
 
     /// <summary>
     /// Filas de firmante activas de solicitudes en curso cuya etapa es la pendiente mas baja (turno actual),

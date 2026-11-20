@@ -32,16 +32,22 @@ public class ContarSolicitudesNoVistasTest
     }
 
     [Fact]
-    public async Task CodigosEnTurno_DevuelveSoloLaCuentaDelFirmanteEnTurno()
+    public async Task DestinatariosEnTurno_IncluyePendientesYaVistasYPreservaElTurno()
     {
         var nombre = await Sembrar();
 
         using var consulta = Contexto(nombre);
         var repositorio = new SolicitudQueryRepository(consulta, null!, TimeProvider.System);
 
-        Assert.Equal(new[] { $"cuenta{Primero}" }, await repositorio.ObtenerCodigosUsuarioEnTurnoAsync(1, default));
-        Assert.Equal(new[] { $"cuenta{Segundo}" }, await repositorio.ObtenerCodigosUsuarioEnTurnoAsync(4, default));
-        Assert.Empty(await repositorio.ObtenerCodigosUsuarioEnTurnoAsync(3, default));
+        var primero = Assert.Single(await repositorio.ObtenerDestinatariosSolicitudPendienteFirmaAsync(1, default));
+        Assert.Equal($"cuenta{Primero}", primero.CodigoUsuario);
+        Assert.Equal(2, primero.TotalSolicitudesPendientesFirma);
+
+        var segundo = Assert.Single(await repositorio.ObtenerDestinatariosSolicitudPendienteFirmaAsync(4, default));
+        Assert.Equal($"cuenta{Segundo}", segundo.CodigoUsuario);
+        Assert.Equal(1, segundo.TotalSolicitudesPendientesFirma);
+
+        Assert.Empty(await repositorio.ObtenerDestinatariosSolicitudPendienteFirmaAsync(3, default));
     }
 
     private static async Task<string> Sembrar()
