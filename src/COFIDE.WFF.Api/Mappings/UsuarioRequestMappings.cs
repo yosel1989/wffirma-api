@@ -1,4 +1,5 @@
 using COFIDE.WFF.Api.Request.Usuarios;
+using COFIDE.WFF.Application.Features.Usuarios.Commands.CambiarEstadoUsuario;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerUsuariosPaginado;
 
 namespace COFIDE.WFF.Api.Mappings;
@@ -12,4 +13,7 @@ public static class UsuarioRequestMappings
     public static ObtenerUsuariosPaginadoQuery ToQuery(this UsuarioPaginadoRequest request)
         => new(request.PageNumber, request.PageSize, request.Sorts, request.IdGerencia,
             request.IdDepartamento, request.IdCargo, request.Estado, request.IdUsuario);
+
+    public static CambiarEstadoUsuarioCommand ToCommand(this CambiarEstadoUsuarioRequest request, long id)
+        => new(id, request.Estado);
 }

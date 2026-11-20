@@ -81,6 +81,28 @@ public class UsuarioController : BaseApiController
         return Ok(ResponseDto<List<UsuarioBuscadorDto>>.Ok(result));
     }
 
-   
+
+    #endregion
+
+    #region Commands
+
+    /// <summary>Activa o desactiva un usuario. Requiere el rol de administrador.</summary>
+    /// <returns>El estado final del usuario: true = activo, false = inactivo.</returns>
+    [HttpPut("{id:long}/estado")]
+    [ProducesResponseType(typeof(ResponseDto<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResponseDto<bool>>> CambiarEstadoUsuario(
+        long id, [FromBody] CambiarEstadoUsuarioRequest request, CancellationToken cancellationToken)
+    {
+        var nuevoEstado = await _mediator.Send(request.ToCommand(id), cancellationToken);
+        var response = ResponseDto<bool>.Ok(
+            nuevoEstado, ResponseCodes.OperacionExitosa, HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
+
     #endregion
 }

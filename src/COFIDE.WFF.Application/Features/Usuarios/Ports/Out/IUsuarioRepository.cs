@@ -8,6 +8,11 @@ namespace COFIDE.WFF.Application.Features.Usuarios.Ports.Out;
 public interface IUsuarioRepository
 {
     Task<Usuario?> GetByIdAsync(long idUsuario, bool tracking = false);
+
+    /// <summary>Obtiene un usuario activo o inactivo para consultar o modificar su estado.</summary>
+    Task<Usuario?> GetByIdAnyStatusAsync(long idUsuario, bool tracking, CancellationToken cancellationToken);
+    Task UpdateAsync(Usuario usuario);
+
     Task<Usuario?> GetByCuentaLogueoAsync(string cuentaLogueo, bool tracking = false);
     Task<List<UsuarioBuscadorDto>> BuscarAsync(string termino, CancellationToken cancellationToken);
     Task<List<UsuariosComboDto>> GetUsuarioCombo(CancellationToken cancellationToken);

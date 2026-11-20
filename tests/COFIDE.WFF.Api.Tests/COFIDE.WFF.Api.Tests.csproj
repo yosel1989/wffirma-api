@@ -25,13 +25,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+	<Using Include="Xunit" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\Solicitudes\" />
-    <Folder Include="Support\" />
-    <Folder Include="Tests\Usuarios\" />
+	<Folder Include="Resources\Solicitudes\" />
+	<Folder Include="Support\" />
+	<Folder Include="Tests\Usuarios\" />
   </ItemGroup>
 
 	<ItemGroup>

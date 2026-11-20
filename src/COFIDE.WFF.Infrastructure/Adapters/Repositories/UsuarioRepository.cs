@@ -15,6 +15,17 @@ public class UsuarioRepository(
         WorkflowFirmaDbContext context
     ) : GenericRepository<Usuario, long>(context), IUsuarioRepository
 {
+    /// <inheritdoc />
+    public async Task<Usuario?> GetByIdAnyStatusAsync(
+        long idUsuario, bool tracking, CancellationToken cancellationToken)
+    {
+        IQueryable<Usuario> query = _context.Usuarios;
+        if (!tracking)
+            query = query.AsNoTracking();
+
+        return await query.FirstOrDefaultAsync(u => u.Id == idUsuario, cancellationToken);
+    }
+
     public async Task<Usuario?> GetByIdAsync(long idUsuario, bool tracking = false)
     {
         IQueryable<Usuario> query = _context.Set<Usuario>();
