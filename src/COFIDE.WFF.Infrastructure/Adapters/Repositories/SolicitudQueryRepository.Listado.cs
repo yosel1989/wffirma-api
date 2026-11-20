@@ -111,16 +111,15 @@ public partial class SolicitudQueryRepository
         // Visibilidad primero (rol OR acceso especial); los filtros siguientes solo reducen.
         query = AplicarVisibilidad(query, codigoUsuario, areaUsuario, roLUsuario, idsAreasAccesoEspecial);
 
-        if (gerencia?.Count > 0)
-        {
-            query = query.Where(s =>
-                gerencia.Contains(s.IdAreaPadreSolicitud));
-        }
-
         if (departamento?.Count > 0)
         {
             query = query.Where(s =>
                 departamento.Contains(s.IdAreaSolicitud));
+        }
+        else if (gerencia?.Count > 0)
+        {
+            query = query.Where(s =>
+                gerencia.Contains(s.IdAreaPadreSolicitud));
         }
 
         if (solicitante?.Count > 0)

@@ -153,6 +153,18 @@ public sealed class SolicitudVisibilidadPaginadoTests
         var departamentoAutorizado = await ObtenerPaginado(repository, departamentos: [50]);
         departamentoAutorizado.Items.Select(s => s.IdSolicitud).Should().Equal(2);
 
+        var departamentoPrioritario = await ObtenerPaginado(repository, gerencias: [9], departamentos: [50]);
+        departamentoPrioritario.Items.Select(s => s.IdSolicitud).Should().Equal(2);
+        departamentoPrioritario.TotalCount.Should().Be(1);
+        departamentoPrioritario.ExtraData!.Total.Should().Be(1);
+        departamentoPrioritario.ExtraData.MisSolicitudes.Should().Be(1);
+        departamentoPrioritario.ExtraData.MiDepartamento.Should().Be(1);
+        departamentoPrioritario.ExtraData.Urgente.Should().Be(0);
+
+        var gerenciaConDepartamentoVacio = await ObtenerPaginado(repository, gerencias: [5], departamentos: []);
+        gerenciaConDepartamentoVacio.Items.Select(s => s.IdSolicitud).Should().BeEquivalentTo(new long[] { 2, 3 });
+        gerenciaConDepartamentoVacio.ExtraData!.Total.Should().Be(2);
+
         var accesoSoloDepartamento = await ObtenerPaginado(repository, areasAccesoEspecial: [50]);
         accesoSoloDepartamento.Items.Select(s => s.IdSolicitud).Should().BeEquivalentTo(new long[] { 1, 2 });
         accesoSoloDepartamento.Items.Select(s => s.IdSolicitud).Should().NotContain(3);
@@ -160,9 +172,73 @@ public sealed class SolicitudVisibilidadPaginadoTests
         var sinAccesoEspecial = await ObtenerPaginado(repository, areasAccesoEspecial: []);
         sinAccesoEspecial.Items.Select(s => s.IdSolicitud).Should().Equal(1);
 
-        var departamentoNoAutorizado = await ObtenerPaginado(repository, departamentos: [70]);
+        var departamentoNoAutorizado = await ObtenerPaginado(repository, gerencias: [5], departamentos: [70]);
         departamentoNoAutorizado.Items.Should().BeEmpty();
         departamentoNoAutorizado.TotalCount.Should().Be(0);
+        departamentoNoAutorizado.ExtraData!.Total.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(9L, 307, 28)]
+    [InlineData(5L, 303, 27)]
+    public async Task Paginado_Area_Actual_Del_Solicitante_No_Reemplaza_Area_Guardada_Al_Filtrar(
+        long gerenciaHistorica, int totalSoloGerencia, int urgentesSoloGerencia)
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        await using (var seed = CrearContexto(databaseName))
+        {
+            await SembrarSolicitudesAsync(seed, incluirSolicitudes: false);
+            var solicitantePropia = seed.Usuarios.Local.Single(u => u.Id == IdUsuario);
+            var solicitanteActual = seed.Usuarios.Local.Single(u => u.Id == 21);
+            Asignar(solicitanteActual, nameof(Usuario.IdArea), (long?)AreaUsuario);
+
+            for (var i = 0; i < 307; i++)
+            {
+                var perteneceHistoricamente = i < 303;
+                seed.Solicitudes.Add(CrearSolicitud(
+                    10 + i,
+                    perteneceHistoricamente ? AreaUsuario : 50,
+                    perteneceHistoricamente ? 9 : gerenciaHistorica,
+                    perteneceHistoricamente ? IdUsuario : solicitanteActual.Id,
+                    urgente: i < 27 || i == 303,
+                    perteneceHistoricamente ? solicitantePropia : solicitanteActual,
+                    seed.Plantillas.Local.Single(),
+                    seed.TipoSolicitudes.Local.Single(),
+                    seed.SubTipoSolicitud.Local.Single(),
+                    seed.TipoOperacion.Local.Single()));
+            }
+
+            await seed.SaveChangesAsync();
+        }
+
+        await using var contexto = CrearContexto(databaseName);
+        var repository = CrearRepositorio(contexto);
+        var sinFiltros = await ObtenerPaginado(repository, areasAccesoEspecial: [50]);
+        var miDepartamento = await ObtenerPaginado(
+            repository, areasAccesoEspecial: [50], usuarioDepartamento: true);
+        var soloGerencia = await ObtenerPaginado(
+            repository, gerencias: [9], areasAccesoEspecial: [50]);
+        var soloDepartamento = await ObtenerPaginado(
+            repository, departamentos: [AreaUsuario], areasAccesoEspecial: [50]);
+        var ambosFiltros = await ObtenerPaginado(
+            repository, gerencias: [9], departamentos: [AreaUsuario], areasAccesoEspecial: [50]);
+
+        sinFiltros.TotalCount.Should().Be(307);
+        sinFiltros.ExtraData!.Total.Should().Be(307);
+        sinFiltros.ExtraData.MiDepartamento.Should().Be(307);
+        sinFiltros.ExtraData.Urgente.Should().Be(28);
+        miDepartamento.TotalCount.Should().Be(307);
+        miDepartamento.ExtraData!.MiDepartamento.Should().Be(307);
+
+        soloGerencia.TotalCount.Should().Be(totalSoloGerencia);
+        soloGerencia.ExtraData!.Total.Should().Be(totalSoloGerencia);
+        soloGerencia.ExtraData.Urgente.Should().Be(urgentesSoloGerencia);
+        soloDepartamento.TotalCount.Should().Be(303);
+        soloDepartamento.ExtraData!.MiDepartamento.Should().Be(303);
+        ambosFiltros.TotalCount.Should().Be(303);
+        ambosFiltros.ExtraData!.Total.Should().Be(303);
+        ambosFiltros.ExtraData.MiDepartamento.Should().Be(303);
+        ambosFiltros.ExtraData.Urgente.Should().Be(27);
     }
 
     private static async Task<PagedResult<SolicitudPaginadoDto, SolicitudResumenPaginadoDto>> ObtenerPaginado(
@@ -171,7 +247,8 @@ public sealed class SolicitudVisibilidadPaginadoTests
         List<long>? departamentos = null,
         int pageNumber = 1,
         int pageSize = 10,
-        List<long>? areasAccesoEspecial = null) =>
+        List<long>? areasAccesoEspecial = null,
+        bool? usuarioDepartamento = null) =>
         await repository.ObtenerPaginado(
             new PagedQueryParams { PageNumber = pageNumber, PageSize = pageSize },
             IdUsuario,
@@ -193,12 +270,13 @@ public sealed class SolicitudVisibilidadPaginadoTests
             null,
             null,
             null,
-            null,
+            usuarioDepartamento,
             true,
             areasAccesoEspecial ?? [5],
             CancellationToken.None);
 
-    private static async Task SembrarSolicitudesAsync(WorkflowFirmaDbContext contexto)
+    private static async Task SembrarSolicitudesAsync(
+        WorkflowFirmaDbContext contexto, bool incluirSolicitudes = true)
     {
         var gerenciaAcceso = CrearArea(5, null, "Gerencia Especial");
         var departamento50 = CrearArea(50, 5, "Departamento 50");
@@ -241,14 +319,18 @@ public sealed class SolicitudVisibilidadPaginadoTests
         var plantilla = Plantilla.Crear(1, "Plantilla", "Prueba", false, IdUsuario, "GTI", true);
         contexto.Plantillas.Add(plantilla);
 
-        var solicitudes = new[]
+        if (incluirSolicitudes)
         {
-            CrearSolicitud(1, 90, 9, IdUsuario, urgente: true, solicitantePropia, plantilla, tipo, subtipo, operacion),
-            CrearSolicitud(2, 50, 5, IdUsuario, urgente: false, solicitantePropia, plantilla, tipo, subtipo, operacion),
-            CrearSolicitud(3, 51, 5, 21, urgente: true, solicitante51, plantilla, tipo, subtipo, operacion),
-            CrearSolicitud(4, 70, 7, 22, urgente: true, solicitanteNoAutorizado, plantilla, tipo, subtipo, operacion)
-        };
-        contexto.Solicitudes.AddRange(solicitudes);
+            var solicitudes = new[]
+            {
+                CrearSolicitud(1, 90, 9, IdUsuario, urgente: true, solicitantePropia, plantilla, tipo, subtipo, operacion),
+                CrearSolicitud(2, 50, 5, IdUsuario, urgente: false, solicitantePropia, plantilla, tipo, subtipo, operacion),
+                CrearSolicitud(3, 51, 5, 21, urgente: true, solicitante51, plantilla, tipo, subtipo, operacion),
+                CrearSolicitud(4, 70, 7, 22, urgente: true, solicitanteNoAutorizado, plantilla, tipo, subtipo, operacion)
+            };
+            contexto.Solicitudes.AddRange(solicitudes);
+        }
+
         await contexto.SaveChangesAsync();
     }
 
