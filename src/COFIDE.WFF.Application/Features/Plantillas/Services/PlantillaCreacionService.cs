@@ -21,6 +21,23 @@ public class PlantillaCreacionService(
             string gerenciaUsuario,
             CancellationToken cancellationToken)
     {
+        return await CrearPlantilla(
+            input,
+            usuarioActual,
+            gerenciaUsuario,
+            null,
+            null,
+            cancellationToken);
+    }
+
+    public async Task<Plantilla> CrearPlantilla(
+            CrearPlantillaInput input,
+            long usuarioActual,
+            string gerenciaUsuario,
+            long? idAreaPlantilla,
+            long? idAreaPadrePlantilla,
+            CancellationToken cancellationToken)
+    {
         var idPlantilla = await _plantillaRepository.ObtenerSiguienteIdAsync(cancellationToken);
         var idEtapa = await _plantillaRepository.ObtenerSiguienteIdEtapaAsync(cancellationToken);
         var idFirmante = await _plantillaRepository.ObtenerSiguienteIdFirmanteAsync(cancellationToken);
@@ -47,7 +64,9 @@ public class PlantillaCreacionService(
             usuarioActual,
             gerenciaUsuario,
             tipoEtapaDict,
-            tipoAprobadorDict
+            tipoAprobadorDict,
+            idAreaPlantilla,
+            idAreaPadrePlantilla
         );
     }
 }

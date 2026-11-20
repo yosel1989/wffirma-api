@@ -2,18 +2,20 @@
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
+using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Domain.Entities;
 namespace COFIDE.WFF.Application.Features.Plantillas.Queries.ValidarExistencia;
 
 public sealed class ValidarExistenciaQueryHandler(
         IMapper mapper,
         ICurrentUserService currentUser,
-        IPlantillaRepository plantillaRepository
+        IPlantillaRepository plantillaRepository,
+        IPlantillaCambioEstadoAuthorizationService authorizationService
     ) : BaseQueryHandler<ValidarExistenciaQuery, ValidarExistenciaResponseDto?>(mapper)
 {
     private readonly ICurrentUserService _currentUser = currentUser;
     private readonly IPlantillaRepository _plantillaRepository = plantillaRepository;
-
+    private readonly IPlantillaCambioEstadoAuthorizationService _authorizationService = authorizationService;
     public override async Task<ValidarExistenciaResponseDto?> Handle(ValidarExistenciaQuery request, CancellationToken cancellationToken)
     {
         ValidarExistenciaResponseDto response;
@@ -22,7 +24,12 @@ public sealed class ValidarExistenciaQueryHandler(
         var rolUusario = _currentUser.RolUsuario;
         var usuario = new Usuario(usuarioActual, rolUusario!.Value);
 
-        var plantilla = await _plantillaRepository.ValidarExistenciaNombrePlantilla(request.NombrePlantilla, request.Visibilidad, usuarioActual);
+        var plantilla = await _plantillaRepository.ValidarExistenciaNombrePlantilla(
+            request.NombrePlantilla,
+            request.Visibilidad,
+            usuarioActual,
+            _currentUser.UserAreaId,
+            _currentUser.UserAreaPadreId);
 
         if (plantilla == null)
         {
@@ -34,7 +41,9 @@ public sealed class ValidarExistenciaQueryHandler(
         }
         else
         {
-            bool validar = plantilla.ValidarPermisoPlantilla(usuarioActual, gerenciaUsuario, usuario);
+            bool validar = await _authorizationService.PuedeAutorizarAsync(
+                plantilla,
+                cancellationToken);
 
             response = new ValidarExistenciaResponseDto
             {

@@ -41,13 +41,92 @@ public class PlantillaRepositoryDisponibilidadTest
         Assert.NotNull(await repository.ObtenerDetallePlantillaPorId(2));
 
         Assert.Null(await repository.ValidarExistenciaNombrePlantilla(
-            "Eliminada", false, 10));
+            "Eliminada", false, 10, 100, 200));
         Assert.NotNull(await repository.ValidarExistenciaNombrePlantilla(
-            "Inactiva", false, 10));
+            "Inactiva", false, 10, 100, 200));
     }
 
-    private static Plantilla CrearPlantilla(long id, string nombre) =>
-        Plantilla.Crear(id, nombre, "Descripción", false, 10, "GTI", true);
+    [Fact]
+    public async Task ValidarExistencia_ConPrivadaBuscaLaMismaAreaYGerencia_RF01()
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        using (var seed = CrearContexto(databaseName))
+        {
+            var privadaOtraArea = CrearPlantilla(1, "Duplicada", 300, 200, 11);
+            var privadaMismaArea = CrearPlantilla(2, "Duplicada", 100, 200, 11);
+            seed.Plantillas.AddRange(privadaOtraArea, privadaMismaArea);
+            await seed.SaveChangesAsync();
+        }
+
+        using var context = CrearContexto(databaseName);
+        var repository = new PlantillaRepository(context);
+
+        var resultado = await repository.ValidarExistenciaNombrePlantilla(
+            "Duplicada", false, 10, 100, 200);
+
+        Assert.NotNull(resultado);
+        Assert.Equal(2, resultado.Id);
+    }
+
+    [Fact]
+    public async Task ValidarExistencia_ConPrivadaBuscaPorUsuarioCreador_RF01()
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        using (var seed = CrearContexto(databaseName))
+        {
+            var privadaPropia = CrearPlantilla(1, "Duplicada", 300, 400);
+            seed.Plantillas.Add(privadaPropia);
+            await seed.SaveChangesAsync();
+        }
+
+        using var context = CrearContexto(databaseName);
+        var repository = new PlantillaRepository(context);
+
+        var resultado = await repository.ValidarExistenciaNombrePlantilla(
+            "Duplicada", false, 10, 100, 200);
+
+        Assert.NotNull(resultado);
+        Assert.Equal(1, resultado.Id);
+    }
+
+    [Fact]
+    public async Task ValidarExistencia_ConPublicaBuscaEntreTodas_RF01()
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        using (var seed = CrearContexto(databaseName))
+        {
+            var publica = Plantilla.Crear(
+                1, "Duplicada", "Descripción", true, 10, "GTI", true, 300, 400);
+            seed.Plantillas.Add(publica);
+            await seed.SaveChangesAsync();
+        }
+
+        using var context = CrearContexto(databaseName);
+        var repository = new PlantillaRepository(context);
+
+        var resultado = await repository.ValidarExistenciaNombrePlantilla(
+            "Duplicada", true, 10, 100, 200);
+
+        Assert.NotNull(resultado);
+        Assert.Equal(1, resultado.Id);
+    }
+
+    private static Plantilla CrearPlantilla(
+        long id,
+        string nombre,
+        long? idArea = 100,
+        long? idAreaPadre = 200,
+        long idUsuarioPropietario = 10) =>
+        Plantilla.Crear(
+            id,
+            nombre,
+            "Descripción",
+            false,
+            idUsuarioPropietario,
+            "GTI",
+            true,
+            idArea,
+            idAreaPadre);
 
     private static WorkflowFirmaDbContext CrearContexto(string databaseName)
     {
