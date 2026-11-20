@@ -3,8 +3,12 @@ using COFIDE.WFF.Api.ApiVersions;
 using COFIDE.WFF.Api.Constants;
 using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
+using COFIDE.WFF.Api.Mappings;
+using COFIDE.WFF.Api.Request.Usuarios;
+using COFIDE.WFF.Application.Common.Pageds;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerContextoUsuario;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerContextoUsuario.Dtos;
+using COFIDE.WFF.Application.Features.Usuarios.Queries.ObtenerUsuariosPaginado;
 using COFIDE.WFF.Application.Features.Usuarios.Queries.UsuarioBuscador;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +26,29 @@ public class UsuarioController : BaseApiController
     public UsuarioController(IMediator mediator, ICorrelationContext correlationContext) : base(mediator, correlationContext) { }
 
     #region Queries
+
+    /// <summary>Obtiene un listado paginado de usuarios con filtros opcionales.</summary>
+    /// <param name="request">Filtros, orden y parámetros de paginación enviados en la URL.</param>
+    /// <param name="cancellationToken">Token de cancelación de la solicitud.</param>
+    /// <returns>La página solicitada y el total de usuarios que cumplen los filtros.</returns>
+    /// <response code="200">Página obtenida, incluso si no contiene usuarios.</response>
+    /// <response code="400">Los filtros o parámetros de paginación no son válidos.</response>
+    /// <response code="401">El usuario no está autenticado.</response>
+    /// <response code="403">El usuario no tiene el rol de administrador.</response>
+    [HttpGet("paginado")]
+    [ProducesResponseType(typeof(ResponseDto<PagedResultDto<UsuarioPaginadoDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ResponseDto<PagedResultDto<UsuarioPaginadoDto>>>> ObtenerUsuariosPaginado(
+        [FromQuery] UsuarioPaginadoRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(request.ToQuery(), cancellationToken);
+        var response = ResponseDto<PagedResultDto<UsuarioPaginadoDto>>.Ok(
+            result, ResponseCodes.OperacionExitosa, HttpContext.TraceIdentifier);
+
+        return Ok(response);
+    }
 
     /// <summary>
     /// Obtener el contexto de mi Usuario
