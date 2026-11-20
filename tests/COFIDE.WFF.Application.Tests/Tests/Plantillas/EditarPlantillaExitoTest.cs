@@ -5,6 +5,7 @@ using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Models;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
+using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Common.Enums;
 using FluentAssertions;
@@ -37,7 +38,11 @@ public class EditarPlantillaExitoTest
         usuario.Setup(u => u.RolUsuario).Returns(RolUsuario.SolicitanteAprobador);
 
         var id = await new EditarPlantillaCommandHandler(
-                new Mock<IMapper>().Object, usuario.Object, plantillas.Object, parametros.Object)
+                new Mock<IMapper>().Object,
+                usuario.Object,
+                plantillas.Object,
+                parametros.Object,
+                new Mock<IPlantillaCambioEstadoAuthorizationService>().Object)
             .Handle(new EditarPlantillaCommand(6, "Flujo editado", "Descripcion", new List<PlantillaEtapaRequest>
             {
                 new()

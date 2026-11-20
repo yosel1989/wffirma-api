@@ -7,6 +7,7 @@ using COFIDE.WFF.Application.Features.Maestros.DTOs;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
+using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Entities;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
@@ -35,7 +36,11 @@ public class PlantillaYJobHandlerTest
             .ReturnsAsync(plantilla);
 
         var act = () => new EditarPlantillaCommandHandler(
-                new Mock<IMapper>().Object, usuario.Object, plantillas.Object, parametros.Object)
+                new Mock<IMapper>().Object,
+                usuario.Object,
+                plantillas.Object,
+                parametros.Object,
+                new Mock<IPlantillaCambioEstadoAuthorizationService>().Object)
             .Handle(new EditarPlantillaCommand(6, "Flujo", "Descripcion", []), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<DomainException>();

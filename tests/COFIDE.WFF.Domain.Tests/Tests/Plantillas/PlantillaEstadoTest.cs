@@ -50,90 +50,121 @@ public class PlantillaEstadoTest
         Assert.True(plantilla.Estado);
     }
 
-    [Fact]
-    public void PermitirCambiarEstado_ConCoordinadorDeAreaPermite_RF02()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PermitirCambiarEstado_ConCoordinadorDeAreaPermite_RF02(bool visibilidad)
     {
-        var plantilla = PlantillaMother.Vacia();
-        AsignarArea(plantilla, 100, 200);
+        var plantilla = Plantilla.Crear(
+            1, "Plantilla", "Descripción", visibilidad, 20, "GTI", true, 100, 200);
 
-        var permitido = plantilla.PermitirCambiarEstadoPlantilla(
+        var exception = Record.Exception(() => plantilla.PermitirCambiarEstadoPlantilla(
             2,
             100,
             200,
             new Usuario(2, RolUsuario.Coordinador),
-            []);
+            []));
 
-        Assert.True(permitido);
+        Assert.Null(exception);
     }
 
-    [Fact]
-    public void PermitirCambiarEstado_ConCoordinadorDeAccesoEspecialPermite_RF02()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PermitirCambiarEstado_ConCoordinadorPropietarioFueraDeAreaPermite_RF02(bool visibilidad)
     {
-        var plantilla = PlantillaMother.Vacia();
-        AsignarArea(plantilla, 100, 200);
+        var plantilla = Plantilla.Crear(
+            1, "Plantilla", "Descripción", visibilidad, 2, "GTI", true, 100, 200);
 
-        var permitido = plantilla.PermitirCambiarEstadoPlantilla(
+        var exception = Record.Exception(() => plantilla.PermitirCambiarEstadoPlantilla(
             2,
             300,
             400,
             new Usuario(2, RolUsuario.Coordinador),
-            [100]);
+            []));
 
-        Assert.True(permitido);
+        Assert.Null(exception);
     }
 
-    [Fact]
-    public void PermitirCambiarEstado_ConCoordinadorFueraDeAlcanceDeniega_RF02()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PermitirCambiarEstado_ConCoordinadorDeAccesoEspecialPermite_RF02(bool visibilidad)
     {
-        var plantilla = PlantillaMother.Vacia();
-        AsignarArea(plantilla, 100, 200);
+        var plantilla = Plantilla.Crear(
+            1, "Plantilla", "Descripción", visibilidad, 20, "GTI", true, 100, 200);
 
-        var permitido = plantilla.PermitirCambiarEstadoPlantilla(
+        var exception = Record.Exception(() => plantilla.PermitirCambiarEstadoPlantilla(
             2,
             300,
             400,
             new Usuario(2, RolUsuario.Coordinador),
-            []);
+            [100]));
 
-        Assert.False(permitido);
+        Assert.Null(exception);
     }
 
-    [Fact]
-    public void PermitirCambiarEstado_ConAdministradorPermite_RF02()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PermitirCambiarEstado_ConCoordinadorFueraDeAlcanceDeniega_RF02(bool visibilidad)
     {
-        var plantilla = PlantillaMother.Vacia();
+        var plantilla = Plantilla.Crear(
+            1, "Plantilla", "Descripción", visibilidad, 20, "GTI", true, 100, 200);
 
-        var permitido = plantilla.PermitirCambiarEstadoPlantilla(
+        var exception = Assert.Throws<DomainException>(() => plantilla.PermitirCambiarEstadoPlantilla(
+            2,
+            300,
+            400,
+            new Usuario(2, RolUsuario.Coordinador),
+            []));
+
+        Assert.Equal(PlantillaErrors.PermisoCoordinadorPlantillaArea, exception.Error);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PermitirCambiarEstado_ConAdministradorPermite_RF02(bool visibilidad)
+    {
+        var plantilla = Plantilla.Crear(
+            1, "Plantilla", "Descripción", visibilidad, 20, "GTI", true, 100, 200);
+
+        var exception = Record.Exception(() => plantilla.PermitirCambiarEstadoPlantilla(
             1,
             null,
             null,
             new Usuario(1, RolUsuario.Administrador),
-            []);
+            []));
 
-        Assert.True(permitido);
+        Assert.Null(exception);
     }
 
-    [Fact]
-    public void PermitirCambiarEstado_ConSolicitantePropietarioPermite_RF02()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PermitirCambiarEstado_ConSolicitantePropietarioPermite_RF02(bool visibilidad)
     {
         var plantilla = Plantilla.Crear(
-            1, "Plantilla", "Descripción", true, 10, "GTI", true);
+            1, "Plantilla", "Descripción", visibilidad, 10, "GTI", true);
 
-        var permitido = plantilla.PermitirCambiarEstadoPlantilla(
+        var exception = Record.Exception(() => plantilla.PermitirCambiarEstadoPlantilla(
             10,
             null,
             null,
             new Usuario(10, RolUsuario.SolicitanteAprobador),
-            []);
+            []));
 
-        Assert.True(permitido);
+        Assert.Null(exception);
     }
 
-    [Fact]
-    public void PermitirCambiarEstado_ConSolicitanteQueNoEsPropietarioDeniega_RF02()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void PermitirCambiarEstado_ConSolicitanteQueNoEsPropietarioDeniega_RF02(bool visibilidad)
     {
         var plantilla = Plantilla.Crear(
-            1, "Plantilla", "Descripción", true, 10, "GTI", true);
+            1, "Plantilla", "Descripción", visibilidad, 10, "GTI", true);
 
         var exception = Assert.Throws<DomainException>(() =>
             plantilla.PermitirCambiarEstadoPlantilla(

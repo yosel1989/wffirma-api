@@ -39,6 +39,13 @@ public static class ApplicationErrors
 
     public static readonly ApplicationError UsuarioAreaAsignado = new("APP_SOL_018", "El usuario no tiene área asignada..");
 
+    /// <summary>
+    /// Error cuando el contexto autenticado carece del área o del área padre.
+    /// </summary>
+    public static readonly ApplicationError AreaUsuarioIncompleta = new(
+        "APP_PLT_002",
+        "El usuario no tiene asignadas el área y el área padre requeridas.",
+        (int)System.Net.HttpStatusCode.BadRequest);
 
     #region AccesoEspecial
     public static readonly ApplicationError AccesoEspecialNotFound = new("APP_SOL_019", "No se encontró el acceso especial.");

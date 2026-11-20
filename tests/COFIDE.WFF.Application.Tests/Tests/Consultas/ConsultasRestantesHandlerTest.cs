@@ -8,6 +8,7 @@ using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.AccesosEspeciales.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
+using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Application.Features.Solicitudes.DTOs;
 using COFIDE.WFF.Application.Features.Solicitudes.EventHandlers;
 using COFIDE.WFF.Application.Features.Solicitudes.Ports.Out;
@@ -352,7 +353,11 @@ public class ConsultasRestantesHandlerTest
             .ReturnsAsync((Plantilla?)null);
 
         var act = () => new EditarPlantillaCommandHandler(
-                _mapper.Object, usuario.Object, plantillas.Object, new Mock<IParametroRepository>().Object)
+                _mapper.Object,
+                usuario.Object,
+                plantillas.Object,
+                new Mock<IParametroRepository>().Object,
+                new Mock<IPlantillaCambioEstadoAuthorizationService>().Object)
             .Handle(new EditarPlantillaCommand(6, "Flujo", "Descripcion", []), CancellationToken.None);
 
         var ex = await act.Should().ThrowAsync<AppEx.ApplicationException>();

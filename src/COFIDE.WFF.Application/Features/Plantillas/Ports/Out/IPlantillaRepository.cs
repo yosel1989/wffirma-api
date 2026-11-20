@@ -17,7 +17,12 @@ public interface IPlantillaRepository : IGenericRepository<Plantilla, long>
     void GuardarFlujoPlantillaAsync(Plantilla? plantilla);
     Task<List<long>> ObtenerBloqueSiguienteIdEtapaAsync(long cantidad, CancellationToken cancellationToken);
     Task<List<long>> ObtenerBloqueSiguienteIdFirmanteAsync(long cantidad, CancellationToken cancellationToken);
-    Task<Plantilla?> ValidarExistenciaNombrePlantilla(string nombrePlantilla, bool visibilidad, long usuarioId);
+    Task<Plantilla?> ValidarExistenciaNombrePlantilla(
+        string nombrePlantilla,
+        bool visibilidad,
+        long usuarioId,
+        long? idAreaUsuario,
+        long? idAreaPadreUsuario);
 
     #region Queries
 

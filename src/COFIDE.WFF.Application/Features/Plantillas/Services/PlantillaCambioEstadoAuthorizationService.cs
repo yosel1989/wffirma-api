@@ -25,6 +25,26 @@ public sealed class PlantillaCambioEstadoAuthorizationService(
         Plantilla plantilla,
         CancellationToken cancellationToken)
     {
+        var autorizado = await EvaluarAsync(plantilla, cancellationToken);
+        if (!autorizado)
+        {
+            throw new ValidacionAplicacion.ApplicationException(
+                ApplicationErrors.Forbidden);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> PuedeAutorizarAsync(
+        Plantilla plantilla,
+        CancellationToken cancellationToken)
+    {
+        return await EvaluarAsync(plantilla, cancellationToken);
+    }
+
+    private async Task<bool> EvaluarAsync(
+        Plantilla plantilla,
+        CancellationToken cancellationToken)
+    {
         if (_currentUser.UserIdLocal is not long usuarioActual ||
             _currentUser.RolUsuario is not { } rolUsuario)
         {
@@ -37,15 +57,19 @@ public sealed class PlantillaCambioEstadoAuthorizationService(
             : [];
         var usuario = new Usuario(usuarioActual, rolUsuario);
 
-        if (!plantilla.PermitirCambiarEstadoPlantilla(
+        try
+        {
+            plantilla.PermitirCambiarEstadoPlantilla(
                 usuarioActual,
                 _currentUser.UserAreaId,
                 _currentUser.UserAreaPadreId,
                 usuario,
-                areasAccesoEspecial ?? []))
+                areasAccesoEspecial ?? []);
+            return true;
+        }
+        catch (COFIDE.WFF.Domain.Exceptions.DomainException)
         {
-            throw new ValidacionAplicacion.ApplicationException(
-                ApplicationErrors.Forbidden);
+            return false;
         }
     }
 }

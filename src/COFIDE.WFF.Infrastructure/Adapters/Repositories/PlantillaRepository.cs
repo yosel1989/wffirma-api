@@ -212,7 +212,15 @@ public class PlantillaRepository(
 
     #endregion
 
-    public async Task<Plantilla?> ValidarExistenciaNombrePlantilla(string nombrePlantilla, bool visibilidad, long usuarioId)
+    /// <summary>
+    /// Busca una plantilla activa o inactiva por nombre dentro del alcance territorial correspondiente.
+    /// </summary>
+    public async Task<Plantilla?> ValidarExistenciaNombrePlantilla(
+        string nombrePlantilla,
+        bool visibilidad,
+        long usuarioId,
+        long? idAreaUsuario,
+        long? idAreaPadreUsuario)
     {
         var estadosExcluidos = new List<EstadoPlantilla>
         {
@@ -228,10 +236,12 @@ public class PlantillaRepository(
                 !estadosExcluidos.Contains(p.EstadoPlantilla) &&
                 p.NombrePlantilla!.Valor.ToUpper() == nombrePlantilla &&
                 p.Visibilidad == visibilidad &&
-                (
-                    visibilidad ||
-                    p.IdUsuarioPropietario == usuarioId
-                ))
+                (visibilidad ||
+                 p.IdUsuarioPropietario == usuarioId ||
+                 (idAreaUsuario.HasValue &&
+                  idAreaPadreUsuario.HasValue &&
+                  p.IdAreaPlantilla == idAreaUsuario &&
+                  p.IdAreaPadrePlantilla == idAreaPadreUsuario)))
             .FirstOrDefaultAsync();
 
         return plantilla;

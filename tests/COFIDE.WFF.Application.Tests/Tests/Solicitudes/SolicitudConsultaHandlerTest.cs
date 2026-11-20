@@ -17,6 +17,8 @@ using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate;
 using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Inputs;
 using COFIDE.WFF.Domain.Aggregates.SolicitudAggregate;
 using COFIDE.WFF.Domain.Common.Enums;
+using COFIDE.WFF.Domain.Exceptions;
+using COFIDE.WFF.Domain.Aggregates.PlantillaAggregate.Errors;
 using COFIDE.WFF.Application.Common.Pageds;
 using FluentAssertions;
 using Moq;
@@ -317,10 +319,15 @@ public class SolicitudConsultaHandlerTest
     {
         ConfigurarUsuarioPlantilla();
         var repo = new Mock<IPlantillaRepository>();
-        repo.Setup(r => r.ValidarExistenciaNombrePlantilla("Flujo", false, 10))
+        repo.Setup(r => r.ValidarExistenciaNombrePlantilla("Flujo", false, 10, 100, 200))
             .ReturnsAsync((Plantilla?)null);
 
-        var resultado = await new ValidarExistenciaQueryHandler(_mapper.Object, _usuario.Object, repo.Object)
+        var autorizacion = new Mock<IPlantillaCambioEstadoAuthorizationService>();
+        var resultado = await new ValidarExistenciaQueryHandler(
+                _mapper.Object,
+                _usuario.Object,
+                repo.Object,
+                autorizacion.Object)
             .Handle(new ValidarExistenciaQuery("Flujo", false), CancellationToken.None);
 
         resultado!.Existe.Should().BeFalse();
@@ -333,14 +340,72 @@ public class SolicitudConsultaHandlerTest
         ConfigurarUsuarioPlantilla();
         var plantilla = Plantilla.Crear(4, "Flujo", "Desc", false, 10, "GTI", true);
         var repo = new Mock<IPlantillaRepository>();
-        repo.Setup(r => r.ValidarExistenciaNombrePlantilla("Flujo", false, 10)).ReturnsAsync(plantilla);
+        repo.Setup(r => r.ValidarExistenciaNombrePlantilla("Flujo", false, 10, 100, 200)).ReturnsAsync(plantilla);
 
-        var resultado = await new ValidarExistenciaQueryHandler(_mapper.Object, _usuario.Object, repo.Object)
+        var autorizacion = new Mock<IPlantillaCambioEstadoAuthorizationService>();
+        autorizacion.Setup(a => a.PuedeAutorizarAsync(
+                plantilla, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var resultado = await new ValidarExistenciaQueryHandler(
+                _mapper.Object,
+                _usuario.Object,
+                repo.Object,
+                autorizacion.Object)
             .Handle(new ValidarExistenciaQuery("Flujo", false), CancellationToken.None);
 
         resultado!.Existe.Should().BeTrue();
         resultado.IdPlantilla.Should().Be(4);
         resultado.BotonSecundario.Should().Be("Reemplazar");
+    }
+
+    [Fact]
+    public async Task ValidarExistencia_Sin_Permiso_Debe_Ofrecer_Renombrar_RF01()
+    {
+        ConfigurarUsuarioPlantilla();
+        var plantilla = Plantilla.Crear(4, "Flujo", "Desc", false, 10, "GTI", true);
+        var repo = new Mock<IPlantillaRepository>();
+        repo.Setup(r => r.ValidarExistenciaNombrePlantilla("Flujo", false, 10, 100, 200))
+            .ReturnsAsync(plantilla);
+        var autorizacion = new Mock<IPlantillaCambioEstadoAuthorizationService>();
+        autorizacion.Setup(a => a.PuedeAutorizarAsync(
+                plantilla, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var resultado = await new ValidarExistenciaQueryHandler(
+                _mapper.Object,
+                _usuario.Object,
+                repo.Object,
+                autorizacion.Object)
+            .Handle(new ValidarExistenciaQuery("Flujo", false), CancellationToken.None);
+
+        resultado!.Existe.Should().BeTrue();
+        resultado.Mensaje.Should().Contain("renombrarla");
+        resultado.BotonSecundario.Should().Be("Cancelar");
+    }
+
+    [Fact]
+    public async Task ValidarExistencia_ConExcepcionDeDominio_Debe_Ofrecer_Renombrar_RF01()
+    {
+        ConfigurarUsuarioPlantilla();
+        var plantilla = Plantilla.Crear(4, "Flujo", "Desc", false, 10, "GTI", true);
+        var repo = new Mock<IPlantillaRepository>();
+        repo.Setup(r => r.ValidarExistenciaNombrePlantilla("Flujo", false, 10, 100, 200))
+            .ReturnsAsync(plantilla);
+        var autorizacion = new Mock<IPlantillaCambioEstadoAuthorizationService>();
+        autorizacion.Setup(a => a.PuedeAutorizarAsync(
+                plantilla, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var resultado = await new ValidarExistenciaQueryHandler(
+                _mapper.Object,
+                _usuario.Object,
+                repo.Object,
+                autorizacion.Object)
+            .Handle(new ValidarExistenciaQuery("Flujo", false), CancellationToken.None);
+
+        resultado!.Existe.Should().BeTrue();
+        resultado.Mensaje.Should().Contain("renombrarla");
+        resultado.BotonSecundario.Should().Be("Cancelar");
     }
 
     [Fact]
@@ -400,6 +465,8 @@ public class SolicitudConsultaHandlerTest
         _usuario.Setup(u => u.UserIdLocal).Returns(10);
         _usuario.Setup(u => u.UserGerenciaNombre).Returns("GTI");
         _usuario.Setup(u => u.RolUsuario).Returns(RolUsuario.SolicitanteAprobador);
+        _usuario.Setup(u => u.UserAreaId).Returns(100);
+        _usuario.Setup(u => u.UserAreaPadreId).Returns(200);
     }
 
     private static ObtenerBandejaEntradaQuery QueryBandeja() =>

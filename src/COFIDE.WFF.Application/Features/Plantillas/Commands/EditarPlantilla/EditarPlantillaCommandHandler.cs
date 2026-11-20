@@ -1,24 +1,27 @@
 ﻿using AutoMapper;
+using COFIDE.WFF.Application.Common.Constants;
 using COFIDE.WFF.Application.Common.Errors;
 using COFIDE.WFF.Application.Common.Handlers;
 using COFIDE.WFF.Application.Common.Ports.Out;
 using COFIDE.WFF.Application.Features.Maestros.Ports.Out;
 using COFIDE.WFF.Application.Features.Plantillas.Ports.Out;
+using COFIDE.WFF.Application.Features.Plantillas.Services;
 using COFIDE.WFF.Domain.Entities;
 using ValidacionAplicacion = COFIDE.WFF.Application.Exceptions;
-using COFIDE.WFF.Application.Common.Constants;
 namespace COFIDE.WFF.Application.Features.Plantillas.Commands.EditarPlantilla;
 
 public sealed class EditarPlantillaCommandHandler(
         IMapper mapper,
         ICurrentUserService currentUser,
         IPlantillaRepository plantillaRepository,
-        IParametroRepository parametroRepository
+        IParametroRepository parametroRepository,
+        IPlantillaCambioEstadoAuthorizationService authorizationService
     ) : BaseCommandHandler<EditarPlantillaCommand, long>(mapper)
 {
     private readonly ICurrentUserService _currentUser = currentUser;
     private readonly IPlantillaRepository _plantillaRepository = plantillaRepository;
     private readonly IParametroRepository _parametroRepository = parametroRepository;
+    private readonly IPlantillaCambioEstadoAuthorizationService _authorizationService = authorizationService;
 
     public override async Task<long> Handle(EditarPlantillaCommand request, CancellationToken cancellationToken)
     {
@@ -29,11 +32,21 @@ public sealed class EditarPlantillaCommandHandler(
         var plantilla = await _plantillaRepository.ObtenerAgregadoPlantillaAsync(request.Id, cancellationToken, true)
         ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.PlantillaInvalid);
 
-        plantilla.PermitirActualizarPlantilla(
-            usuarioActual,
-            _currentUser.UserAreaId,
-            _currentUser.UserAreaPadreId,
-            usuario);
+        await _authorizationService.AutorizarAsync(plantilla, cancellationToken);
+
+        if (request.IdPlantillaOrigen.HasValue &&
+            request.IdPlantillaOrigen.Value > 0 &&
+            request.IdPlantillaOrigen.Value != request.Id)
+        {
+            var plantillaOrigen = await _plantillaRepository.ObtenerAgregadoPlantillaAsync(
+                request.IdPlantillaOrigen.Value,
+                cancellationToken,
+                true)
+            ?? throw new ValidacionAplicacion.ApplicationException(ApplicationErrors.PlantillaInvalid);
+
+            plantillaOrigen.EliminarLogicamente();
+            await _plantillaRepository.UpdateAsync(plantillaOrigen);
+        }
 
         var tipoAprobadorDict = (await _parametroRepository
            .ObtenerDetallePorCodigoParametro(CodigosParametro.TipoAprobador, cancellationToken))
