@@ -19,7 +19,7 @@ public class CargoRepositoryTests
             new Cargo().Con(c => c.Id, 20L).Con(c => c.NombreCargo, "Analista").Con(c => c.Estado, false));
         await context.SaveChangesAsync();
 
-        var result = await new CargoRepository(context).GetCargoCombo(CancellationToken.None);
+        var result = await new CargoRepository(context).GetObtenerCargos(CancellationToken.None);
 
         Assert.Collection(result,
             cargo => { Assert.Equal(20L, cargo.IdCargo); Assert.Equal("Analista", cargo.NombreCargo); },
@@ -32,7 +32,7 @@ public class CargoRepositoryTests
     {
         await using var context = CrearContexto();
 
-        var result = await new CargoRepository(context).GetCargoCombo(CancellationToken.None);
+        var result = await new CargoRepository(context).GetObtenerCargos(CancellationToken.None);
 
         Assert.Empty(result);
     }

@@ -4,7 +4,7 @@ using COFIDE.WFF.Api.Constants;
 using COFIDE.WFF.Api.Controllers.Common;
 using COFIDE.WFF.Api.Controllers.DTOs;
 using COFIDE.WFF.Application.Common.Ports.Out;
-using COFIDE.WFF.Application.Features.Cargos.Queries.ObtenerCargosCombo;
+using COFIDE.WFF.Application.Features.Cargos.Queries.ObtenerCargos;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Mime;
@@ -25,21 +25,21 @@ public class CargoController : BaseApiController
     public CargoController(IMediator mediator, ICorrelationContext correlationContext)
         : base(mediator, correlationContext) { }
 
-    /// <summary>Obtiene los cargos disponibles para un combo, ordenados por nombre.</summary>
+    /// <summary>Obtiene los cargos disponibles para una selección, ordenados por nombre.</summary>
     /// <param name="cancellationToken">Token de cancelación de la solicitud.</param>
     /// <returns>Lista de identificadores y nombres de cargos.</returns>
     /// <response code="200">Se encontraron cargos.</response>
     /// <response code="404">No se encontraron cargos.</response>
     [HttpGet("combo")]
-    [ProducesResponseType(typeof(ResponseDto<List<CargosComboDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ResponseDto<List<CargosComboDto>>), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ResponseDto<List<CargosComboDto>>>> ObtenerCombo(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ResponseDto<List<ObtenerCargosDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ResponseDto<List<ObtenerCargosDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResponseDto<List<ObtenerCargosDto>>>> ObtenerCargos(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new ObtenerCargosComboQuery(), cancellationToken);
+        var result = await _mediator.Send(new ObtenerCargosQuery(), cancellationToken);
         if (result.Count == 0)
-            return NotFound(ResponseDto<List<CargosComboDto>>
+            return NotFound(ResponseDto<List<ObtenerCargosDto>>
                 .Fail(ResponseCodes.NotFound, ResponseCodes.RegistrosNoEncontrados));
 
-        return Ok(ResponseDto<List<CargosComboDto>>.Ok(result));
+        return Ok(ResponseDto<List<ObtenerCargosDto>>.Ok(result));
     }
 }

@@ -1,7 +1,7 @@
-namespace COFIDE.WFF.Application.Features.Cargos.Queries.ObtenerCargosCombo;
+namespace COFIDE.WFF.Application.Features.Cargos.Queries.ObtenerCargos;
 
-/// <summary>Datos de un cargo para su selección en un combo.</summary>
-public class CargosComboDto
+/// <summary>Datos de un cargo para su selección.</summary>
+public class ObtenerCargosDto
 {
     /// <summary>Identificador del cargo.</summary>
     public long IdCargo { get; set; }
