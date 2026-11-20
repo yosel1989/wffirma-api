@@ -8,5 +8,6 @@ public sealed record EditarPlantillaCommand
     string? NombrePlantilla,
     string? Descripcion,
     List<PlantillaEtapaRequest>? Etapas,
-    bool? Visibilidad = null
+    bool? Visibilidad = null,
+    long? IdPlantillaOrigen = null
 ) : UpdateCommand<long, long>(Id);

@@ -36,12 +36,6 @@ public sealed class EliminarPlantillaCommandHandler(
                 ApplicationErrors.PlantillaYaNoExiste);
         }
 
-        if (plantilla.EstadoPlantilla == EstadoPlantilla.Eliminada)
-        {
-            throw new ValidacionAplicacion.ApplicationException(
-                ApplicationErrors.PlantillaYaNoExiste);
-        }
-
         await _authorizationService.AutorizarAsync(plantilla, cancellationToken);
         plantilla.EliminarLogicamente();
 

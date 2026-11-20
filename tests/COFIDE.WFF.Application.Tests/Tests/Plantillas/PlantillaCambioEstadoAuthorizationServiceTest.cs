@@ -71,8 +71,20 @@ public class PlantillaCambioEstadoAuthorizationServiceTest
         var act = () => CrearServicio().AutorizarAsync(
             CrearPlantilla(), CancellationToken.None);
 
-        var exception = await Assert.ThrowsAsync<DomainException>(act);
-        Assert.Equal("DOM_PLT_027", exception.Error.Code);
+        var exception = await Assert.ThrowsAsync<ValidacionAplicacion.ApplicationException>(act);
+        Assert.Equal(ApplicationErrors.Forbidden, exception.Error);
+    }
+
+    [Fact]
+    public async Task PuedeAutorizarAsync_ConSolicitanteNoPropietario_DevuelveFalse_RF02()
+    {
+        ConfigurarUsuario(11, RolUsuario.SolicitanteAprobador,
+            RolUsuarioCodigo.SolicitanteAprobador);
+
+        var permitido = await CrearServicio().PuedeAutorizarAsync(
+            CrearPlantilla(), CancellationToken.None);
+
+        Assert.False(permitido);
     }
 
     [Fact]
